@@ -77,13 +77,13 @@ class BuildingDetailSheet extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            '${building.category} · 우송대학교',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey.shade600,
+                                                      Text(
+                              '${building.category} · ${l10n.woosong_university}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade600,
+                              ),
                             ),
-                          ),
                         ],
                       ),
                     ),

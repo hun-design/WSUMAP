@@ -103,82 +103,98 @@ class FriendsController extends ChangeNotifier {
       return;
     }
 
+    // 🔥 메시지 유효성 검사
+    if (message == null || message['type'] == null) {
+      debugPrint('⚠️ 유효하지 않은 웹소켓 메시지: $message');
+      return;
+    }
+
     debugPrint('📨 친구 컨트롤러에서 웹소켓 메시지 수신: ${message['type']}');
     debugPrint('📨 메시지 내용: $message');
     debugPrint('📨 현재 웹소켓 연결 상태: $isWebSocketConnected');
     debugPrint('📨 현재 온라인 사용자 수: ${onlineUsers.length}');
 
-    switch (message['type']) {
-      case 'new_friend_request':
-      case 'friend_request_accepted':
-      case 'friend_request_rejected':
-      case 'friend_deleted':
-        // 친구 관련 이벤트 발생 시 즉시 데이터 업데이트
-        debugPrint('🔄 친구 이벤트로 인한 즉시 업데이트');
-        quickUpdate();
-        break;
+    try {
+      switch (message['type']) {
+        case 'new_friend_request':
+        case 'friend_request_accepted':
+        case 'friend_request_rejected':
+        case 'friend_deleted':
+          // 친구 관련 이벤트 발생 시 즉시 데이터 업데이트
+          debugPrint('🔄 친구 이벤트로 인한 즉시 업데이트');
+          quickUpdate();
+          break;
 
-      case 'friend_status_change':
-        _handleFriendStatusChange(message);
-        break;
+        case 'friend_status_change':
+          _handleFriendStatusChange(message);
+          break;
 
-      // 🔥 실시간 친구 위치 업데이트 처리
-      case 'friend_location_update':
-        _handleFriendLocationUpdate(message);
-        break;
+        // 🔥 실시간 친구 위치 업데이트 처리
+        case 'friend_location_update':
+          _handleFriendLocationUpdate(message);
+          break;
 
-      // 🔥 온라인 사용자 목록 업데이트 처리
-      case 'online_users_update':
-        if (message['users'] != null) {
-          List<String> users = [];
-          if (message['users'] is List) {
-            users = (message['users'] as List)
-                .map((user) {
-                  if (user is String) {
-                    return user;
-                  } else if (user is Map) {
-                    return user['userId']?.toString() ??
-                        user['id']?.toString() ??
-                        '';
-                  } else {
-                    return user.toString();
-                  }
-                })
-                .where((id) => id.isNotEmpty)
-                .toList();
+        // 🔥 온라인 사용자 목록 업데이트 처리
+        case 'online_users_update':
+          if (message['users'] != null) {
+            List<String> users = [];
+            if (message['users'] is List) {
+              users = (message['users'] as List)
+                  .map((user) {
+                    if (user is String) {
+                      return user;
+                    } else if (user is Map) {
+                      return user['userId']?.toString() ??
+                          user['id']?.toString() ??
+                          '';
+                    } else {
+                      return user.toString();
+                    }
+                  })
+                  .where((id) => id.isNotEmpty)
+                  .toList();
+            }
+            _handleOnlineUsersUpdate(users);
           }
-          _handleOnlineUsersUpdate(users);
-        }
-        break;
+          break;
 
-      // 🔥 등록 확인 메시지
-      case 'registered':
-        debugPrint('✅ 웹소켓 등록 확인됨 - 친구 컨트롤러');
-        break;
+        // 🔥 등록 확인 메시지
+        case 'registered':
+          debugPrint('✅ 웹소켓 등록 확인됨 - 친구 컨트롤러');
+          break;
 
-      // 🔥 새로 추가: 사용자 로그인 처리
-      case 'user_login':
-        _handleUserLogin(message);
-        break;
+        // 🔥 새로 추가: 사용자 로그인 처리
+        case 'user_login':
+          _handleUserLogin(message);
+          break;
 
-      // 🔥 새로 추가: 사용자 로그아웃 처리
-      case 'user_logout':
-        _handleUserLogout(message);
-        break;
+        // 🔥 새로 추가: 사용자 로그아웃 처리
+        case 'user_logout':
+          _handleUserLogout(message);
+          break;
 
-      // 🔥 새로 추가: 친구 로그인 처리
-      case 'friend_logged_in':
-        _handleFriendLoggedIn(message);
-        break;
+        // 🔥 새로 추가: 친구 로그인 처리
+        case 'friend_logged_in':
+          _handleFriendLoggedIn(message);
+          break;
 
-      // 🔥 하트비트 응답 처리
-      case 'heartbeat_response':
-        debugPrint('❤️ 친구 컨트롤러에서 하트비트 응답 수신');
-        // 특별한 UI 업데이트 필요 없음
-        break;
+        // 🔥 새로 추가: 친구 로그아웃 처리
+        case 'friend_logged_out':
+          _handleFriendLoggedOut(message);
+          break;
 
-      default:
-        debugPrint('⚠️ 알 수 없는 웹소켓 메시지 타입: ${message['type']}');
+        // 🔥 하트비트 응답 처리
+        case 'heartbeat_response':
+          debugPrint('❤️ 친구 컨트롤러에서 하트비트 응답 수신');
+          // 특별한 UI 업데이트 필요 없음
+          break;
+
+        default:
+          debugPrint('⚠️ 알 수 없는 웹소켓 메시지 타입: ${message['type']}');
+      }
+    } catch (e) {
+      debugPrint('❌ 웹소켓 메시지 처리 중 오류: $e');
+      debugPrint('❌ 오류가 발생한 메시지: $message');
     }
   }
 
@@ -314,37 +330,29 @@ class FriendsController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // 🔥 서버 데이터와 웹소켓 데이터 동기화
+  // 🔥 서버 데이터와 웹소켓 데이터 동기화 (단순화)
   void _syncWithServerData() {
     debugPrint('🔄 서버 데이터와 웹소켓 데이터 동기화 시작');
 
+    // 🔥 웹소켓이 연결되어 있으면 웹소켓 데이터를 우선
+    if (isWebSocketConnected) {
+      debugPrint('✅ 웹소켓 연결됨 - 웹소켓 데이터 우선 사용');
+      return; // 웹소켓 연결 시에는 서버 데이터와 동기화하지 않음
+    }
+
+    // 🔥 웹소켓 연결 안됨: 서버 데이터를 우선
+    debugPrint('⚠️ 웹소켓 연결 안됨 - 서버 데이터 우선 사용');
     for (int i = 0; i < friends.length; i++) {
       final friend = friends[i];
-      final isOnlineInServer = friend.isLogin; // 서버에서 받은 Is_Login 상태
-      final isOnlineInWebSocket = onlineUsers.contains(friend.userId);
+      final isOnlineInServer = friend.isLogin;
 
-      debugPrint(
-        '🔍 ${friend.userName} (${friend.userId}): 서버=$isOnlineInServer, 웹소켓=$isOnlineInWebSocket',
-      );
-
-      // 🔥 웹소켓이 연결되어 있으면 웹소켓 데이터를 우선, 아니면 서버 데이터를 우선
-      if (isWebSocketConnected) {
-        // 웹소켓 연결 시: 웹소켓 데이터가 실시간이므로 우선
-        if (isOnlineInWebSocket && !isOnlineInServer) {
-          debugPrint('✅ ${friend.userName} - 웹소켓에서 온라인으로 확인');
-        }
-      } else {
-        // 웹소켓 연결 안됨: 서버 데이터를 우선
-        if (isOnlineInServer && !isOnlineInWebSocket) {
-          if (!onlineUsers.contains(friend.userId)) {
-            onlineUsers.add(friend.userId);
-            debugPrint('✅ ${friend.userName}을 온라인 사용자 목록에 추가 (서버 데이터)');
-          }
-        }
+      if (isOnlineInServer && !onlineUsers.contains(friend.userId)) {
+        onlineUsers.add(friend.userId);
+        debugPrint('✅ ${friend.userName}을 온라인 사용자 목록에 추가 (서버 데이터)');
       }
     }
 
-    debugPrint('🔄 동기화 완료 - 최종 온라인 사용자: $onlineUsers');
+    debugPrint('🔄 서버 데이터 기반 동기화 완료 - 최종 온라인 사용자: $onlineUsers');
   }
 
   // 📶 친구 상태 변경 처리 (기존 메서드 개선)
@@ -543,39 +551,76 @@ class FriendsController extends ChangeNotifier {
   void _updateFriendsOnlineStatus() {
     debugPrint('🔄 친구 온라인 상태 업데이트 시작');
     debugPrint('온라인 사용자 목록: $onlineUsers');
+    debugPrint('웹소켓 연결 상태: $isWebSocketConnected');
 
+    // 🔥 웹소켓이 연결되어 있으면 웹소켓 데이터를 우선
+    if (isWebSocketConnected) {
+      debugPrint('✅ 웹소켓 연결됨 - 웹소켓 데이터 기반 상태 업데이트');
+      _updateFriendsStatusFromWebSocket();
+    } else {
+      debugPrint('⚠️ 웹소켓 연결 안됨 - 서버 데이터 기반 상태 업데이트');
+      _updateFriendsStatusFromServer();
+    }
+  }
+
+  // 🔥 웹소켓 데이터 기반 친구 상태 업데이트
+  void _updateFriendsStatusFromWebSocket() {
     bool hasChanges = false;
 
     for (int i = 0; i < friends.length; i++) {
-      final isOnline = onlineUsers.contains(friends[i].userId);
+      final isOnlineInWebSocket = onlineUsers.contains(friends[i].userId);
       final currentStatus = friends[i].isLogin;
 
-      debugPrint(
-        '친구 ${friends[i].userName} (${friends[i].userId}): 현재=$currentStatus, 서버=$isOnline',
-      );
-
-      if (currentStatus != isOnline) {
+      if (currentStatus != isOnlineInWebSocket) {
         friends[i] = Friend(
           userId: friends[i].userId,
           userName: friends[i].userName,
           profileImage: friends[i].profileImage,
           phone: friends[i].phone,
-          isLogin: isOnline,
+          isLogin: isOnlineInWebSocket,
           lastLocation: friends[i].lastLocation,
           isLocationPublic: friends[i].isLocationPublic,
         );
         debugPrint(
-          '✅ ${friends[i].userName} 상태 변경: $currentStatus → $isOnline',
+          '✅ ${friends[i].userName} 상태 변경: $currentStatus → $isOnlineInWebSocket (웹소켓)',
         );
         hasChanges = true;
       }
     }
 
     if (hasChanges) {
-      debugPrint('🔄 UI 업데이트 트리거 - 친구 상태 변경');
+      debugPrint('🔄 UI 업데이트 트리거 - 웹소켓 기반 친구 상태 변경');
       notifyListeners();
     } else {
-      debugPrint('ℹ️ 친구 상태 변경 없음');
+      debugPrint('ℹ️ 웹소켓 기반 친구 상태 변경 없음');
+    }
+  }
+
+  // 🔥 서버 데이터 기반 친구 상태 업데이트
+  void _updateFriendsStatusFromServer() {
+    bool hasChanges = false;
+
+    for (int i = 0; i < friends.length; i++) {
+      final isOnlineInServer = friends[i].isLogin;
+      final isOnlineInWebSocket = onlineUsers.contains(friends[i].userId);
+
+      if (isOnlineInServer != isOnlineInWebSocket) {
+        if (isOnlineInServer && !isOnlineInWebSocket) {
+          onlineUsers.add(friends[i].userId);
+          debugPrint('✅ ${friends[i].userName}을 온라인 사용자 목록에 추가 (서버 데이터)');
+        } else if (!isOnlineInServer && isOnlineInWebSocket) {
+          onlineUsers.remove(friends[i].userId);
+          debugPrint('✅ ${friends[i].userName}을 온라인 사용자 목록에서 제거 (서버 데이터)');
+        }
+        hasChanges = true;
+      }
+    }
+
+    if (hasChanges) {
+      debugPrint('🔄 UI 업데이트 트리거 - 서버 데이터 기반 친구 상태 변경');
+      notifyListeners();
+    } else {
+      debugPrint('ℹ️ 서버 데이터 기반 친구 상태 변경 없음');
     }
   }
 
@@ -994,14 +1039,29 @@ class FriendsController extends ChangeNotifier {
   void dispose() {
     debugPrint('🛑 FriendsController 정리 중...');
 
+    // 🔥 타이머 정리
     _updateTimer?.cancel();
-    _wsMessageSubscription?.cancel();
-    _wsConnectionSubscription?.cancel();
-    _wsOnlineUsersSubscription?.cancel();
+    _updateTimer = null;
 
-    // 웹소켓 연결 해제
-    _wsService.disconnect();
+    // 🔥 웹소켓 구독 정리
+    try {
+      _wsMessageSubscription?.cancel();
+      _wsConnectionSubscription?.cancel();
+      _wsOnlineUsersSubscription?.cancel();
+      debugPrint('✅ 웹소켓 구독 정리 완료');
+    } catch (e) {
+      debugPrint('⚠️ 웹소켓 구독 정리 중 오류: $e');
+    }
+
+    // 🔥 웹소켓 연결 해제
+    try {
+      _wsService.disconnect();
+      debugPrint('✅ 웹소켓 연결 해제 완료');
+    } catch (e) {
+      debugPrint('⚠️ 웹소켓 연결 해제 중 오류: $e');
+    }
 
     super.dispose();
+    debugPrint('✅ FriendsController 정리 완료');
   }
 }

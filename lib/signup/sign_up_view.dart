@@ -197,7 +197,7 @@ class _SignUpViewState extends State<SignUpView> with TickerProviderStateMixin {
             ),
             const SizedBox(height: 16),
             Text(
-              isSuccess ? '성공' : (isError ? '오류' : '알림'),
+              isSuccess ? l10n.success : (isError ? l10n.error : l10n.info),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
@@ -319,7 +319,7 @@ class _SignUpViewState extends State<SignUpView> with TickerProviderStateMixin {
                       Padding(
                         padding: const EdgeInsets.only(left: 16),
                         child: Text(
-                          '따라우송에 오신 것을 환영합니다',
+                          l10n.welcome_to_ttarausong,
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.white.withOpacity(0.9),

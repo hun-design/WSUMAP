@@ -167,7 +167,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get lectureRoomInfo => '教室信息';
 
   @override
-  String get floor => '层';
+  String get floor => '楼层';
 
   @override
   String get personInCharge => '负责人';
@@ -176,7 +176,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get viewLectureRoom => '查看教室';
 
   @override
-  String get viewBuilding => '查看楼宇';
+  String get viewBuilding => '查看建筑物';
 
   @override
   String get walk => '步行';
@@ -203,7 +203,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get building_name => '建筑名称';
 
   @override
-  String get floor_number => '楼层';
+  String floor_number(Object floor) {
+    return '楼层';
+  }
 
   @override
   String get room_name => '房间';
@@ -281,6 +283,253 @@ class AppLocalizationsZh extends AppLocalizations {
   String get woosong_university => '乌松大学';
 
   @override
+  String get excel_upload_title => '上传课程表Excel文件';
+
+  @override
+  String get excel_upload_description => '请选择乌松大学课程表Excel文件(.xlsx)';
+
+  @override
+  String get excel_file_select => '选择Excel文件';
+
+  @override
+  String get excel_upload_uploading => '正在上传Excel文件...';
+
+  @override
+  String get language_selection => '语言选择';
+
+  @override
+  String get language_selection_description => '请选择您偏好的语言';
+
+  @override
+  String get departure => '出发';
+
+  @override
+  String get destination => '目的地';
+
+  @override
+  String get my_location => '我的位置';
+
+  @override
+  String get current_location => '当前位置';
+
+  @override
+  String get welcome_subtitle_1 => '手中的跟随乌松，';
+
+  @override
+  String get welcome_subtitle_2 => '建筑信息都在这里！';
+
+  @override
+  String get select_language => '选择语言';
+
+  @override
+  String get auth_selection_title => '认证方式选择';
+
+  @override
+  String get auth_selection_subtitle => '请选择您偏好的登录方式';
+
+  @override
+  String get select_auth_method => '选择认证方式';
+
+  @override
+  String total_floors(Object count) {
+    return '共 $count 层';
+  }
+
+  @override
+  String get floor_info => '楼层信息';
+
+  @override
+  String floor_with_category(Object category) {
+    return '有 $category 的楼层';
+  }
+
+  @override
+  String get floor_label => '层';
+
+  @override
+  String get category => '类别';
+
+  @override
+  String get excel_upload_success => '上传完成！';
+
+  @override
+  String get guest_timetable_disabled => '访客用户无法使用课程表功能。';
+
+  @override
+  String get guest_timetable_add_disabled => '访客用户无法添加课程表。';
+
+  @override
+  String get guest_timetable_edit_disabled => '访客用户无法编辑课程表。';
+
+  @override
+  String get guest_timetable_delete_disabled => '访客用户无法删除课程表。';
+
+  @override
+  String get timetable_load_failed => '无法加载课程表。';
+
+  @override
+  String get timetable_add_success => '课程表添加成功。';
+
+  @override
+  String timetable_add_failed(Object error) {
+    return '添加时间表失败';
+  }
+
+  @override
+  String get timetable_overlap => '同一时间已有注册的课程。';
+
+  @override
+  String get required_fields_missing => '请填写所有必填字段。';
+
+  @override
+  String get no_search_results => '无搜索结果';
+
+  @override
+  String get excel_upload_refreshing => '正在刷新课程表...';
+
+  @override
+  String get logout_processing => '正在登出...';
+
+  @override
+  String get logout_error_message => '登出过程中发生错误，但正在移动到初始屏幕。';
+
+  @override
+  String get data_to_be_deleted => '将被删除的数据';
+
+  @override
+  String get deleting_account => '正在删除账户...';
+
+  @override
+  String get excel_tutorial_title => '如何下载Excel文件';
+
+  @override
+  String get edit_profile_section => '编辑个人资料';
+
+  @override
+  String get delete_account_section => '删除账户';
+
+  @override
+  String get logout_section => '登出';
+
+  @override
+  String get location_share_title => '位置共享';
+
+  @override
+  String get location_share_enabled => '位置共享已启用';
+
+  @override
+  String get location_share_disabled => '位置共享已禁用';
+
+  @override
+  String get excel_tutorial_previous => '上一个';
+
+  @override
+  String get room_route_error => '计算房间路径时出错。请按建筑物搜索。';
+
+  @override
+  String get location_check_error => '无法检查当前位置。请重试。';
+
+  @override
+  String get server_connection_error => '服务器连接有问题。请稍后重试。';
+
+  @override
+  String get route_calculation_error => '计算路径时出错。请重试。';
+
+  @override
+  String get try_again => '重试';
+
+  @override
+  String get current_location_departure => '从当前位置出发';
+
+  @override
+  String get current_location_departure_default => '从默认位置出发';
+
+  @override
+  String get current_location_navigation_start => '从当前位置开始导航';
+
+  @override
+  String get excel_tutorial_next => '下一个';
+
+  @override
+  String get profile_edit_title => '编辑个人资料';
+
+  @override
+  String get profile_edit_subtitle => '您可以修改您的个人信息';
+
+  @override
+  String get account_delete_title => '删除账户';
+
+  @override
+  String get account_delete_subtitle => '永久删除您的账户';
+
+  @override
+  String get logout_title => '登出';
+
+  @override
+  String get logout_subtitle => '从当前账户登出';
+
+  @override
+  String get location_share_enabled_success => '位置共享已启用';
+
+  @override
+  String get location_share_disabled_success => '位置共享已禁用';
+
+  @override
+  String get profile_edit_error => '编辑个人资料时发生错误';
+
+  @override
+  String get inquiry_load_failed => '加载查询列表失败';
+
+  @override
+  String get pull_to_refresh => '下拉刷新';
+
+  @override
+  String get app_version_number => 'v1.0.0';
+
+  @override
+  String get developer_email_address => 'wsumap41@gmail.com';
+
+  @override
+  String get developer_github_url => 'https://github.com/WSU-YJB/WSUMAP';
+
+  @override
+  String get friend_management => '朋友管理';
+
+  @override
+  String get excel_tutorial_file_select => '选择文件';
+
+  @override
+  String get excel_tutorial_help => '查看说明';
+
+  @override
+  String get excel_upload_file_cancelled => '文件选择已取消。';
+
+  @override
+  String get excel_upload_success_message => '课程表已更新！';
+
+  @override
+  String excel_upload_refresh_failed(String error) {
+    return '刷新失败：$error';
+  }
+
+  @override
+  String excel_upload_failed(String error) {
+    return '上传失败：$error';
+  }
+
+  @override
+  String get excel_tutorial_step_1 => '1. 登录乌松大学信息系统';
+
+  @override
+  String get excel_tutorial_url => 'https://wsinfo.wsu.ac.kr';
+
+  @override
+  String get excel_tutorial_image_load_error => '无法加载图片';
+
+  @override
+  String get excel_tutorial_unknown_page => '未知页面';
+
+  @override
   String get campus_navigator => '校园导航器';
 
   @override
@@ -329,7 +578,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get phone => '电话';
 
   @override
-  String get email => '邮箱';
+  String get email => '电子邮件';
 
   @override
   String get student_number => '学号';
@@ -398,9 +647,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get unknown_error => '发生未知错误';
 
   @override
-  String get select_auth_method => '选择认证方式';
-
-  @override
   String get woosong_campus_guide_service => '乌松大学校园指南服务';
 
   @override
@@ -420,6 +666,15 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get guest_mode => '访客模式';
+
+  @override
+  String get guest_mode_confirm => '您要进入访客模式吗？\n\n在访客模式下，您无法使用好友功能和位置共享。';
+
+  @override
+  String get app_name => '达拉乌松';
+
+  @override
+  String get welcome_to_ttarausong => '欢迎来到达拉乌松';
 
   @override
   String get guest_mode_description => '在访客模式下，您只能查看基本的校园信息。\n要使用所有功能，请注册并登录。';
@@ -699,30 +954,30 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get enterFriendIdPrompt => '请输入要添加的好友ID';
+  String get enterFriendIdPrompt => '请输入您朋友的ID';
 
   @override
-  String get friendId => '好友ID';
+  String get friendId => '朋友ID';
 
   @override
-  String get enterFriendId => '输入好友ID';
+  String get enterFriendId => '输入朋友ID';
 
   @override
-  String get sendFriendRequest => '发送好友请求';
+  String get sendFriendRequest => '发送朋友请求';
 
   @override
-  String get realTimeSyncActive => '实时同步激活 • 自动更新';
+  String get realTimeSyncActive => '实时同步激活';
 
   @override
-  String get noSentRequests => '无发送的好友请求';
+  String get noSentRequests => '没有发送的请求';
 
   @override
   String newFriendRequests(int count) {
-    return '$count个新的好友请求';
+    return '$count个新的朋友请求';
   }
 
   @override
-  String get noReceivedRequests => '无接收的好友请求';
+  String get noReceivedRequests => '没有收到的请求';
 
   @override
   String get id => 'ID';
@@ -733,7 +988,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get newBadge => 'NEW';
+  String get newBadge => '新';
 
   @override
   String get online => '在线';
@@ -742,13 +997,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get offline => '离线';
 
   @override
-  String get contact => '联系';
+  String get contact => '联系方式';
 
   @override
   String get noContactInfo => '无联系信息';
 
   @override
-  String get friendOfflineError => '好友离线';
+  String get friendOfflineError => '无法查看离线朋友的位置';
 
   @override
   String get removeLocation => '移除位置';
@@ -788,24 +1043,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get estimated_time => '预计时间';
 
   @override
-  String get account_delete_title => '删除账户';
-
-  @override
-  String get account_delete_subtitle => '永久删除您的账户';
-
-  @override
-  String get logout_title => '登出';
-
-  @override
-  String get logout_subtitle => '从当前账户登出';
-
-  @override
-  String get location_share_enabled_success => '位置共享已启用';
-
-  @override
-  String get location_share_disabled_success => '位置共享已禁用';
-
-  @override
   String get location_share_update_failed => '位置共享设置更新失败';
 
   @override
@@ -813,9 +1050,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get no_changes => '无更改';
-
-  @override
-  String get profile_edit_error => '编辑个人资料时发生错误';
 
   @override
   String get password_confirm_title => '密码确认';
@@ -845,7 +1079,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get excel_file_tutorial => 'Excel文件教程';
 
   @override
-  String get image_attachment => '图片附件';
+  String get image_attachment => 'Image Attachment';
 
   @override
   String get max_one_image => '最多1张';
@@ -897,21 +1131,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get inquiry_category_place_error => '地点/信息错误';
-
-  @override
-  String get location_share_title => '位置共享';
-
-  @override
-  String get location_share_enabled => '位置共享已启用';
-
-  @override
-  String get location_share_disabled => '位置共享已禁用';
-
-  @override
-  String get profile_edit_title => '编辑个人资料';
-
-  @override
-  String get profile_edit_subtitle => '您可以修改您的个人信息';
 
   @override
   String get schedule => '课程表';
@@ -1120,12 +1339,6 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String get current_location_departure => '从当前位置出发';
-
-  @override
-  String get current_location => '当前位置';
-
-  @override
   String get available => '可用';
 
   @override
@@ -1133,9 +1346,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get my_location_set_as_start => '我的位置已设为起点';
-
-  @override
-  String get current_location_departure_default => '从当前位置出发（默认）';
 
   @override
   String get default_location_set_as_start => '默认位置已设为起点';
@@ -1147,13 +1357,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get navigation_ended => '导航已结束';
 
   @override
-  String get departure => '出发';
-
-  @override
   String get arrival => '到达';
-
-  @override
-  String get destination => '目的地';
 
   @override
   String get outdoor_movement_distance => '室外移动距离';
@@ -1581,9 +1785,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get search_campus_buildings => 'Search campus buildings';
 
   @override
-  String get no_search_results => 'No search results';
-
-  @override
   String get building_details => 'Details';
 
   @override
@@ -1632,10 +1833,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get developer_name => 'Name: Hong Gil-dong';
 
   @override
-  String get developer_email => 'Email: example@email.com';
+  String get developer_email => 'Email: wsumap41@gmail.com';
 
   @override
-  String get developer_github => 'GitHub: github.com/yourid';
+  String get developer_github => 'GitHub: github.com/WSU-YJB/WSUMAP';
 
   @override
   String get no_help_images => 'No help images';
@@ -1764,7 +1965,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get friendManagementAndRequests => 'Friend Management and Requests';
 
   @override
-  String get realTimeSyncStatus => 'Real-time Sync Status';
+  String get realTimeSyncStatus => '实时同步状态';
 
   @override
   String get friendManagement => 'Friend Management';
@@ -1801,9 +2002,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get basic_info => 'Basic Info';
 
   @override
-  String get category => 'Category';
-
-  @override
   String get status => 'Status';
 
   @override
@@ -1819,13 +2017,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get search_hint => 'Search campus buildings';
 
   @override
-  String get searchHint => 'Search by building or room';
+  String get searchHint => '按建筑物或房间搜索';
 
   @override
   String get searchInitialGuide => 'Search for a building or room';
 
   @override
-  String get searchHintExample => 'e.g. W19, Engineering Hall, Room 401';
+  String get searchHintExample => '例如：W19、工程馆、401室';
 
   @override
   String get searchLoading => 'Searching...';
@@ -1852,6 +2050,42 @@ class AppLocalizationsZh extends AppLocalizations {
   String get restaurant => 'Restaurant';
 
   @override
+  String get privacy_policy => '隐私政策';
+
+  @override
+  String get fire_extinguisher => '灭火器';
+
+  @override
+  String get my_location_route_calculating => '正在计算从我的位置到建筑物的路线。请稍等片刻。';
+
+  @override
+  String get calculating => '计算中';
+
+  @override
+  String get set_both_locations => '请设置出发地和目的地';
+
+  @override
+  String get route_calculating => '正在计算路线...';
+
+  @override
+  String get search_error => '搜索错误';
+
+  @override
+  String get search_initial_guide => '搜索建筑物或房间';
+
+  @override
+  String get search_hint_example => '例如：W19、工程馆、401室';
+
+  @override
+  String get search_loading => '搜索中...';
+
+  @override
+  String get search_no_result => '未找到搜索结果';
+
+  @override
+  String get search_try_again => '尝试其他搜索词';
+
+  @override
   String get library => 'Library';
 
   @override
@@ -1859,7 +2093,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String location_setting_confirm(String buildingName, String locationType) {
-    return '是否要将$buildingName设置为$locationType？';
+    return '将$buildingName设置为$locationType？';
   }
 
   @override
@@ -1867,7 +2101,51 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String friend_location_permission_denied(String name) {
-    return '$name未允许位置共享。';
+    return '$name不允许位置共享';
+  }
+
+  @override
+  String get no_friends_message => '您没有朋友。\n请添加朋友后重试。';
+
+  @override
+  String offline_friends_not_displayed(int count) {
+    return '\n$count个离线朋友未显示。';
+  }
+
+  @override
+  String location_denied_friends_not_displayed(int count) {
+    return '\n$count个拒绝位置共享的朋友未显示。';
+  }
+
+  @override
+  String both_offline_and_location_denied(int offlineCount, int locationCount) {
+    return '\n$offlineCount个离线朋友和$locationCount个拒绝位置共享的朋友未显示。';
+  }
+
+  @override
+  String get all_friends_offline_or_location_denied =>
+      '所有朋友都离线或拒绝位置共享。\n当朋友上线并允许位置共享时，您可以查看他们的位置。';
+
+  @override
+  String get all_friends_offline => '所有朋友都离线。\n当朋友上线时，您可以查看他们的位置。';
+
+  @override
+  String get all_friends_location_denied =>
+      '所有朋友都拒绝位置共享。\n当朋友允许位置共享时，您可以查看他们的位置。';
+
+  @override
+  String friends_location_display_success(int count) {
+    return '在地图上显示了$count位朋友的位置。';
+  }
+
+  @override
+  String friends_location_display_error(String error) {
+    return '无法显示朋友位置: $error';
+  }
+
+  @override
+  String offline_friends_dialog_subtitle(int count) {
+    return '当前离线的$count位朋友';
   }
 
   @override
@@ -1913,56 +2191,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get already_adding_friend => '正在添加好友，防止重复提交';
 
   @override
-  String get no_friends_message => '您还没有好友。\n请添加好友后重试。';
-
-  @override
   String friends_location_displayed(int count) {
     return '显示了 $count 位好友的位置。';
   }
 
   @override
-  String offline_friends_not_displayed(int count) {
-    return '\n$count 位离线好友未显示。';
-  }
-
-  @override
-  String location_denied_friends_not_displayed(int count) {
-    return '\n$count 位拒绝位置共享的好友未显示。';
-  }
-
-  @override
-  String both_offline_and_location_denied(int offlineCount, int locationCount) {
-    return '\n$offlineCount 位离线好友和 $locationCount 位拒绝位置共享的好友未显示。';
-  }
-
-  @override
-  String get all_friends_offline_or_location_denied =>
-      '所有好友都离线或拒绝位置共享。\n当好友上线并允许位置共享时，您可以查看他们的位置。';
-
-  @override
-  String get all_friends_offline => '所有好友都离线。\n当好友上线时，您可以查看他们的位置。';
-
-  @override
-  String get all_friends_location_denied =>
-      '所有好友都拒绝位置共享。\n当好友允许位置共享时，您可以查看他们的位置。';
-
-  @override
-  String friends_location_display_success(int count) {
-    return '在地图上显示了 $count 位好友的位置。';
-  }
-
-  @override
-  String friends_location_display_error(String error) {
-    return '无法显示好友位置: $error';
-  }
-
-  @override
   String get offline_friends_dialog_title => '离线好友';
-
-  @override
-  String offline_friends_dialog_subtitle(int count) {
-    return '当前离线的 $count 位好友';
-  }
 
   @override
   String friendRequestCancelled(String name) {
@@ -1990,4 +2224,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get friendLocationRemovedFromMap => '已从地图中移除好友位置。';
+
+  @override
+  String get info => '信息';
 }

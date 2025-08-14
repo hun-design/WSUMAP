@@ -86,7 +86,7 @@ class _LoginFormViewState extends State<LoginFormView> with TickerProviderStateM
 
   /// 게스트 로그인 처리
   void _handleGuestLogin() async {
-    // 다이얼로그에서 고정 텍스트를 사용하므로 지역화 객체는 사용하지 않음
+    final l10n = AppLocalizations.of(context)!;
     
     // 게스트 로그인 확인 다이얼로그 표시
     final confirmed = await showDialog<bool>(
@@ -113,7 +113,7 @@ class _LoginFormViewState extends State<LoginFormView> with TickerProviderStateM
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                '게스트 모드',
+                l10n.guest_mode,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
@@ -126,7 +126,7 @@ class _LoginFormViewState extends State<LoginFormView> with TickerProviderStateM
         content: Padding(
           padding: const EdgeInsets.only(top: 8),
           child: Text(
-            '게스트 모드로 입장하시겠습니까?\n\n게스트 모드에서는 친구 기능과 위치 공유 기능을 사용할 수 없습니다.',
+            l10n.guest_mode_confirm,
             style: TextStyle(
               fontSize: 16,
               color: Colors.grey[700],
@@ -151,7 +151,7 @@ class _LoginFormViewState extends State<LoginFormView> with TickerProviderStateM
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: Text(
-                      '취소',
+                      l10n.cancel,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -175,7 +175,7 @@ class _LoginFormViewState extends State<LoginFormView> with TickerProviderStateM
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: Text(
-                      '확인',
+                      l10n.confirm,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,

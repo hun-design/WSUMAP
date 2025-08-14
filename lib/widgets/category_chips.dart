@@ -4,6 +4,7 @@ import 'package:flutter_application_1/services/category_api_service.dart';
 import 'package:flutter_application_1/data/category_fallback_data.dart';
 import 'package:flutter_application_1/utils/CategoryLocalization.dart';
 import 'package:flutter_application_1/providers/category_provider.dart';
+import 'package:flutter_application_1/providers/app_language_provider.dart';
 
 class CategoryChips extends StatefulWidget {
   final Function(String, List<Map<String, dynamic>>) onCategorySelected;
@@ -163,8 +164,8 @@ class _CategoryChipsState extends State<CategoryChips> {
 
 @override
 Widget build(BuildContext context) {
-  return Consumer<CategoryProvider>(
-    builder: (context, categoryProvider, child) {
+  return Consumer2<CategoryProvider, AppLanguageProvider>(
+    builder: (context, categoryProvider, languageProvider, child) {
       return Container(
         height: 40,
         margin: const EdgeInsets.symmetric(horizontal: 16),

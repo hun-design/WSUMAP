@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../generated/app_localizations.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AppInfoPage extends StatelessWidget {
   const AppInfoPage({super.key});
@@ -90,9 +91,9 @@ class AppInfoPage extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(height: 4),
-                            const Text(
-                              'v1.0.0',
-                              style: TextStyle(
+                            Text(
+                              l10n.app_version_number,
+                              style: const TextStyle(
                                 fontSize: 14,
                                 color: Color(0xFF64748B),
                               ),
@@ -150,9 +151,9 @@ class AppInfoPage extends StatelessWidget {
                       const SizedBox(height: 16),
                       _buildDeveloperInfo(Icons.person, l10n.developer_name),
                       const SizedBox(height: 8),
-                      _buildDeveloperInfo(Icons.email_outlined, l10n.developer_email),
+                      _buildEmailInfo(Icons.email_outlined, l10n.developer_email),
                       const SizedBox(height: 8),
-                      _buildDeveloperInfo(Icons.code, l10n.developer_github),
+                      _buildGitHubInfo(Icons.code, l10n.developer_github),
                     ],
                   ),
                 ),
@@ -184,5 +185,84 @@ class AppInfoPage extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  Widget _buildEmailInfo(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 16,
+          color: const Color(0xFF64748B),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: GestureDetector(
+            onTap: () => _launchEmail(),
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFF1E3A8A),
+                decoration: TextDecoration.underline,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _launchEmail() async {
+    final Uri emailUri = Uri(
+      scheme: 'mailto',
+      path: 'wsumap41@gmail.com',
+    );
+    
+    if (await canLaunchUrl(emailUri)) {
+      await launchUrl(emailUri);
+    } else {
+      // 이메일 앱을 열 수 없는 경우 클립보드에 복사
+      // Flutter의 클립보드 서비스를 사용하려면 추가 import가 필요합니다
+      debugPrint('이메일 앱을 열 수 없습니다: $emailUri');
+    }
+  }
+
+  Widget _buildGitHubInfo(IconData icon, String text) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 16,
+          color: const Color(0xFF64748B),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: GestureDetector(
+            onTap: () => _launchGitHub(),
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFF1E3A8A),
+                decoration: TextDecoration.underline,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _launchGitHub() async {
+    final Uri githubUri = Uri.parse('https://github.com/WSU-YJB/WSUMAP');
+    
+    if (await canLaunchUrl(githubUri)) {
+      await launchUrl(githubUri, mode: LaunchMode.externalApplication);
+    } else {
+      debugPrint('GitHub 링크를 열 수 없습니다: $githubUri');
+    }
   }
 }

@@ -7,16 +7,22 @@ import 'providers/app_language_provider.dart';
 import '../managers/location_manager.dart';
 import '../selection/auth_selection_view.dart';
 
-enum AppLanguage { korean, chinese, english }
+enum AppLanguage { korean, english, chinese, spanish, japanese, russian }
 
 String languageToString(AppLanguage lang) {
   switch (lang) {
     case AppLanguage.korean:
       return '한국어';
-    case AppLanguage.chinese:
-      return '中文';
     case AppLanguage.english:
       return 'English';
+    case AppLanguage.chinese:
+      return '中文';
+    case AppLanguage.spanish:
+      return 'Español';
+    case AppLanguage.japanese:
+      return '日本語';
+    case AppLanguage.russian:
+      return 'Русский';
   }
 }
 
@@ -24,10 +30,16 @@ AppLanguage localeToAppLanguage(Locale locale) {
   switch (locale.languageCode) {
     case 'ko':
       return AppLanguage.korean;
-    case 'zh':
-      return AppLanguage.chinese;
     case 'en':
       return AppLanguage.english;
+    case 'zh':
+      return AppLanguage.chinese;
+    case 'es':
+      return AppLanguage.spanish;
+    case 'ja':
+      return AppLanguage.japanese;
+    case 'ru':
+      return AppLanguage.russian;
     default:
       return AppLanguage.korean;
   }
@@ -37,10 +49,16 @@ Locale appLanguageToLocale(AppLanguage lang) {
   switch (lang) {
     case AppLanguage.korean:
       return const Locale('ko');
-    case AppLanguage.chinese:
-      return const Locale('zh');
     case AppLanguage.english:
       return const Locale('en');
+    case AppLanguage.chinese:
+      return const Locale('zh');
+    case AppLanguage.spanish:
+      return const Locale('es');
+    case AppLanguage.japanese:
+      return const Locale('ja');
+    case AppLanguage.russian:
+      return const Locale('ru');
   }
 }
 
@@ -270,9 +288,15 @@ class _WelcomeViewState extends State<WelcomeView>
     switch (_selectedLanguage) {
       case AppLanguage.korean:
         return '따라우송';
+      case AppLanguage.english:
+        return '따라우송';
       case AppLanguage.chinese:
         return '따라우송';
-      case AppLanguage.english:
+      case AppLanguage.spanish:
+        return '따라우송';
+      case AppLanguage.japanese:
+        return '따라우송';
+      case AppLanguage.russian:
         return '따라우송';
     }
   }
@@ -281,10 +305,16 @@ class _WelcomeViewState extends State<WelcomeView>
     switch (_selectedLanguage) {
       case AppLanguage.korean:
         return '우송대학교 캠퍼스를\n쉽고 빠르게 탐색하세요';
-      case AppLanguage.chinese:
-        return '轻松快捷地探索又松大学校园';
       case AppLanguage.english:
         return 'Explore Woosong University campus easily and quickly';
+      case AppLanguage.chinese:
+        return '轻松快捷地探索又松大学校园';
+      case AppLanguage.spanish:
+        return 'Explora el campus de la Universidad de Woosong de manera fácil y rápida';
+      case AppLanguage.japanese:
+        return 'ウソン大学のキャンパスを\n簡単かつ迅速に探索しましょう';
+      case AppLanguage.russian:
+        return 'Легко и быстро исследуйте кампус Университета Вусонг';
     }
   }
 
@@ -292,21 +322,39 @@ class _WelcomeViewState extends State<WelcomeView>
     switch (_selectedLanguage) {
       case AppLanguage.korean:
         return '시작하기';
-      case AppLanguage.chinese:
-        return '开始';
       case AppLanguage.english:
         return 'Get Started';
+      case AppLanguage.chinese:
+        return '开始';
+      case AppLanguage.spanish:
+        return 'Comenzar';
+      case AppLanguage.japanese:
+        return '始める';
+      case AppLanguage.russian:
+        return 'Начать';
     }
   }
 
   String _getLanguageText() {
+    // AppLocalizations를 사용하여 다국어 지원
+    final l10n = AppLocalizations.of(context);
+    if (l10n != null) {
+      return l10n.select_language;
+    }
+    // 폴백: 현재 선택된 언어에 따라 반환
     switch (_selectedLanguage) {
       case AppLanguage.korean:
         return '언어 선택';
-      case AppLanguage.chinese:
-        return '选择语言';
       case AppLanguage.english:
         return 'Select Language';
+      case AppLanguage.chinese:
+        return '选择语言';
+      case AppLanguage.spanish:
+        return 'Seleccionar Idioma';
+      case AppLanguage.japanese:
+        return '言語選択';
+      case AppLanguage.russian:
+        return 'Выбрать язык';
     }
   }
 
@@ -314,9 +362,15 @@ class _WelcomeViewState extends State<WelcomeView>
     switch (_selectedLanguage) {
       case AppLanguage.korean:
         return '따라우송';
+      case AppLanguage.english:
+        return '따라우송';
       case AppLanguage.chinese:
         return '따라우송';
-      case AppLanguage.english:
+      case AppLanguage.spanish:
+        return '따라우송';
+      case AppLanguage.japanese:
+        return '따라우송';
+      case AppLanguage.russian:
         return '따라우송';
     }
   }
@@ -481,7 +535,7 @@ class _WelcomeViewState extends State<WelcomeView>
   @override
   Widget build(BuildContext context) {
     // AppLocalizations를 안전하게 가져오기 (null일 수 있음)
-    final localizations = AppLocalizations.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       body: Container(
@@ -522,7 +576,7 @@ class _WelcomeViewState extends State<WelcomeView>
                 child: Column(
                   children: [
                     Text(
-                      '내 손 안의 따라우송,',
+                      l10n?.welcome_subtitle_1 ?? '내 손 안의 따라우송,',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
@@ -531,7 +585,7 @@ class _WelcomeViewState extends State<WelcomeView>
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      '건물 정보가 다 여기에!',
+                      l10n?.welcome_subtitle_2 ?? '건물 정보가 다 여기에!',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,

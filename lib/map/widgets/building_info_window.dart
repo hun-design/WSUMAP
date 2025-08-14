@@ -136,6 +136,8 @@ class _BuildingInfoWindowState extends State<BuildingInfoWindow> {
 
   /// 🔥 대표 사진만 표시하는 위젯
   Widget _buildImageGallery(List<String> imagePaths, bool isNetworkImage) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -227,7 +229,7 @@ class _BuildingInfoWindowState extends State<BuildingInfoWindow> {
         if (imagePaths.length > 1) ...[
           const SizedBox(height: 8),
           Text(
-            '${imagePaths.length}개의 이미지',
+            '${imagePaths.length}${l10n.max_one_image}',
             style: TextStyle(
               fontSize: 12,
               color: Colors.grey[600],
@@ -444,6 +446,8 @@ class _ImageDialogState extends State<_ImageDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    
     return Dialog(
       insetPadding: EdgeInsets.zero,
       backgroundColor: Colors.transparent,
@@ -485,7 +489,7 @@ class _ImageDialogState extends State<_ImageDialog> {
                             Icon(Icons.error, size: 48, color: Colors.grey),
                             SizedBox(height: 16),
                             Text(
-                              '이미지를 불러올 수 없습니다',
+                              l10n.image_load_error,
                               style: TextStyle(color: Colors.grey),
                             ),
                           ],

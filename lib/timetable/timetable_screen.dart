@@ -42,19 +42,20 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final l10n = AppLocalizations.of(context);
 
     if (month >= 12 || month <= 2) {
-      return l10n?.winter_semester ?? 'Winter';
+      return l10n?.winter_semester ?? '겨울학기';
     } else if (month >= 3 && month <= 5) {
-      return l10n?.spring_semester ?? 'Spring';
+      return l10n?.spring_semester ?? '봄학기';
     } else if (month >= 6 && month <= 8) {
-      return l10n?.summer_semester ?? 'Summer';
+      return l10n?.summer_semester ?? '여름학기';
     } else {
-      return l10n?.fall_semester ?? 'Fall';
+      return l10n?.fall_semester ?? '가을학기';
     }
   }
 
   int _getCurrentYear() => DateTime.now().year;
 
   Future<void> _loadScheduleItems() async {
+    final l10n = AppLocalizations.of(context);
     debugPrint('📅 시간표 새로고침 시작 - userId: ${widget.userId}');
     setState(() => _isLoading = true);
     try {
@@ -65,21 +66,21 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           setState(() => _scheduleItems = []);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Row(
-                children: [
-                  Icon(Icons.info_outline, color: Colors.white, size: 20),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      '게스트 사용자는 시간표 기능을 사용할 수 없습니다.',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 14,
-                      ),
+                          content: Row(
+              children: [
+                const Icon(Icons.info_outline, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    l10n?.guest_timetable_disabled ?? '게스트 사용자는 시간표 기능을 사용할 수 없습니다.',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w500,
+                      fontSize: 14,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
+            ),
               backgroundColor: const Color(0xFF3B82F6),
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
@@ -103,14 +104,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Row(
+            content: Row(
               children: [
-                Icon(Icons.error_outline, color: Colors.white, size: 20),
-                SizedBox(width: 12),
+                const Icon(Icons.error_outline, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    '시간표를 불러오지 못했습니다.',
-                    style: TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+                    l10n?.timetable_load_failed ?? '시간표를 불러오지 못했습니다.',
+                    style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
                   ),
                 ),
               ],
@@ -130,17 +131,18 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   Future<void> _addScheduleItem(ScheduleItem item) async {
+    final l10n = AppLocalizations.of(context);
     // 🔥 게스트 사용자 체크
     if (widget.userId.startsWith('guest_')) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Row(
+          content: Row(
             children: [
-              Icon(Icons.info_outline, color: Colors.white, size: 20),
-              SizedBox(width: 12),
+              const Icon(Icons.info_outline, color: Colors.white, size: 20),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  '게스트 사용자는 시간표를 추가할 수 없습니다.',
+                  l10n?.guest_timetable_add_disabled ?? '게스트 사용자는 시간표를 추가할 수 없습니다.',
                   style: TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
                 ),
               ),
@@ -166,13 +168,13 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Row(
+            content: Row(
               children: [
-                Icon(Icons.check_circle, color: Colors.white, size: 20),
-                SizedBox(width: 12),
+                const Icon(Icons.check_circle, color: Colors.white, size: 20),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    '시간표가 성공적으로 추가되었습니다.',
+                    l10n?.timetable_add_success ?? '시간표가 성공적으로 추가되었습니다.',
                     style: TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
                   ),
                 ),
@@ -198,7 +200,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    '시간표 추가에 실패했습니다: ${e.toString().replaceAll('Exception: ', '')}',
+                    '${l10n?.timetable_add_failed ?? '시간표 추가에 실패했습니다'}: ${e.toString().replaceAll('Exception: ', '')}',
                     style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
                   ),
                 ),
@@ -220,17 +222,18 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     ScheduleItem originItem,
     ScheduleItem newItem,
   ) async {
+    final l10n = AppLocalizations.of(context);
     // 🔥 게스트 사용자 체크
     if (widget.userId.startsWith('guest_')) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Row(
+          content: Row(
             children: [
-              Icon(Icons.info_outline, color: Colors.white, size: 20),
-              SizedBox(width: 12),
+              const Icon(Icons.info_outline, color: Colors.white, size: 20),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  '게스트 사용자는 시간표를 수정할 수 없습니다.',
+                  l10n?.guest_timetable_edit_disabled ?? '게스트 사용자는 시간표를 수정할 수 없습니다.',
                   style: TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
                 ),
               ),
@@ -257,17 +260,18 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   Future<void> _deleteScheduleItem(ScheduleItem item) async {
+    final l10n = AppLocalizations.of(context);
     // 🔥 게스트 사용자 체크
     if (widget.userId.startsWith('guest_')) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Row(
+          content: Row(
             children: [
-              Icon(Icons.info_outline, color: Colors.white, size: 20),
-              SizedBox(width: 12),
+              const Icon(Icons.info_outline, color: Colors.white, size: 20),
+              const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  '게스트 사용자는 시간표를 삭제할 수 없습니다.',
+                  l10n?.guest_timetable_delete_disabled ?? '게스트 사용자는 시간표를 삭제할 수 없습니다.',
                   style: TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
                 ),
               ),
@@ -337,7 +341,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final l10n = AppLocalizations.of(context);
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: const BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -348,82 +352,111 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           ),
         ],
       ),
-      child: Row(
-        children: [
-          // 시간표(시계) 아이콘 부분 삭제됨
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  l10n?.timetable ?? 'Timetable',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1E3A8A),
-                  ),
-                ),
-                Row(
-                  children: [
-                    Text(
-                      l10n?.current_year(_getCurrentYear()) ??
-                          '${_getCurrentYear()}',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      _currentSemester,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF1E3A8A),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isSmallScreen = constraints.maxWidth < 400;
+          
+          return Row(
             children: [
-              GestureDetector(
-                onTap: _showExcelImportDialog,
+              Expanded(
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(
-                      Icons.file_upload_outlined,
-                      color: Color(0xFF1E3A8A),
-                      size: 28,
+                    Text(
+                      l10n?.timetable ?? 'Timetable',
+                      style: TextStyle(
+                        fontSize: isSmallScreen ? 20 : 24,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1E3A8A),
+                      ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      AppLocalizations.of(context)!.excel_file,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF1E3A8A),
-                        fontWeight: FontWeight.w500,
-                      ),
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(
+                          l10n?.current_year(_getCurrentYear()) ??
+                              '${_getCurrentYear()}',
+                          style: TextStyle(
+                            fontSize: isSmallScreen ? 12 : 14,
+                            color: Colors.grey,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _currentSemester,
+                          style: TextStyle(
+                            fontSize: isSmallScreen ? 12 : 14,
+                            color: const Color(0xFF1E3A8A),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 16),
-              IconButton(
-                onPressed: _showAddScheduleDialog,
-                icon: const Icon(
-                  Icons.add_circle_outline,
-                  color: Color(0xFF1E3A8A),
-                  size: 28,
-                ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Flexible(
+                    child: GestureDetector(
+                      onTap: _showExcelImportDialog,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.file_upload_outlined,
+                              color: Color(0xFF1E3A8A),
+                              size: 24,
+                            ),
+                            const SizedBox(height: 4),
+                            Flexible(
+                              child: Text(
+                                AppLocalizations.of(context)!.excel_file,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Color(0xFF1E3A8A),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                textAlign: TextAlign.center,
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 2,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: IconButton(
+                      onPressed: _showAddScheduleDialog,
+                      icon: const Icon(
+                        Icons.add_circle_outline,
+                        color: Color(0xFF1E3A8A),
+                        size: 24,
+                      ),
+                      padding: const EdgeInsets.all(8),
+                    ),
+                  ),
+                ],
               ),
             ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -491,7 +524,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     currentHour,
                     currentMinute,
                   );
-                  return _buildTimeGridRow(timeSlot, isCurrentTime, rowHeight);
+                  return _buildTimeGridRow(timeSlot, isCurrentTime, rowHeight, constraints);
                 }).toList(),
               ),
               ..._buildFloatingScheduleCards(constraints, rowHeight),
@@ -506,6 +539,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     String timeSlot,
     bool isCurrentTime,
     double rowHeight,
+    BoxConstraints constraints,
   ) {
     return Container(
       height: rowHeight, // 동적 높이 적용
@@ -515,11 +549,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           bottom: BorderSide(color: Colors.grey.shade200, width: 0.5),
         ),
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 60,
-            alignment: Alignment.center,
+              child: Row(
+          children: [
+            Container(
+              width: constraints.maxWidth < 400 ? 50 : 60,
+              alignment: Alignment.center,
             decoration: BoxDecoration(
               color: isCurrentTime
                   ? const Color(0xFF1E3A8A).withOpacity(0.1)
@@ -712,35 +746,47 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       l10n?.friday ?? 'Fri',
     ];
 
-    return Container(
-      height: 50,
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(16),
-          topRight: Radius.circular(16),
-        ),
-        border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
-      ),
-      child: Row(
-        children: days
-            .map(
-              (day) => Expanded(
-                child: Container(
-                  alignment: Alignment.center,
-                  child: Text(
-                    day,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1E3A8A),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isSmallScreen = constraints.maxWidth < 400;
+        
+        return Container(
+          height: isSmallScreen ? 40 : 50,
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(16),
+              topRight: Radius.circular(16),
+            ),
+            border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+          ),
+          child: Row(
+            children: days
+                .map(
+                  (day) => Expanded(
+                    child: Container(
+                      alignment: Alignment.center,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: isSmallScreen ? 2 : 4,
+                      ),
+                      child: Text(
+                        day,
+                        style: TextStyle(
+                          fontSize: isSmallScreen ? 11 : 14,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF1E3A8A),
+                        ),
+                        textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     ),
                   ),
-                ),
-              ),
-            )
-            .toList(),
-      ),
+                )
+                .toList(),
+          ),
+        );
+      },
     );
   }
 
@@ -1183,7 +1229,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                             const SizedBox(height: 16),
                             _buildTypeAheadField(
                               controller: floorFieldController,
-                              labelText: l10n?.floor_number ?? 'Floor',
+                              labelText: l10n?.floor_label ?? 'Floor',
                               icon: Icons.layers,
                               items: floorList,
                               onChanged: (value) async {
@@ -2155,7 +2201,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   const SizedBox(height: 16),
                   _buildStyledDetailRow(
                     Icons.layers,
-                    l10n.floor_number,
+                    l10n.floor_label,
                     item.floorNumber,
                   ),
                   const SizedBox(height: 16),
@@ -2434,10 +2480,10 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
               children: [
                 const Icon(Icons.file_upload_outlined, color: Color(0xFF1E3A8A), size: 24),
                 const SizedBox(width: 8),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    '시간표 엑셀 파일 업로드',
-                    style: TextStyle(
+                    AppLocalizations.of(context)!.excel_upload_title,
+                    style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF1E3A8A),
@@ -2459,9 +2505,9 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
               // 업로드 중 표시
               const CircularProgressIndicator(color: Color(0xFF1E3A8A)),
               const SizedBox(height: 16),
-              const Text(
-                '엑셀 파일을 업로드하고 있습니다...',
-                style: TextStyle(fontSize: 14, color: Colors.grey),
+              Text(
+                AppLocalizations.of(context)!.excel_upload_uploading,
+                style: const TextStyle(fontSize: 14, color: Colors.grey),
                 textAlign: TextAlign.center,
               ),
             ] else if (_uploadSuccess) ...[
@@ -2472,9 +2518,9 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
                 size: 64,
               ),
               const SizedBox(height: 16),
-              const Text(
-                '업로드 완료!',
-                style: TextStyle(
+              Text(
+                AppLocalizations.of(context)!.excel_upload_success,
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: Colors.green,
@@ -2482,9 +2528,9 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
-              const Text(
-                '시간표를 새로고침하고 있습니다...',
-                style: TextStyle(fontSize: 14, color: Colors.grey),
+              Text(
+                AppLocalizations.of(context)!.excel_upload_refreshing,
+                style: const TextStyle(fontSize: 14, color: Colors.grey),
                 textAlign: TextAlign.center,
               ),
             ] else if (_showTutorial) ...[
@@ -2514,7 +2560,7 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                '엑셀 파일 다운로드 방법 (${_tutorialPage + 1}/6)',
+                                '${AppLocalizations.of(context)!.excel_tutorial_title} (${_tutorialPage + 1}/6)',
                                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                               ),
                             ),
@@ -2541,7 +2587,7 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
                             if (_tutorialPage > 0)
                               OutlinedButton(
                                 onPressed: () => setState(() => _tutorialPage--),
-                                child: const Text('이전'),
+                                child: Text(AppLocalizations.of(context)!.excel_tutorial_previous),
                               )
                             else
                               const SizedBox(width: 80),
@@ -2566,12 +2612,12 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
                             if (_tutorialPage < 5)
                               OutlinedButton(
                                 onPressed: () => setState(() => _tutorialPage++),
-                                child: const Text('다음'),
+                                child: Text(AppLocalizations.of(context)!.excel_tutorial_next),
                               )
                             else
                               OutlinedButton(
                                 onPressed: _uploadExcelFile,
-                                child: const Text('파일 선택'),
+                                child: Text(AppLocalizations.of(context)!.excel_tutorial_file_select),
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: Colors.white,
                                   backgroundColor: const Color(0xFF1E3A8A),
@@ -2599,9 +2645,9 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
   Widget _buildUploadContent() {
     return Column(
       children: [
-        const Text(
-          '우송대학교 시간표 엑셀 파일(.xlsx)을 선택해주세요',
-          style: TextStyle(fontSize: 14, color: Colors.grey),
+        Text(
+          AppLocalizations.of(context)!.excel_upload_description,
+          style: const TextStyle(fontSize: 14, color: Colors.grey),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 20),
@@ -2613,7 +2659,7 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
           child: ElevatedButton.icon(
             onPressed: _uploadExcelFile,
             icon: const Icon(Icons.folder_open, size: 20),
-            label: const Text('엑셀 파일 선택', style: TextStyle(fontSize: 16)),
+            label: Text(AppLocalizations.of(context)!.excel_file_select, style: const TextStyle(fontSize: 16)),
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF1E3A8A),
               foregroundColor: Colors.white,
@@ -2633,7 +2679,7 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
           child: OutlinedButton.icon(
             onPressed: () => setState(() => _showTutorial = true),
             icon: const Icon(Icons.help_outline, size: 18),
-            label: const Text('사용법 보기', style: TextStyle(fontSize: 14)),
+            label: Text(AppLocalizations.of(context)!.excel_tutorial_help, style: const TextStyle(fontSize: 14)),
             style: OutlinedButton.styleFrom(
               foregroundColor: const Color(0xFF1E3A8A),
               side: const BorderSide(color: Color(0xFF1E3A8A)),
@@ -2676,7 +2722,7 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    '엑셀 파일 다운로드 방법',
+                    AppLocalizations.of(context)!.excel_tutorial_title,
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
@@ -2721,7 +2767,7 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
                         debugPrint('파일 선택 버튼 클릭');
                         _uploadExcelFile();
                       },
-                      child: const Text('파일 선택'),
+                      child: Text(AppLocalizations.of(context)!.excel_tutorial_file_select),
                     ),
                   ],
                 ),
@@ -2830,9 +2876,9 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
               color: const Color(0xFF1E3A8A),
             ),
             const SizedBox(height: 16),
-            const Text(
-              '1. 우송대학교 대학정보시스템에 로그인',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            Text(
+              AppLocalizations.of(context)!.excel_tutorial_step_1,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
@@ -2843,9 +2889,9 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
                 borderRadius: BorderRadius.circular(6),
                 border: Border.all(color: Colors.blue.shade200),
               ),
-              child: const Text(
-                'https://wsinfo.wsu.ac.kr',
-                style: TextStyle(fontSize: 14, color: Colors.blue, fontWeight: FontWeight.w500),
+              child: Text(
+                AppLocalizations.of(context)!.excel_tutorial_url,
+                style: const TextStyle(fontSize: 14, color: Colors.blue, fontWeight: FontWeight.w500),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -2876,8 +2922,8 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
       default:
         return Container(
           color: Colors.red.shade100,
-          child: const Center(
-            child: Text('알 수 없는 페이지'),
+          child: Center(
+            child: Text(AppLocalizations.of(context)!.excel_tutorial_unknown_page),
           ),
         );
     }
@@ -2907,7 +2953,7 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
                   Icon(Icons.error, size: 48, color: Colors.red.shade400),
                   const SizedBox(height: 8),
                   Text(
-                    '이미지 로드 실패',
+                    AppLocalizations.of(context)!.excel_tutorial_image_load_error,
                     style: TextStyle(color: Colors.red.shade600),
                   ),
                   const SizedBox(height: 4),
@@ -2935,13 +2981,13 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
             color: Colors.grey.shade400,
           ),
           const SizedBox(height: 8),
-          Text(
-            '이미지를 불러올 수 없습니다',
-            style: TextStyle(
-              color: Colors.grey.shade600,
-              fontSize: 14,
-            ),
-          ),
+                            Text(
+                    AppLocalizations.of(context)!.excel_tutorial_image_load_error,
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 14,
+                    ),
+                  ),
           const SizedBox(height: 4),
           Text(
             assetPath,
@@ -2991,17 +3037,17 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
               
               // 성공 메시지 표시
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
+                SnackBar(
                   content: Row(
                     children: [
-                      Icon(Icons.check_circle, color: Colors.white, size: 20),
-                      SizedBox(width: 12),
-                      Text('시간표가 업데이트되었습니다!'),
+                      const Icon(Icons.check_circle, color: Colors.white, size: 20),
+                      const SizedBox(width: 12),
+                      Text(AppLocalizations.of(context)!.excel_upload_success_message),
                     ],
                   ),
                   backgroundColor: Colors.green,
                   behavior: SnackBarBehavior.floating,
-                  duration: Duration(seconds: 2),
+                  duration: const Duration(seconds: 2),
                 ),
               );
             }
@@ -3015,7 +3061,7 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
                     children: [
                       const Icon(Icons.warning, color: Colors.white, size: 20),
                       const SizedBox(width: 12),
-                      Expanded(child: Text('새로고침 실패: $error')),
+                      Expanded(child: Text(AppLocalizations.of(context)!.excel_upload_refresh_failed(error))),
                     ],
                   ),
                   backgroundColor: Colors.orange,
@@ -3037,13 +3083,13 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
           await WakelockPlus.disable();
           debugPrint('🔒 파일 선택 취소 후 화면 잠금 해제 비활성화');
           
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
+                    ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
               content: Row(
                 children: [
-                  Icon(Icons.info_outline, color: Colors.white, size: 20),
-                  SizedBox(width: 12),
-                  Text('파일 선택이 취소되었습니다.'),
+                  const Icon(Icons.info_outline, color: Colors.white, size: 20),
+                  const SizedBox(width: 12),
+                  Text(AppLocalizations.of(context)!.excel_upload_file_cancelled),
                 ],
               ),
               backgroundColor: Colors.orange,
@@ -3067,7 +3113,7 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
               children: [
                 const Icon(Icons.error_outline, color: Colors.white, size: 20),
                 const SizedBox(width: 12),
-                Expanded(child: Text('업로드 실패: $e')),
+                                      Expanded(child: Text(AppLocalizations.of(context)!.excel_upload_failed(e.toString()))),
               ],
             ),
             backgroundColor: Colors.red,

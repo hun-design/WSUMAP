@@ -336,9 +336,11 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
   // 3. 경로 미리보기 계산 시 (건물 코드/층번호 일치 보장)
   Future<void> _calculateRoutePreview() async {
     try {
+      final l10n = AppLocalizations.of(context)!;
+      
       // 내위치가 설정되지 않았으면 자동으로 설정
       if (_startBuilding == null) {
-        debugPrint('📍 내위치가 설정되지 않음. 자동으로 내위치 설정');
+        debugPrint('📍 ${l10n.my_location}가 설정되지 않음. 자동으로 ${l10n.my_location} 설정');
         _setMyLocationAsStart(context);
       }
 
@@ -522,6 +524,8 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
 
   // 🔥 건물-건물 경로 계산
   Future<UnifiedPathResponse?> _calculateBuildingToBuildingPath() async {
+    final l10n = AppLocalizations.of(context)!;
+    
     try {
       debugPrint('🏢 건물-건물 경로 계산');
 
@@ -535,8 +539,26 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
       // 🔥 "내 위치"든 일반 건물이든 동일하게 처리
       debugPrint('✅ 건물-건물 경로: $startName → $endName');
 
+              // 🔥 내위치에서 출발하는 경우 특별 처리
+        if (startName == l10n.my_location || startName == l10n.current_location_departure) {
+        debugPrint('📍 내위치에서 출발하는 경로 계산');
+        
+        // 내위치에서 건물로의 경로 계산 (기존 API 사용)
+        final response = await UnifiedPathService.getPathBetweenBuildings(
+          fromBuilding: _startBuilding!,
+          toBuilding: _endBuilding!,
+        );
+
+        if (response == null) {
+          throw Exception('내위치에서 건물로의 경로 API 응답이 null입니다');
+        }
+
+        return response;
+      }
+
+      // 일반 건물 간 경로 계산
       final response = await UnifiedPathService.getPathBetweenBuildings(
-        fromBuilding: _startBuilding!, // "내 위치"도 그대로 전달
+        fromBuilding: _startBuilding!,
         toBuilding: _endBuilding!,
       );
 
@@ -584,6 +606,7 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
 
   // 🔥 경로 계산 오류 처리
   Future<void> _handleRouteCalculationError(dynamic error) async {
+    final l10n = AppLocalizations.of(context)!;
     try {
       if (!mounted) return;
 
@@ -603,17 +626,22 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
       Color messageColor;
 
       if (errorMessage.contains('호실')) {
-        userMessage = '호실 경로 계산 중 오류가 발생했습니다. 건물 단위로 검색해보세요.';
+        // 내위치에서 출발하는 경우 더 친화적인 메시지
+        if (_startBuilding?.name == l10n.my_location || _startBuilding?.name == l10n.current_location_departure) {
+          userMessage = l10n.my_location_route_calculating;
+        } else {
+          userMessage = l10n.room_route_error;
+        }
         messageColor = Colors.orange;
       } else if (errorMessage.contains('위치')) {
-        userMessage = '현재 위치를 확인할 수 없습니다. 다시 시도해주세요.';
+        userMessage = l10n.location_check_error;
         messageColor = Colors.blue;
       } else if (errorMessage.contains('API') ||
           errorMessage.contains('null')) {
-        userMessage = '서버 연결에 문제가 있습니다. 잠시 후 다시 시도해주세요.';
+        userMessage = l10n.server_connection_error;
         messageColor = Colors.red;
       } else {
-        userMessage = '경로 계산 중 오류가 발생했습니다. 다시 시도해주세요.';
+        userMessage = l10n.route_calculation_error;
         messageColor = Colors.red;
       }
 
@@ -623,7 +651,7 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
           backgroundColor: messageColor,
           duration: const Duration(seconds: 4),
           action: SnackBarAction(
-            label: '다시 시도',
+            label: l10n.try_again,
             textColor: Colors.white,
             onPressed: () {
               _calculateRoutePreview();
@@ -733,11 +761,10 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
     }
 
     // 🔥 "내 위치" 관련 검색은 건너뛰기
+    final l10n = AppLocalizations.of(context)!;
     final lowercaseQuery = query.toLowerCase();
-    if (lowercaseQuery.contains('내 위치') ||
-        lowercaseQuery.contains('내위치') ||
-        lowercaseQuery.contains('현재위치') ||
-        lowercaseQuery.contains('현재 위치') ||
+    if (lowercaseQuery.contains(l10n.my_location) ||
+        lowercaseQuery.contains(l10n.current_location) ||
         lowercaseQuery.contains('my location') ||
         lowercaseQuery.contains('current location')) {
       setState(() {
@@ -785,10 +812,11 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
     _focusNode.requestFocus();
 
     // 내위치가 설정되어 있으면 검색 가능하도록 안내
-    if (_startBuilding?.name == '내 위치') {
+    final l10n = AppLocalizations.of(context)!;
+    if (_startBuilding?.name == l10n.my_location) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('검색창에서 다른 출발지를 선택하거나 내위치를 유지할 수 있습니다'),
+        SnackBar(
+          content: Text('${l10n.search_hint} ${l10n.my_location}'),
           backgroundColor: Colors.blue,
           duration: Duration(seconds: 3),
         ),
@@ -1008,16 +1036,16 @@ void _setMyLocationAsStart(BuildContext context) {
     if (locationManager.hasValidLocation &&
         locationManager.currentLocation != null) {
       final myLocationBuilding = Building(
-        name: '내 위치',
-        info: '현재 위치에서 출발',
+        name: l10n.my_location,
+        info: l10n.current_location_departure,
         lat: locationManager.currentLocation!.latitude!,
         lng: locationManager.currentLocation!.longitude!,
-        category: '현재위치',
-        baseStatus: '사용가능',
+        category: l10n.current_location,
+        baseStatus: l10n.available,
         hours: '',
         phone: '',
         imageUrl: '',
-        description: '현재 위치에서 길찾기를 시작합니다',
+        description: l10n.current_location_navigation_start,
       );
 
       setState(() {
@@ -1025,8 +1053,9 @@ void _setMyLocationAsStart(BuildContext context) {
         _startRoomInfo = null;
       });
 
-      // 🔥 내 위치 설정 후 미리보기 계산
+      // 🔥 내 위치 설정 후 미리보기 계산 (호실 정보가 없어도 건물 단위로 계산)
       if (_endBuilding != null) {
+        debugPrint('📍 내위치 → 도착지 건물 경로 계산 시작');
         _calculateRoutePreview();
       }
 
@@ -1051,16 +1080,16 @@ void _setMyLocationAsStart(BuildContext context) {
     } else {
       // 위치 정보가 없으면 기본 위치 사용
       final defaultLocationBuilding = Building(
-        name: '내 위치',
-        info: '현재 위치에서 출발 (기본 위치)',
+        name: l10n.my_location,
+        info: l10n.current_location_departure_default,
         lat: 36.338133,
         lng: 127.446423,
-        category: '현재위치',
-        baseStatus: '사용가능',
+        category: l10n.current_location,
+        baseStatus: l10n.available,
         hours: '',
         phone: '',
         imageUrl: '',
-        description: '현재 위치에서 길찾기를 시작합니다',
+        description: l10n.current_location_navigation_start,
       );
 
       setState(() {
@@ -1068,8 +1097,9 @@ void _setMyLocationAsStart(BuildContext context) {
         _startRoomInfo = null;
       });
 
-      // 🔥 기본 위치 설정 후 미리보기 계산
+      // 🔥 기본 위치 설정 후 미리보기 계산 (호실 정보가 없어도 건물 단위로 계산)
       if (_endBuilding != null) {
+        debugPrint('📍 기본위치 → 도착지 건물 경로 계산 시작');
         _calculateRoutePreview();
       }
 
@@ -1099,17 +1129,18 @@ void _setMyLocationAsStart(BuildContext context) {
 
   // 🔥 기본 내위치 Building 객체 반환
   Building _getDefaultMyLocation() {
+    final l10n = AppLocalizations.of(context)!;
     return Building(
-      name: '내 위치',
-      info: '현재 위치에서 출발',
+      name: l10n.my_location,
+      info: l10n.current_location_departure,
       lat: 36.338133, // 기본 위도
       lng: 127.446423, // 기본 경도
-      category: '현재위치',
-      baseStatus: '사용가능',
+      category: l10n.current_location,
+      baseStatus: l10n.available,
       hours: '',
       phone: '',
       imageUrl: '',
-      description: '현재 위치에서 길찾기를 시작합니다',
+      description: l10n.current_location_navigation_start,
     );
   }
 
@@ -1133,12 +1164,13 @@ void _setMyLocationAsStart(BuildContext context) {
 
   // 🔥 통합 네비게이션 시작 (기존 _startNavigation 대체)
   void _startUnifiedNavigation() {
+    final l10n = AppLocalizations.of(context)!;
     try {
       debugPrint('=== 통합 네비게이션 시작 ===');
 
       // 내위치가 설정되지 않았으면 자동으로 설정
       if (_startBuilding == null) {
-        debugPrint('📍 내위치가 설정되지 않음. 자동으로 내위치 설정');
+        debugPrint('📍 ${l10n.my_location}가 설정되지 않음. 자동으로 ${l10n.my_location} 설정');
         _setMyLocationAsStart(context);
       }
 
@@ -1155,8 +1187,8 @@ void _setMyLocationAsStart(BuildContext context) {
       if (_startBuilding == null || _endBuilding == null) {
         debugPrint('❌ 출발지 또는 도착지가 설정되지 않음');
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('출발지와 도착지를 모두 설정해주세요'),
+          SnackBar(
+            content: Text(l10n.set_both_locations),
             backgroundColor: Colors.red,
           ),
         );
@@ -1168,10 +1200,10 @@ void _setMyLocationAsStart(BuildContext context) {
         debugPrint('⚠️ pathResponse가 null입니다. 경로를 다시 계산합니다...');
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Row(
               children: [
-                SizedBox(
+                const SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(
@@ -1179,12 +1211,12 @@ void _setMyLocationAsStart(BuildContext context) {
                     valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
                 ),
-                SizedBox(width: 12),
-                Text('경로를 계산하는 중...'),
+                const SizedBox(width: 12),
+                Text(l10n.route_calculating),
               ],
             ),
             backgroundColor: Colors.blue,
-            duration: Duration(seconds: 3),
+            duration: const Duration(seconds: 3),
           ),
         );
 
@@ -1214,6 +1246,7 @@ void _setMyLocationAsStart(BuildContext context) {
   }
 
   void _proceedWithNavigation() {
+    final l10n = AppLocalizations.of(context)!;
     try {
       debugPrint('✅ 경로 데이터로 네비게이션 시작');
 
@@ -1224,7 +1257,7 @@ void _setMyLocationAsStart(BuildContext context) {
         'end': _endBuilding,
         'startRoomInfo': _startRoomInfo,
         'endRoomInfo': _endRoomInfo,
-        'useCurrentLocation': _startBuilding!.name == '내 위치',
+        'useCurrentLocation': _startBuilding!.name == l10n.my_location,
         'estimatedDistance': _estimatedDistance,
         'estimatedTime': _estimatedTime,
         'pathResponse': _previewResponse,

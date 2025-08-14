@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/data/category_fallback_data.dart';
 import 'package:flutter_application_1/utils/CategoryLocalization.dart';
+import 'package:flutter_application_1/generated/app_localizations.dart';
 
 class BuildingInfoSheet extends StatelessWidget {
   final String buildingName;
@@ -18,6 +19,7 @@ class BuildingInfoSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     // 🔥 카테고리가 선택된 경우 해당 카테고리가 존재하는 층만 필터링
     final displayFloors = category != null && categoryFloors != null && categoryFloors!.isNotEmpty
         ? categoryFloors!
@@ -129,7 +131,7 @@ class BuildingInfoSheet extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      '총 ${floors.length}층',
+                                              l10n.total_floors(floors.length),
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -144,8 +146,8 @@ class BuildingInfoSheet extends StatelessWidget {
                 if (displayFloors.isNotEmpty) ...[
                   Text(
                     category != null && categoryFloors != null && categoryFloors!.isNotEmpty
-                        ? '${CategoryLocalization.getLabel(context, category!)}이(가) 있는 층'
-                        : '층별 정보',
+                        ? l10n.floor_with_category(CategoryLocalization.getLabel(context, category!))
+                        : l10n.floor_info,
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -167,7 +169,7 @@ class BuildingInfoSheet extends StatelessWidget {
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          '${floor}층',
+                          l10n.floor_number(floor),
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey.shade700,
@@ -178,7 +180,7 @@ class BuildingInfoSheet extends StatelessWidget {
                   )).toList(),
                 ] else ...[
                   Text(
-                    '층 정보가 없습니다.',
+                    l10n.no_floor_info,
                     style: TextStyle(
                       fontSize: 14,
                       color: Colors.grey.shade600,
@@ -199,7 +201,7 @@ class BuildingInfoSheet extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        '카테고리: ${CategoryLocalization.getLabel(context, category!)}',
+                        '${l10n.category}: ${CategoryLocalization.getLabel(context, category!)}',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,

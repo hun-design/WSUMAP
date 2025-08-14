@@ -346,6 +346,12 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
   Future<void> _initializeApp() async {
     try {
       debugPrint('=== 앱 초기화 시작 ===');
+      
+      // 🔥 CategoryProvider를 AppLanguageProvider에 연결
+      final categoryProvider = context.read<CategoryProvider>();
+      final languageProvider = context.read<AppLanguageProvider>();
+      languageProvider.setCategoryProvider(categoryProvider);
+      
       await _userAuth.initialize();
 
       // 🔥 게스트가 아닌 로그인 사용자에게만 위치 전송 및 웹소켓 연결
@@ -382,6 +388,10 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
   Widget build(BuildContext context) {
     return Consumer2<AppLanguageProvider, UserAuth>(
       builder: (_, langProvider, auth, __) {
+        // 디버그 로그 추가
+        debugPrint('🔤 MaterialApp 빌드 - Provider 로케일: ${langProvider.locale.languageCode}');
+        debugPrint('🔤 MaterialApp 빌드 - 현재 시간: ${DateTime.now()}');
+        
         return MaterialApp(
           title: '따라우송',
           theme: ThemeData(
@@ -400,7 +410,7 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
             ),
           ),
           locale: langProvider.locale,
-          supportedLocales: const [Locale('ko'), Locale('en'), Locale('zh')],
+          supportedLocales: const [Locale('ko'), Locale('en'), Locale('zh'), Locale('es'), Locale('ja'), Locale('ru')],
           localizationsDelegates: const [
             AppLocalizations.delegate,
             GlobalMaterialLocalizations.delegate,

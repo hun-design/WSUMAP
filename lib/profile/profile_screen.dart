@@ -8,6 +8,7 @@ import '../generated/app_localizations.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
 import 'package:flutter_application_1/services/websocket_service.dart'; // 🔥 WebSocket 추가
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_application_1/providers/app_language_provider.dart';
 
 import 'help_page.dart';
 import 'app_info_page.dart';
@@ -107,7 +108,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       ),
       child: Row(
         children: [
-          // 사람 아이콘 Container, SizedBox(width: 16)은 제거!
+          // 왼쪽: 제목과 부제목
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -131,9 +132,326 @@ class _ProfileScreenState extends State<ProfileScreen>
               ],
             ),
           ),
+          
+          // 오른쪽: 언어 변경 버튼
+          _buildLanguageButton(),
         ],
       ),
     );
+  }
+
+  /// 언어 변경 버튼 위젯
+  Widget _buildLanguageButton() {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E3A8A).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: const Color(0xFF1E3A8A).withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: _showLanguageSelectionDialog,
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.language,
+                  size: 20,
+                  color: Color(0xFF1E3A8A),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  _getCurrentLanguageText(),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1E3A8A),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Icon(
+                  Icons.keyboard_arrow_down,
+                  size: 16,
+                  color: Color(0xFF1E3A8A),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 현재 언어 텍스트 반환
+  String _getCurrentLanguageText() {
+    final languageProvider = Provider.of<AppLanguageProvider>(context, listen: true);
+    final locale = languageProvider.locale;
+    switch (locale.languageCode) {
+      case 'ko':
+        return '한국어';
+      case 'en':
+        return 'English';
+      case 'zh':
+        return '中文';
+      case 'es':
+        return 'Español';
+      case 'ja':
+        return '日本語';
+      case 'ru':
+        return 'Русский';
+      default:
+        return '한국어';
+    }
+  }
+
+  /// 언어 선택 다이얼로그 표시
+  void _showLanguageSelectionDialog() {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.1),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 상단 아이콘 + 타이틀
+              Container(
+                padding: const EdgeInsets.only(top: 32, bottom: 24),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E3A8A).withValues(alpha: 0.05),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(24),
+                    topRight: Radius.circular(24),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.language_rounded,
+                        color: Color(0xFF1E3A8A),
+                        size: 32,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                                         Text(
+                       l10n.language_selection,
+                       style: const TextStyle(
+                         fontSize: 24,
+                         fontWeight: FontWeight.w700,
+                         color: Color(0xFF1E3A8A),
+                       ),
+                     ),
+                     const SizedBox(height: 8),
+                     Text(
+                       l10n.language_selection_description,
+                       style: TextStyle(
+                         fontSize: 14,
+                         color: const Color(0xFF1E3A8A).withValues(alpha: 0.7),
+                         fontWeight: FontWeight.w500,
+                       ),
+                     ),
+                  ],
+                ),
+              ),
+              
+              // 언어 옵션들
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    _buildLanguageOption('한국어', 'ko', Icons.flag_rounded),
+                    const SizedBox(height: 12),
+                    _buildLanguageOption('English', 'en', Icons.flag_rounded),
+                    const SizedBox(height: 12),
+                    _buildLanguageOption('中文', 'zh', Icons.flag_rounded),
+                    const SizedBox(height: 12),
+                    _buildLanguageOption('Español', 'es', Icons.flag_rounded),
+                    const SizedBox(height: 12),
+                    _buildLanguageOption('日本語', 'ja', Icons.flag_rounded),
+                    const SizedBox(height: 12),
+                    _buildLanguageOption('Русский', 'ru', Icons.flag_rounded),
+                  ],
+                ),
+              ),
+              
+              // 하단 버튼
+              Container(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFFE2E8F0)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      '취소',
+                      style: TextStyle(
+                        color: Color(0xFF64748B),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 언어 옵션 위젯
+  Widget _buildLanguageOption(String name, String languageCode, IconData icon) {
+    final currentLocale = Localizations.localeOf(context);
+    final isSelected = currentLocale.languageCode == languageCode;
+    
+    // 디버그 로그 추가
+    debugPrint('🔤 언어 옵션 빌드: $name ($languageCode) - 현재: ${currentLocale.languageCode}');
+
+    return InkWell(
+      onTap: () {
+        _changeLanguage(languageCode);
+        Navigator.pop(context);
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        decoration: BoxDecoration(
+          color: isSelected 
+              ? const Color(0xFF1E3A8A).withValues(alpha: 0.1)
+              : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected 
+                ? const Color(0xFF1E3A8A).withValues(alpha: 0.3)
+                : const Color(0xFFE2E8F0),
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isSelected 
+                    ? const Color(0xFF1E3A8A).withValues(alpha: 0.1)
+                    : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                icon,
+                color: isSelected ? const Color(0xFF1E3A8A) : const Color(0xFF64748B),
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                name,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  color: isSelected ? const Color(0xFF1E3A8A) : const Color(0xFF334155),
+                ),
+              ),
+            ),
+            if (isSelected)
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF1E3A8A),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 언어 변경 처리
+  void _changeLanguage(String languageCode) {
+    final l10n = AppLocalizations.of(context)!;
+    final languageProvider = Provider.of<AppLanguageProvider>(context, listen: false);
+    languageProvider.setLocale(Locale(languageCode));
+    
+    // 디버그 로그 추가
+    debugPrint('🔤 언어 변경 시도: $languageCode');
+    debugPrint('🔤 Provider 로케일: ${languageProvider.locale}');
+    
+    // 언어 변경 후 강제 리빌드 호출
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      languageProvider.forceRebuild();
+      
+      final currentLocale = Localizations.localeOf(context);
+      debugPrint('🔤 언어 변경 후 현재 로케일: ${currentLocale.languageCode}');
+      debugPrint('🔤 Provider 로케일 재확인: ${languageProvider.locale.languageCode}');
+    });
+    
+    // 언어 변경 성공 메시지
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${l10n.success}: ${_getLanguageName(languageCode)}'),
+        backgroundColor: const Color(0xFF10B981),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  /// 언어 코드에 따른 언어 이름 반환
+  String _getLanguageName(String languageCode) {
+    switch (languageCode) {
+      case 'ko':
+        return '한국어';
+      case 'en':
+        return 'English';
+      case 'zh':
+        return '中文';
+      case 'es':
+        return 'Español';
+      case 'ja':
+        return '日本語';
+      case 'ru':
+        return 'Русский';
+      default:
+        return '한국어';
+    }
   }
 
   Widget _buildUserInfoCard(
@@ -612,7 +930,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '다시 로그인할 수 있습니다',
+                            l10n.logout_subtitle,
                             style: TextStyle(
                               fontSize: 14,
                               color: const Color(0xFF1E3A8A).withOpacity(0.8),
@@ -746,7 +1064,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 const CircularProgressIndicator(color: Color(0xFF1E3A8A)),
                 const SizedBox(height: 16),
                 Text(
-                  '로그아웃 중...',
+                  l10n.logout_processing,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -837,7 +1155,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    '로그아웃 중 오류가 발생했지만 초기 화면으로 이동합니다.',
+                    l10n.logout_error_message,
                     style: const TextStyle(
                       fontWeight: FontWeight.w500,
                       fontSize: 14,
@@ -1242,7 +1560,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '신중하게 결정해주세요',
+                            l10n.account_delete_subtitle,
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.red.withOpacity(0.8),
@@ -1278,9 +1596,9 @@ class _ProfileScreenState extends State<ProfileScreen>
                                 size: 20,
                               ),
                               const SizedBox(width: 8),
-                              const Text(
-                                '삭제될 데이터',
-                                style: TextStyle(
+                              Text(
+                                l10n.data_to_be_deleted,
+                                style: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.red,
@@ -1390,7 +1708,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 const CircularProgressIndicator(color: Color(0xFF1E3A8A)),
                 const SizedBox(height: 16),
                 Text(
-                  '계정을 삭제하는 중...',
+                  l10n.deleting_account,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,

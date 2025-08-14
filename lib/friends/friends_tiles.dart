@@ -144,7 +144,7 @@ class FriendsTiles {
                     Icons.person_remove,
                     color: Color(0xFFEF4444),
                   ),
-                  tooltip: '친구 삭제',
+                  tooltip: AppLocalizations.of(context)!.friendDeleteTitle,
                   onPressed: onDelete,
                 ),
               ],

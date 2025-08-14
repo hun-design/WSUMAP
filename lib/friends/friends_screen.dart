@@ -305,6 +305,7 @@ class _FriendsScreenState extends State<FriendsScreen>
 
   // 친구 관리 다이얼로그 - 실시간 업데이트 적용
   Future<void> _showAddDialog() async {
+    final l10n = AppLocalizations.of(context)!;
     HapticFeedback.lightImpact();
 
     await showModalBottomSheet(
@@ -348,7 +349,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                AppLocalizations.of(context)!.friendManagement,
+                                l10n.friend_management,
                                 style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w600,

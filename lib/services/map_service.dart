@@ -7,6 +7,7 @@ import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:flutter_application_1/models/building.dart';
 import 'package:flutter_application_1/models/category_marker_data.dart';
 import 'package:flutter_application_1/repositories/building_repository.dart';
+import 'package:flutter_application_1/generated/app_localizations.dart';
 import 'map/building_marker_service.dart';
 import 'map/category_marker_service.dart';
 import 'map/route_rendering_service.dart';
@@ -84,6 +85,24 @@ class MapService {
 
     // 🔥 카테고리 마커 아이콘 사전 생성
     _preGenerateCategoryIcons(context);
+    
+    // 🔥 다국어 텍스트 설정
+    _setLocalizedTexts(context);
+  }
+  
+  /// 🔥 다국어 텍스트 설정
+  void _setLocalizedTexts(BuildContext context) {
+    try {
+      final l10n = AppLocalizations.of(context);
+      if (l10n != null) {
+        _routeRenderingService.setLocalizedTexts(
+          departure: l10n.departure,
+          destination: l10n.destination,
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ 다국어 텍스트 설정 실패: $e');
+    }
   }
 
   /// 🔥 카테고리 마커 아이콘 사전 생성

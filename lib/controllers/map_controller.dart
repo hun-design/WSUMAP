@@ -14,6 +14,7 @@ import 'package:flutter_application_1/friends/friend.dart';
 import 'package:flutter_application_1/core/result.dart';
 import 'package:flutter_application_1/friends/friends_controller.dart';
 import 'package:flutter_application_1/data/category_fallback_data.dart';
+import 'package:flutter_application_1/generated/app_localizations.dart';
 
 class MapScreenController extends ChangeNotifier {
   MapService? _mapService;
@@ -469,7 +470,7 @@ class MapScreenController extends ChangeNotifier {
 
         if (friendsController.friends.isEmpty) {
           // 친구가 없는 경우
-          message = '친구가 없습니다.\n친구를 추가한 후 다시 시도해주세요.';
+          message = AppLocalizations.of(_currentContext!)!.no_friends_message;
           backgroundColor = const Color(0xFF6B7280); // 회색 (정보)
           icon = Icons.info;
         } else if (offlineCount > 0 || locationSharedCount > 0) {
@@ -478,13 +479,11 @@ class MapScreenController extends ChangeNotifier {
             // 위치를 표시할 수 있는 친구가 있는 경우
             String detailMessage = '';
             if (offlineCount > 0 && locationSharedCount > 0) {
-              detailMessage =
-                  '\n오프라인 친구 $offlineCount명, 위치 공유 미허용 친구 $locationSharedCount명은 표시되지 않습니다.';
+              detailMessage = AppLocalizations.of(_currentContext!)!.both_offline_and_location_denied(offlineCount, locationSharedCount);
             } else if (offlineCount > 0) {
-              detailMessage = '\n오프라인 친구 $offlineCount명은 표시되지 않습니다.';
+              detailMessage = AppLocalizations.of(_currentContext!)!.offline_friends_not_displayed(offlineCount);
             } else if (locationSharedCount > 0) {
-              detailMessage =
-                  '\n위치 공유 미허용 친구 $locationSharedCount명은 표시되지 않습니다.';
+              detailMessage = AppLocalizations.of(_currentContext!)!.location_denied_friends_not_displayed(locationSharedCount);
             }
             message = '친구 $addedCount명의 위치를 표시했습니다.$detailMessage';
             backgroundColor = const Color(0xFFF59E0B); // 주황색 (경고)
@@ -492,20 +491,18 @@ class MapScreenController extends ChangeNotifier {
           } else {
             // 모든 친구가 오프라인이거나 위치 공유를 허용하지 않는 경우
             if (offlineCount > 0 && locationSharedCount > 0) {
-              message =
-                  '모든 친구가 오프라인이거나 위치 공유를 허용하지 않습니다.\n친구가 온라인에 접속하고 위치 공유를 허용하면 위치를 확인할 수 있습니다.';
+              message = AppLocalizations.of(_currentContext!)!.all_friends_offline_or_location_denied;
             } else if (offlineCount > 0) {
-              message = '모든 친구가 오프라인 상태입니다.\n친구가 온라인에 접속하면 위치를 확인할 수 있습니다.';
+              message = AppLocalizations.of(_currentContext!)!.all_friends_offline;
             } else {
-              message =
-                  '모든 친구가 위치 공유를 허용하지 않습니다.\n친구가 위치 공유를 허용하면 위치를 확인할 수 있습니다.';
+              message = AppLocalizations.of(_currentContext!)!.all_friends_location_denied;
             }
             backgroundColor = const Color(0xFFEF4444); // 빨간색 (오류)
             icon = Icons.offline_bolt;
           }
         } else {
           // 모든 친구가 온라인이고 위치 공유를 허용하는 경우
-          message = '친구 $addedCount명의 위치를 지도에 표시했습니다.';
+          message = AppLocalizations.of(_currentContext!)!.friends_location_display_success(addedCount);
           backgroundColor = const Color(0xFF10B981); // 초록색 (성공)
           icon = Icons.people;
         }
@@ -552,7 +549,7 @@ class MapScreenController extends ChangeNotifier {
       if (_currentContext != null) {
         ScaffoldMessenger.of(_currentContext!).showSnackBar(
           SnackBar(
-            content: Text('친구 위치를 표시할 수 없습니다: $e'),
+            content: Text('${AppLocalizations.of(_currentContext!)!.friends_location_display_error(e.toString())}'),
             backgroundColor: const Color(0xFFEF4444),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
@@ -622,7 +619,7 @@ class MapScreenController extends ChangeNotifier {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '오프라인 친구',
+                              AppLocalizations.of(context)!.offline_friends_dialog_title,
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
@@ -631,7 +628,7 @@ class MapScreenController extends ChangeNotifier {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '현재 접속하지 않은 친구 $offlineCount명',
+                              AppLocalizations.of(context)!.offline_friends_dialog_subtitle(offlineCount),
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.grey[600],
@@ -691,7 +688,7 @@ class MapScreenController extends ChangeNotifier {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
-                                  '오프라인',
+                                  AppLocalizations.of(context)!.offline,
                                   style: TextStyle(
                                     fontSize: 10,
                                     color: Colors.grey[600],
@@ -723,7 +720,7 @@ class MapScreenController extends ChangeNotifier {
                       ),
                     ),
                     child: Text(
-                      '확인',
+                      AppLocalizations.of(context)!.confirm,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,

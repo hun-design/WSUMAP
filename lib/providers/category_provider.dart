@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/services/category_api_service.dart';
 import 'package:flutter_application_1/data/category_fallback_data.dart';
+import 'package:flutter_application_1/providers/app_language_provider.dart';
 
 class CategoryProvider extends ChangeNotifier {
   List<String> _categories = [];
   bool _isLoaded = false;
   bool _isLoading = false;
   String? _error;
+  String _currentLanguage = 'ko'; // 현재 언어 추적
 
   // Getters
   List<String> get categories => _categories;
@@ -62,6 +64,16 @@ class CategoryProvider extends ChangeNotifier {
       _categories = CategoryFallbackData.getCategories();
       _isLoaded = true;
       notifyListeners();
+    }
+  }
+
+  /// 🔥 언어 변경 시 카테고리 새로고침
+  void onLanguageChanged(String newLanguage) {
+    if (_currentLanguage != newLanguage) {
+      debugPrint('🔤 언어 변경 감지: $_currentLanguage → $newLanguage');
+      _currentLanguage = newLanguage;
+      // 언어 변경 시 카테고리 새로고침
+      refreshCategories();
     }
   }
 

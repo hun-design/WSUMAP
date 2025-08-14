@@ -40,9 +40,13 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
 
   /// 연결 상태 확인
   bool get isConnected {
+    // 🔥 더 안정적인 연결 상태 확인
     final hasChannel = _channel != null;
     final hasSubscription = _subscription != null;
-    final status = _isConnected && hasChannel && hasSubscription;
+    final channelReady = _channel?.ready != null;
+    
+    // 모든 조건이 만족되어야 연결됨으로 간주
+    final status = _isConnected && hasChannel && hasSubscription && channelReady;
 
     // 🔥 디버그 로그를 조건부로 출력 (너무 많은 로그 방지)
     if (!status || _isConnecting) {
@@ -50,6 +54,7 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
       debugPrint('🔍 _isConnected: $_isConnected');
       debugPrint('🔍 hasChannel: $hasChannel');
       debugPrint('🔍 hasSubscription: $hasSubscription');
+      debugPrint('🔍 channelReady: $channelReady');
       debugPrint('🔍 최종 상태: $status');
     }
 
@@ -86,15 +91,18 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
       return;
     }
 
+    // 🔥 이미 연결되어 있고 같은 사용자인 경우
     if (_isConnected && _userId == userId) {
       debugPrint('⚠️ 이미 연결되어 있습니다: $userId');
       return;
     }
 
-    // 🔥 새로운 사용자로 연결하는 경우 기존 연결 완전 정리
-    if (_userId != null && _userId != userId) {
+    // 🔥 이미 연결되어 있지만 다른 사용자인 경우 기존 연결 완전 정리
+    if (_isConnected && _userId != userId) {
       debugPrint('🔄 다른 사용자로 연결 변경: $_userId -> $userId');
       await disconnect();
+      // 연결 해제 후 잠시 대기
+      await Future.delayed(const Duration(milliseconds: 500));
     }
 
     _userId = userId;
@@ -354,8 +362,8 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     debugPrint('👋 친구 로그아웃: $loggedOutUserId');
     debugPrint('👋 친구 로그아웃 메시지 전체: $data');
 
-    // 메시지를 스트림으로 전달하여 FriendsController에서 처리
-    _messageController.add(data);
+    // 🔥 메시지 중복 전송 방지 - _handleMessage에서 이미 전송됨
+    // _messageController.add(data); // 제거
 
     // 🔥 추가 디버깅: 온라인 사용자 목록에서 제거
     debugPrint('🔥 친구 로그아웃으로 인한 온라인 사용자 목록 업데이트');
@@ -368,8 +376,8 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     debugPrint('👋 친구 로그인: $loggedInUserId');
     debugPrint('👋 친구 로그인 메시지 전체: $data');
 
-    // 메시지를 스트림으로 전달하여 FriendsController에서 처리
-    _messageController.add(data);
+    // 🔥 메시지 중복 전송 방지 - _handleMessage에서 이미 전송됨
+    // _messageController.add(data); // 제거
 
     // 🔥 추가 디버깅: 온라인 사용자 목록에 추가
     debugPrint('🔥 친구 로그인으로 인한 온라인 사용자 목록 업데이트');
@@ -381,6 +389,9 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     final userId = data['userId'];
     final isLocationPublic = data['isLocationPublic'] ?? false;
     debugPrint('📍 위치 공유 상태 변경: $userId - ${isLocationPublic ? '공유' : '비공유'}');
+
+    // 🔥 메시지 중복 전송 방지 - _handleMessage에서 이미 전송됨
+    // _messageController.add(data); // 제거
 
     // 위치 공유 상태 변경 알림 표시 (나중에 구현)
     // NotificationService.showLocationShareStatusChangeNotification(
@@ -397,8 +408,8 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     debugPrint('📨 새로운 친구 요청: $fromUserName ($fromUserId)');
     debugPrint('📨 친구 요청 메시지 전체: $data');
 
-    // 메시지를 스트림으로 전달하여 FriendsController에서 처리
-    _messageController.add(data);
+    // 🔥 메시지 중복 전송 방지 - _handleMessage에서 이미 전송됨
+    // _messageController.add(data); // 제거
   }
 
   // 🔥 새로 추가: 친구 요청 수락 처리
@@ -408,8 +419,8 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     debugPrint('✅ 친구 요청 수락: $fromUserName ($fromUserId)');
     debugPrint('✅ 친구 요청 수락 메시지 전체: $data');
 
-    // 메시지를 스트림으로 전달하여 FriendsController에서 처리
-    _messageController.add(data);
+    // 🔥 메시지 중복 전송 방지 - _handleMessage에서 이미 전송됨
+    // _messageController.add(data); // 제거
   }
 
   // 🔥 새로 추가: 친구 요청 거절 처리
@@ -419,8 +430,8 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     debugPrint('❌ 친구 요청 거절: $fromUserName ($fromUserId)');
     debugPrint('❌ 친구 요청 거절 메시지 전체: $data');
 
-    // 메시지를 스트림으로 전달하여 FriendsController에서 처리
-    _messageController.add(data);
+    // 🔥 메시지 중복 전송 방지 - _handleMessage에서 이미 전송됨
+    // _messageController.add(data); // 제거
   }
 
   // 🔥 새로 추가: 친구 삭제 처리
@@ -430,8 +441,8 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     debugPrint('🗑️ 친구 삭제: $deletedUserName ($deletedUserId)');
     debugPrint('🗑️ 친구 삭제 메시지 전체: $data');
 
-    // 메시지를 스트림으로 전달하여 FriendsController에서 처리
-    _messageController.add(data);
+    // 🔥 메시지 중복 전송 방지 - _handleMessage에서 이미 전송됨
+    // _messageController.add(data); // 제거
   }
 
   // 🔥 웹소켓 연결 확인 메시지 처리
@@ -618,26 +629,42 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
       return;
     }
 
+    // 🔥 최대 재연결 시도 횟수 체크
     if (_reconnectAttempts >= _maxReconnectAttempts) {
-      debugPrint('🛑 최대 재연결 시도 횟수 초과');
+      debugPrint('🛑 최대 재연결 시도 횟수 초과: $_reconnectAttempts/$_maxReconnectAttempts');
+      _shouldReconnect = false; // 더 이상 재연결 시도하지 않음
       return;
     }
 
     _reconnectAttempts++;
+    
+    // 🔥 지수 백오프 적용 (1초, 2초, 4초, 8초, 16초)
     final delay = Duration(
-      seconds: _reconnectDelay.inSeconds * _reconnectAttempts,
+      seconds: _reconnectDelay.inSeconds * (1 << (_reconnectAttempts - 1)),
     );
 
     debugPrint(
       '🔄 ${delay.inSeconds}초 후 재연결 시도 ($_reconnectAttempts/$_maxReconnectAttempts)',
     );
 
-    _reconnectTimer = Timer(delay, () {
+    _reconnectTimer = Timer(delay, () async {
       // 🔥 타이머 실행 후 즉시 null로 설정하여 중복 방지
       _reconnectTimer = null;
 
+      // 🔥 재연결 조건 재확인
       if (_shouldReconnect && !_isConnected && !_isConnecting) {
-        _doConnect();
+        debugPrint('🔄 재연결 시도 시작...');
+        try {
+          await _doConnect();
+        } catch (e) {
+          debugPrint('❌ 재연결 실패: $e');
+          // 재연결 실패 시 다음 시도 예약
+          if (_shouldReconnect) {
+            _scheduleReconnect();
+          }
+        }
+      } else {
+        debugPrint('⚠️ 재연결 조건 불만족 - 재연결 시도 중단');
       }
     });
   }
@@ -646,31 +673,62 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
   Future<void> disconnect() async {
     debugPrint('🔌 웹소켓 연결 해제 중...');
 
-    // 🔥 서버에서 disconnect 메시지를 처리하지 않으므로 제거
-    // 연결 해제는 웹소켓 연결 자체가 끊어지면 서버에서 자동으로 감지됨
-
+    // 🔥 재연결 방지
     _shouldReconnect = false;
     _isConnected = false;
+    _isConnecting = false;
 
+    // 🔥 타이머들 정리
     _heartbeatTimer?.cancel();
     _reconnectTimer?.cancel();
+    _heartbeatTimer = null;
+    _reconnectTimer = null;
 
-    await _subscription?.cancel();
-    await _channel?.sink.close(status.normalClosure);
-
+    // 🔥 구독 정리
+    try {
+      await _subscription?.cancel();
+      debugPrint('✅ 구독 정리 완료');
+    } catch (e) {
+      debugPrint('⚠️ 구독 정리 중 오류: $e');
+    }
     _subscription = null;
+
+    // 🔥 채널 정리
+    try {
+      await _channel?.sink.close(status.normalClosure);
+      debugPrint('✅ 채널 정리 완료');
+    } catch (e) {
+      debugPrint('⚠️ 채널 정리 중 오류: $e');
+    }
     _channel = null;
 
+    // 🔥 연결 상태 스트림 업데이트
     _connectionController.add(false);
+    
     debugPrint('✅ 웹소켓 연결 해제 완료');
   }
 
   // 🧹 리소스 정리
   void dispose() {
-    disconnect();
-    _messageController.close();
-    _connectionController.close();
-    _onlineUsersController.close();
+    debugPrint('🛑 WebSocketService 정리 중...');
+    
+    try {
+      disconnect();
+      debugPrint('✅ 웹소켓 연결 해제 완료');
+    } catch (e) {
+      debugPrint('⚠️ 웹소켓 연결 해제 중 오류: $e');
+    }
+
+    try {
+      _messageController.close();
+      _connectionController.close();
+      _onlineUsersController.close();
+      debugPrint('✅ 스트림 컨트롤러 정리 완료');
+    } catch (e) {
+      debugPrint('⚠️ 스트림 컨트롤러 정리 중 오류: $e');
+    }
+
+    debugPrint('✅ WebSocketService 정리 완료');
   }
 
   // 🔍 연결 상태 테스트 메서드

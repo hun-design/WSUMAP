@@ -113,7 +113,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get departurePoint => '출발지';
+  String get departurePoint => '출발';
 
   @override
   String get arrivalPoint => '도착지';
@@ -202,13 +202,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get professor_name => '교수명';
 
   @override
-  String get building_name => '건물명';
+  String get building_name => '건물';
 
   @override
-  String get floor_number => '층수';
+  String floor_number(Object floor) {
+    return '$floor층';
+  }
 
   @override
-  String get room_name => '호실';
+  String get room_name => '강의실';
 
   @override
   String get day_of_week => '요일';
@@ -286,6 +288,253 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get woosong_university => '우송대학교';
+
+  @override
+  String get excel_upload_title => '시간표 엑셀 파일 업로드';
+
+  @override
+  String get excel_upload_description => '우송대학교 시간표 엑셀 파일(.xlsx)을 선택해주세요';
+
+  @override
+  String get excel_file_select => '엑셀 파일 선택';
+
+  @override
+  String get excel_upload_uploading => '엑셀 파일을 업로드하고 있습니다...';
+
+  @override
+  String get language_selection => '언어 선택';
+
+  @override
+  String get language_selection_description => '사용하실 언어를 선택해주세요';
+
+  @override
+  String get departure => '출발';
+
+  @override
+  String get destination => '도착지';
+
+  @override
+  String get my_location => '내위치';
+
+  @override
+  String get current_location => '현재위치';
+
+  @override
+  String get welcome_subtitle_1 => '내 손 안의 따라우송,';
+
+  @override
+  String get welcome_subtitle_2 => '건물 정보가 다 여기에!';
+
+  @override
+  String get select_language => '언어 선택';
+
+  @override
+  String get auth_selection_title => '인증 방법 선택';
+
+  @override
+  String get auth_selection_subtitle => '원하시는 로그인 방법을 선택해주세요';
+
+  @override
+  String get select_auth_method => '인증 방법 선택';
+
+  @override
+  String total_floors(Object count) {
+    return '총 $count층';
+  }
+
+  @override
+  String get floor_info => '층별 정보';
+
+  @override
+  String floor_with_category(Object category) {
+    return '$category이(가) 있는 층';
+  }
+
+  @override
+  String get floor_label => '층';
+
+  @override
+  String get category => '분류';
+
+  @override
+  String get excel_upload_success => '업로드 완료!';
+
+  @override
+  String get guest_timetable_disabled => '게스트 사용자는 시간표 기능을 사용할 수 없습니다.';
+
+  @override
+  String get guest_timetable_add_disabled => '게스트 사용자는 시간표를 추가할 수 없습니다.';
+
+  @override
+  String get guest_timetable_edit_disabled => '게스트 사용자는 시간표를 수정할 수 없습니다.';
+
+  @override
+  String get guest_timetable_delete_disabled => '게스트 사용자는 시간표를 삭제할 수 없습니다.';
+
+  @override
+  String get timetable_load_failed => '시간표를 불러오지 못했습니다.';
+
+  @override
+  String get timetable_add_success => '시간표가 성공적으로 추가되었습니다.';
+
+  @override
+  String timetable_add_failed(Object error) {
+    return '시간표 추가에 실패했습니다: $error';
+  }
+
+  @override
+  String get timetable_overlap => '이미 같은 시간에 등록된 수업이 있습니다.';
+
+  @override
+  String get required_fields_missing => '필수 입력값을 모두 입력해 주세요.';
+
+  @override
+  String get no_search_results => '검색 결과가 없습니다';
+
+  @override
+  String get excel_upload_refreshing => '시간표를 새로고침하고 있습니다...';
+
+  @override
+  String get logout_processing => '로그아웃 중...';
+
+  @override
+  String get logout_error_message => '로그아웃 중 오류가 발생했지만 초기 화면으로 이동합니다.';
+
+  @override
+  String get data_to_be_deleted => '삭제될 데이터';
+
+  @override
+  String get deleting_account => '계정을 삭제하는 중...';
+
+  @override
+  String get excel_tutorial_title => '엑셀 파일 다운로드 방법';
+
+  @override
+  String get edit_profile_section => '회원정보 수정';
+
+  @override
+  String get delete_account_section => '회원탈퇴';
+
+  @override
+  String get logout_section => '로그아웃';
+
+  @override
+  String get location_share_title => '위치 공유';
+
+  @override
+  String get location_share_enabled => '위치 공유 활성화';
+
+  @override
+  String get location_share_disabled => '위치 공유 비활성화';
+
+  @override
+  String get excel_tutorial_previous => '이전';
+
+  @override
+  String get room_route_error => '호실 경로 계산 중 오류가 발생했습니다. 건물 단위로 검색해보세요.';
+
+  @override
+  String get location_check_error => '현재 위치를 확인할 수 없습니다. 다시 시도해주세요.';
+
+  @override
+  String get server_connection_error => '서버 연결에 문제가 있습니다. 잠시 후 다시 시도해주세요.';
+
+  @override
+  String get route_calculation_error => '경로 계산 중 오류가 발생했습니다. 다시 시도해주세요.';
+
+  @override
+  String get try_again => '다시 시도';
+
+  @override
+  String get current_location_departure => '현재위치에서 출발';
+
+  @override
+  String get current_location_departure_default => '기본위치에서 출발';
+
+  @override
+  String get current_location_navigation_start => '현재 위치에서 길찾기를 시작합니다';
+
+  @override
+  String get excel_tutorial_next => '다음';
+
+  @override
+  String get profile_edit_title => '프로필 수정';
+
+  @override
+  String get profile_edit_subtitle => '개인정보를 수정할 수 있습니다';
+
+  @override
+  String get account_delete_title => '계정 삭제';
+
+  @override
+  String get account_delete_subtitle => '계정을 영구적으로 삭제합니다';
+
+  @override
+  String get logout_title => '로그아웃';
+
+  @override
+  String get logout_subtitle => '현재 계정에서 로그아웃합니다';
+
+  @override
+  String get location_share_enabled_success => '위치 공유가 활성화되었습니다';
+
+  @override
+  String get location_share_disabled_success => '위치 공유가 비활성화되었습니다';
+
+  @override
+  String get profile_edit_error => '프로필 수정 중 오류가 발생했습니다';
+
+  @override
+  String get inquiry_load_failed => 'Failed to load inquiry list';
+
+  @override
+  String get pull_to_refresh => 'Pull down to refresh';
+
+  @override
+  String get app_version_number => 'v1.0.0';
+
+  @override
+  String get developer_email_address => 'wsumap41@gmail.com';
+
+  @override
+  String get developer_github_url => 'https://github.com/WSU-YJB/WSUMAP';
+
+  @override
+  String get friend_management => '친구 관리';
+
+  @override
+  String get excel_tutorial_file_select => '파일 선택';
+
+  @override
+  String get excel_tutorial_help => '사용법 보기';
+
+  @override
+  String get excel_upload_file_cancelled => '파일 선택이 취소되었습니다.';
+
+  @override
+  String get excel_upload_success_message => '시간표가 업데이트되었습니다!';
+
+  @override
+  String excel_upload_refresh_failed(String error) {
+    return '새로고침 실패: $error';
+  }
+
+  @override
+  String excel_upload_failed(String error) {
+    return '업로드 실패: $error';
+  }
+
+  @override
+  String get excel_tutorial_step_1 => '1. 우송대학교 대학정보시스템에 로그인';
+
+  @override
+  String get excel_tutorial_url => 'https://wsinfo.wsu.ac.kr';
+
+  @override
+  String get excel_tutorial_image_load_error => '이미지를 불러올 수 없습니다';
+
+  @override
+  String get excel_tutorial_unknown_page => '알 수 없는 페이지';
 
   @override
   String get campus_navigator => '캠퍼스 네비게이터';
@@ -405,9 +654,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get unknown_error => '알 수 없는 오류가 발생했습니다';
 
   @override
-  String get select_auth_method => '인증 방법 선택';
-
-  @override
   String get woosong_campus_guide_service => '우송대학교 캠퍼스 길안내 서비스';
 
   @override
@@ -427,6 +673,16 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get guest_mode => '게스트 모드';
+
+  @override
+  String get guest_mode_confirm =>
+      '게스트 모드로 입장하시겠습니까?\n\n게스트 모드에서는 친구 기능과 위치 공유 기능을 사용할 수 없습니다.';
+
+  @override
+  String get app_name => '따라우송';
+
+  @override
+  String get welcome_to_ttarausong => 'Welcome to Ttarausong';
 
   @override
   String get guest_mode_description =>
@@ -577,100 +833,100 @@ class AppLocalizationsKo extends AppLocalizations {
   String get unified_navigation => '통합 내비게이션';
 
   @override
-  String get recent_searches => '최근 검색';
+  String get recent_searches => 'Recent Searches';
 
   @override
-  String get clear_all => '모두 지우기';
+  String get clear_all => 'All';
 
   @override
-  String get searching => '검색 중...';
+  String get searching => 'Searching...';
 
   @override
-  String get try_different_keyword => '다른 키워드를 시도해보세요';
+  String get try_different_keyword => 'Try a different keyword';
 
   @override
-  String get enter_end_location => '도착지를 입력하세요';
+  String get enter_end_location => 'Enter destination';
 
   @override
-  String get route_preview => '경로 미리보기';
+  String get route_preview => 'Route Preview';
 
   @override
-  String get calculating_optimal_route => '최적 경로 계산 중...';
+  String get calculating_optimal_route => 'Calculating optimal route...';
 
   @override
-  String get set_departure_and_destination => '출발지와 도착지를 설정하세요';
+  String get set_departure_and_destination => 'Set departure and destination';
 
   @override
-  String get start_unified_navigation => '통합 내비게이션 시작';
+  String get start_unified_navigation => 'Start Unified Navigation';
 
   @override
-  String get departure_indoor => '출발지 (실내)';
+  String get departure_indoor => 'Departure (Indoor)';
 
   @override
-  String get to_building_exit => '건물 출구로';
+  String get to_building_exit => 'To Building Exit';
 
   @override
-  String get outdoor_movement => '실외 이동';
+  String get outdoor_movement => 'Outdoor Movement';
 
   @override
-  String get to_destination_building => '도착 건물로';
+  String get to_destination_building => 'To Destination Building';
 
   @override
-  String get arrival_indoor => '도착지 (실내)';
+  String get arrival_indoor => 'Arrival (Indoor)';
 
   @override
-  String get to_final_destination => '최종 목적지로';
+  String get to_final_destination => 'To Final Destination';
 
   @override
-  String get total_distance => '총 거리';
+  String get total_distance => 'Total Distance';
 
   @override
-  String get route_type => '경로 유형';
+  String get route_type => 'Route Type';
 
   @override
-  String get building_to_building => '건물 간 이동';
+  String get building_to_building => 'Building to Building';
 
   @override
-  String get room_to_building => '호실에서 건물로';
+  String get room_to_building => 'Room to Building';
 
   @override
-  String get building_to_room => '건물에서 호실로';
+  String get building_to_room => 'Building to Room';
 
   @override
-  String get room_to_room => '호실 간 이동';
+  String get room_to_room => 'Room to Room';
 
   @override
-  String get location_to_building => '현재 위치에서 건물로';
+  String get location_to_building => 'Location to Building';
 
   @override
-  String get unified_route => '통합 경로';
+  String get unified_route => 'Unified Route';
 
   @override
-  String get status_offline => '오프라인';
+  String get status_offline => 'Offline';
 
   @override
-  String get status_open => '운영중';
+  String get status_open => 'Open';
 
   @override
-  String get status_closed => '운영종료';
+  String get status_closed => 'Closed';
 
   @override
-  String get status_24hours => '24시간';
+  String get status_24hours => '24 Hours';
 
   @override
-  String get status_temp_closed => '임시휴무';
+  String get status_temp_closed => 'Temporarily Closed';
 
   @override
-  String get status_closed_permanently => '영구휴업';
+  String get status_closed_permanently => 'Permanently Closed';
 
   @override
-  String get status_next_open => '오전 9시에 운영 시작';
+  String get status_next_open => 'Opens at 9 AM';
 
   @override
-  String get status_next_close => '오후 6시에 운영 종료';
+  String get status_next_close => 'Closes at 6 PM';
 
   @override
-  String get status_next_open_tomorrow => '내일 오전 9시에 운영 시작';
+  String get status_next_open_tomorrow => 'Opens tomorrow at 9 AM';
 
   @override
   String get set_start_point => '출발지 설정';
@@ -679,35 +935,36 @@ class AppLocalizationsKo extends AppLocalizations {
   String get set_end_point => '도착지 설정';
 
   @override
-  String get scheduleDeleteTitle => '일정 삭제';
+  String get scheduleDeleteTitle => 'Delete Schedule';
 
   @override
-  String get scheduleDeleteSubtitle => '신중하게 결정해주세요';
+  String get scheduleDeleteSubtitle => 'Please decide carefully';
 
   @override
-  String get scheduleDeleteLabel => '삭제할 일정';
+  String get scheduleDeleteLabel => 'Schedule to Delete';
 
   @override
   String scheduleDeleteDescription(Object title) {
-    return '\"$title\" 수업이 일정에서 삭제됩니다.\n삭제된 일정은 복구할 수 없습니다.';
+    return '\"$title\" class will be deleted from schedule.\nDeleted schedule cannot be recovered.';
   }
 
   @override
-  String get cancelButton => '취소';
+  String get cancelButton => 'Cancel';
 
   @override
-  String get deleteButton => '삭제';
+  String get deleteButton => 'Delete';
 
   @override
-  String get overlap_message => '이 시간에 이미 등록된 수업이 있습니다';
+  String get overlap_message =>
+      'There is already a class registered at this time';
 
   @override
   String friendDeleteSuccessMessage(Object userName) {
-    return '$userName님이 친구 목록에서 제거되었습니다';
+    return '$userName has been removed from friends list';
   }
 
   @override
-  String get enterFriendIdPrompt => '추가할 친구의 ID를 입력해주세요';
+  String get enterFriendIdPrompt => '친구의 ID를 입력해주세요';
 
   @override
   String get friendId => '친구 ID';
@@ -719,7 +976,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get sendFriendRequest => '친구 요청 보내기';
 
   @override
-  String get realTimeSyncActive => '실시간 동기화 활성화 • 자동 업데이트';
+  String get realTimeSyncActive => '실시간 동기화 활성화';
 
   @override
   String get noSentRequests => '보낸 친구 요청이 없습니다';
@@ -744,7 +1001,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get newBadge => 'NEW';
 
   @override
-  String get online => '온라인';
+  String get online => 'Online';
 
   @override
   String get offline => '오프라인';
@@ -753,66 +1010,48 @@ class AppLocalizationsKo extends AppLocalizations {
   String get contact => '연락처';
 
   @override
-  String get noContactInfo => '연락처 정보가 없습니다';
+  String get noContactInfo => '연락처 정보 없음';
 
   @override
-  String get friendOfflineError => '친구가 오프라인 상태입니다';
+  String get friendOfflineError => '오프라인 친구의 위치를 볼 수 없습니다';
 
   @override
-  String get removeLocation => '위치 제거';
+  String get removeLocation => '위치제거';
 
   @override
-  String get showLocation => '위치 보기';
+  String get showLocation => '위치보기';
 
   @override
   String friendLocationRemoved(String userName) {
-    return '$userName의 위치가 제거되었습니다';
+    return '$userName\'s location has been removed';
   }
 
   @override
   String friendLocationShown(String userName) {
-    return '$userName의 위치가 표시되었습니다';
+    return '$userName\'s location has been shown';
   }
 
   @override
-  String get errorCannotRemoveLocation => '위치를 제거할 수 없습니다';
+  String get errorCannotRemoveLocation => 'Cannot remove location';
 
   @override
   String get my_page => '내 페이지';
 
   @override
-  String get calculating_route => '경로 계산 중...';
+  String get calculating_route => 'Calculating route...';
 
   @override
-  String get finding_optimal_route => '서버에서 최적 경로를 찾는 중';
+  String get finding_optimal_route => 'Server is finding optimal route';
 
   @override
-  String get clear_route => '경로 지우기';
+  String get clear_route => 'Clear Route';
 
   @override
   String get location_permission_denied =>
-      '위치 권한이 거부되었습니다.\n설정에서 위치 권한을 허용해주세요.';
+      'Location permission denied.\nPlease allow location permission in settings.';
 
   @override
-  String get estimated_time => '예상 시간';
-
-  @override
-  String get account_delete_title => '계정 삭제';
-
-  @override
-  String get account_delete_subtitle => '계정을 영구적으로 삭제합니다';
-
-  @override
-  String get logout_title => '로그아웃';
-
-  @override
-  String get logout_subtitle => '현재 계정에서 로그아웃합니다';
-
-  @override
-  String get location_share_enabled_success => '위치 공유가 활성화되었습니다';
-
-  @override
-  String get location_share_disabled_success => '위치 공유가 비활성화되었습니다';
+  String get estimated_time => 'Estimated Time';
 
   @override
   String get location_share_update_failed => '위치 공유 설정 업데이트에 실패했습니다';
@@ -822,9 +1061,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get no_changes => '변경사항이 없습니다';
-
-  @override
-  String get profile_edit_error => '프로필 수정 중 오류가 발생했습니다';
 
   @override
   String get password_confirm_title => '비밀번호 확인';
@@ -854,7 +1090,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get excel_file_tutorial => '엑셀 파일 사용법';
 
   @override
-  String get image_attachment => '이미지 첨부';
+  String get image_attachment => 'Image Attachment';
 
   @override
   String get max_one_image => '최대 1장';
@@ -906,21 +1142,6 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get inquiry_category_place_error => '장소/정보 오류';
-
-  @override
-  String get location_share_title => '위치 공유';
-
-  @override
-  String get location_share_enabled => '위치 공유 활성화';
-
-  @override
-  String get location_share_disabled => '위치 공유 비활성화';
-
-  @override
-  String get profile_edit_title => '프로필 수정';
-
-  @override
-  String get profile_edit_subtitle => '개인정보를 수정할 수 있습니다';
 
   @override
   String get schedule => '시간표';
@@ -1129,25 +1350,16 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get current_location_departure => '현재 위치에서 출발';
-
-  @override
-  String get current_location => '현재위치';
-
-  @override
   String get available => '사용가능';
 
   @override
   String get start_navigation_from_current_location => '현재 위치에서 길찾기를 시작합니다';
 
   @override
-  String get my_location_set_as_start => '내 위치가 출발지로 자동 설정되었습니다';
+  String get my_location_set_as_start => '내위치가 출발지로 설정되었습니다';
 
   @override
-  String get current_location_departure_default => '현재 위치에서 출발 (기본 위치)';
-
-  @override
-  String get default_location_set_as_start => '기본 위치가 출발지로 설정되었습니다';
+  String get default_location_set_as_start => '기본위치가 출발지로 설정되었습니다';
 
   @override
   String get start_navigation => '길찾기 시작';
@@ -1156,13 +1368,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get navigation_ended => '길찾기가 종료되었습니다';
 
   @override
-  String get departure => '출발';
-
-  @override
   String get arrival => '도착';
-
-  @override
-  String get destination => '도착지';
 
   @override
   String get outdoor_movement_distance => '실외 이동 거리';
@@ -1583,9 +1789,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get search_campus_buildings => '캠퍼스 건물 검색';
 
   @override
-  String get no_search_results => '검색 결과가 없습니다';
-
-  @override
   String get building_details => '상세 정보';
 
   @override
@@ -1634,10 +1837,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get developer_name => '팀원: 정진영, 박철현, 조현준, 최성열, 한승헌, 이예은';
 
   @override
-  String get developer_email => '이메일: example@email.com';
+  String get developer_email => '이메일: wsumap41@gmail.com';
 
   @override
-  String get developer_github => 'GitHub: github.com/yourid';
+  String get developer_github => 'GitHub: github.com/WSU-YJB/WSUMAP';
 
   @override
   String get no_help_images => '도움말 이미지가 없습니다';
@@ -1714,30 +1917,30 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get attached_image => '첨부된 이미지';
+  String get attached_image => 'Attached Image';
 
   @override
-  String get answer_section_title => '답변';
+  String get answer_section_title => 'Answer';
 
   @override
   String get inquiry_default_answer =>
-      '문의해주신 내용에 대한 답변입니다. 추가 문의사항이 있으시면 언제든 연락주세요.';
+      'This is the answer to your inquiry. Please contact us if you have further questions.';
 
   @override
-  String get answer_date_prefix => '답변일:';
+  String get answer_date_prefix => 'Answered on:';
 
   @override
-  String get waiting_answer_status => '답변 대기 중';
+  String get waiting_answer_status => 'Waiting for answer';
 
   @override
   String get waiting_answer_message =>
-      '문의해주신 내용을 검토하고 있습니다. 빠른 시일 내에 답변드리겠습니다.';
+      'We are reviewing your inquiry and will reply as soon as possible.';
 
   @override
-  String get status_pending => '답변 대기';
+  String get status_pending => 'Pending';
 
   @override
-  String get status_answered => '답변 완료';
+  String get status_answered => 'Answered';
 
   @override
   String get cancelRequest => '요청 취소';
@@ -1800,9 +2003,6 @@ class AppLocalizationsKo extends AppLocalizations {
   String get basic_info => '기본 정보';
 
   @override
-  String get category => '분류';
-
-  @override
   String get status => '상태';
 
   @override
@@ -1851,6 +2051,43 @@ class AppLocalizationsKo extends AppLocalizations {
   String get restaurant => '식당';
 
   @override
+  String get privacy_policy => '개인정보 처리방침';
+
+  @override
+  String get fire_extinguisher => '소화기';
+
+  @override
+  String get my_location_route_calculating =>
+      '내위치에서 건물로의 경로를 계산하고 있습니다. 잠시만 기다려주세요.';
+
+  @override
+  String get calculating => '계산 중';
+
+  @override
+  String get set_both_locations => '출발지와 도착지를 모두 설정해주세요';
+
+  @override
+  String get route_calculating => '경로를 계산하는 중...';
+
+  @override
+  String get search_error => '검색 오류';
+
+  @override
+  String get search_initial_guide => '건물이나 호실을 검색해보세요';
+
+  @override
+  String get search_hint_example => '예: W19, 공학관, 401호';
+
+  @override
+  String get search_loading => '검색 중...';
+
+  @override
+  String get search_no_result => '검색 결과가 없습니다';
+
+  @override
+  String get search_try_again => '다른 검색어를 시도해보세요';
+
+  @override
   String get library => '도서관';
 
   @override
@@ -1858,7 +2095,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String location_setting_confirm(String buildingName, String locationType) {
-    return '을(를) $locationType로 설정하시겠습니까?';
+    return '$buildingName을(를) $locationType로 설정하시겠습니까?';
   }
 
   @override
@@ -1866,7 +2103,52 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String friend_location_permission_denied(String name) {
-    return '$name님이 위치 공유를 허용하지 않았습니다.';
+    return '$name님이 위치 공유를 허용하지 않았습니다';
+  }
+
+  @override
+  String get no_friends_message => '친구가 없습니다.\n친구를 추가한 후 다시 시도해주세요.';
+
+  @override
+  String offline_friends_not_displayed(int count) {
+    return '\n오프라인 친구 $count명은 표시되지 않습니다.';
+  }
+
+  @override
+  String location_denied_friends_not_displayed(int count) {
+    return '\n위치 공유 미허용 친구 $count명은 표시되지 않습니다.';
+  }
+
+  @override
+  String both_offline_and_location_denied(int offlineCount, int locationCount) {
+    return '\n오프라인 친구 $offlineCount명, 위치 공유 미허용 친구 $locationCount명은 표시되지 않습니다.';
+  }
+
+  @override
+  String get all_friends_offline_or_location_denied =>
+      '모든 친구가 오프라인이거나 위치 공유를 허용하지 않습니다.\n친구가 온라인에 접속하고 위치 공유를 허용하면 위치를 확인할 수 있습니다.';
+
+  @override
+  String get all_friends_offline =>
+      '모든 친구가 오프라인 상태입니다.\n친구가 온라인에 접속하면 위치를 확인할 수 있습니다.';
+
+  @override
+  String get all_friends_location_denied =>
+      '모든 친구가 위치 공유를 허용하지 않습니다.\n친구가 위치 공유를 허용하면 위치를 확인할 수 있습니다.';
+
+  @override
+  String friends_location_display_success(int count) {
+    return '친구 $count명의 위치를 지도에 표시했습니다.';
+  }
+
+  @override
+  String friends_location_display_error(String error) {
+    return '친구 위치를 표시할 수 없습니다: $error';
+  }
+
+  @override
+  String offline_friends_dialog_subtitle(int count) {
+    return '현재 접속하지 않은 친구 $count명';
   }
 
   @override
@@ -1912,57 +2194,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get already_adding_friend => '이미 친구 추가 중입니다. 중복 제출 방지';
 
   @override
-  String get no_friends_message => '친구가 없습니다.\n친구를 추가한 후 다시 시도해주세요.';
-
-  @override
   String friends_location_displayed(int count) {
     return '친구 $count명의 위치를 표시했습니다.';
   }
 
   @override
-  String offline_friends_not_displayed(int count) {
-    return '\n오프라인 친구 $count명은 표시되지 않습니다.';
-  }
-
-  @override
-  String location_denied_friends_not_displayed(int count) {
-    return '\n위치 공유 미허용 친구 $count명은 표시되지 않습니다.';
-  }
-
-  @override
-  String both_offline_and_location_denied(int offlineCount, int locationCount) {
-    return '\n오프라인 친구 $offlineCount명, 위치 공유 미허용 친구 $locationCount명은 표시되지 않습니다.';
-  }
-
-  @override
-  String get all_friends_offline_or_location_denied =>
-      '모든 친구가 오프라인이거나 위치 공유를 허용하지 않습니다.\n친구가 온라인에 접속하고 위치 공유를 허용하면 위치를 확인할 수 있습니다.';
-
-  @override
-  String get all_friends_offline =>
-      '모든 친구가 오프라인 상태입니다.\n친구가 온라인에 접속하면 위치를 확인할 수 있습니다.';
-
-  @override
-  String get all_friends_location_denied =>
-      '모든 친구가 위치 공유를 허용하지 않습니다.\n친구가 위치 공유를 허용하면 위치를 확인할 수 있습니다.';
-
-  @override
-  String friends_location_display_success(int count) {
-    return '친구 $count명의 위치를 지도에 표시했습니다.';
-  }
-
-  @override
-  String friends_location_display_error(String error) {
-    return '친구 위치를 표시할 수 없습니다: $error';
-  }
-
-  @override
   String get offline_friends_dialog_title => '오프라인 친구';
-
-  @override
-  String offline_friends_dialog_subtitle(int count) {
-    return '현재 접속하지 않은 친구 $count명';
-  }
 
   @override
   String friendRequestCancelled(String name) {
@@ -1990,4 +2227,7 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get friendLocationRemovedFromMap => '친구 위치를 지도에서 제거했습니다.';
+
+  @override
+  String get info => '알림';
 }

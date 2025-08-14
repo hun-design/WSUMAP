@@ -209,7 +209,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get building_name => 'Building Name';
 
   @override
-  String get floor_number => 'Floor';
+  String floor_number(Object floor) {
+    return 'Floor';
+  }
 
   @override
   String get room_name => 'Room';
@@ -290,6 +292,272 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get woosong_university => 'Woosong University';
+
+  @override
+  String get excel_upload_title => 'Upload Timetable Excel File';
+
+  @override
+  String get excel_upload_description =>
+      'Please select a Woosong University timetable Excel file (.xlsx)';
+
+  @override
+  String get excel_file_select => 'Select Excel File';
+
+  @override
+  String get excel_upload_uploading => 'Uploading Excel file...';
+
+  @override
+  String get language_selection => 'Language Selection';
+
+  @override
+  String get language_selection_description =>
+      'Please select your preferred language';
+
+  @override
+  String get departure => 'Departure';
+
+  @override
+  String get destination => 'Destination';
+
+  @override
+  String get my_location => 'My Location';
+
+  @override
+  String get current_location => 'Current Location';
+
+  @override
+  String get welcome_subtitle_1 => 'Follow Woosong in your hands,';
+
+  @override
+  String get welcome_subtitle_2 => 'All building information is here!';
+
+  @override
+  String get select_language => 'Select Language';
+
+  @override
+  String get auth_selection_title => 'Authentication Method Selection';
+
+  @override
+  String get auth_selection_subtitle =>
+      'Please select your preferred login method';
+
+  @override
+  String get select_auth_method => 'Select Authentication Method';
+
+  @override
+  String total_floors(Object count) {
+    return 'Total $count floors';
+  }
+
+  @override
+  String get floor_info => 'Floor Information';
+
+  @override
+  String floor_with_category(Object category) {
+    return 'Floor with $category';
+  }
+
+  @override
+  String get floor_label => 'Floor';
+
+  @override
+  String get category => 'Category';
+
+  @override
+  String get excel_upload_success => 'Upload Complete!';
+
+  @override
+  String get guest_timetable_disabled =>
+      'Guest users cannot use the timetable feature.';
+
+  @override
+  String get guest_timetable_add_disabled =>
+      'Guest users cannot add timetables.';
+
+  @override
+  String get guest_timetable_edit_disabled =>
+      'Guest users cannot edit timetables.';
+
+  @override
+  String get guest_timetable_delete_disabled =>
+      'Guest users cannot delete timetables.';
+
+  @override
+  String get timetable_load_failed => 'Failed to load timetable.';
+
+  @override
+  String get timetable_add_success => 'Timetable added successfully.';
+
+  @override
+  String timetable_add_failed(Object error) {
+    return 'Failed to add timetable';
+  }
+
+  @override
+  String get timetable_overlap =>
+      'There is already a class registered at the same time.';
+
+  @override
+  String get required_fields_missing => 'Please fill in all required fields.';
+
+  @override
+  String get no_search_results => 'No search results';
+
+  @override
+  String get excel_upload_refreshing => 'Refreshing timetable...';
+
+  @override
+  String get logout_processing => 'Logging out...';
+
+  @override
+  String get logout_error_message =>
+      'An error occurred during logout, but moving to the initial screen.';
+
+  @override
+  String get data_to_be_deleted => 'Data to be deleted';
+
+  @override
+  String get deleting_account => 'Deleting account...';
+
+  @override
+  String get excel_tutorial_title => 'How to Download Excel File';
+
+  @override
+  String get edit_profile_section => 'Edit Profile';
+
+  @override
+  String get delete_account_section => 'Delete Account';
+
+  @override
+  String get logout_section => 'Logout';
+
+  @override
+  String get location_share_title => 'Location Sharing';
+
+  @override
+  String get location_share_enabled => 'Location sharing enabled';
+
+  @override
+  String get location_share_disabled => 'Location sharing disabled';
+
+  @override
+  String get excel_tutorial_previous => 'Previous';
+
+  @override
+  String get room_route_error =>
+      'Error calculating room route. Please search by building.';
+
+  @override
+  String get location_check_error =>
+      'Unable to check current location. Please try again.';
+
+  @override
+  String get server_connection_error =>
+      'There is a problem with server connection. Please try again later.';
+
+  @override
+  String get route_calculation_error =>
+      'Error occurred while calculating route. Please try again.';
+
+  @override
+  String get try_again => 'Try Again';
+
+  @override
+  String get current_location_departure => 'Depart from Current Location';
+
+  @override
+  String get current_location_departure_default =>
+      'Depart from Default Location';
+
+  @override
+  String get current_location_navigation_start =>
+      'Start navigation from current location';
+
+  @override
+  String get excel_tutorial_next => 'Next';
+
+  @override
+  String get profile_edit_title => 'Edit Profile';
+
+  @override
+  String get profile_edit_subtitle =>
+      'You can modify your personal information';
+
+  @override
+  String get account_delete_title => 'Delete Account';
+
+  @override
+  String get account_delete_subtitle => 'Permanently delete your account';
+
+  @override
+  String get logout_title => 'Logout';
+
+  @override
+  String get logout_subtitle => 'Logout from current account';
+
+  @override
+  String get location_share_enabled_success =>
+      'Location sharing has been enabled';
+
+  @override
+  String get location_share_disabled_success =>
+      'Location sharing has been disabled';
+
+  @override
+  String get profile_edit_error => 'An error occurred while editing profile';
+
+  @override
+  String get inquiry_load_failed => 'Failed to load inquiry list';
+
+  @override
+  String get pull_to_refresh => 'Pull down to refresh';
+
+  @override
+  String get app_version_number => 'v1.0.0';
+
+  @override
+  String get developer_email_address => 'wsumap41@gmail.com';
+
+  @override
+  String get developer_github_url => 'https://github.com/WSU-YJB/WSUMAP';
+
+  @override
+  String get friend_management => 'Friend Management';
+
+  @override
+  String get excel_tutorial_file_select => 'Select File';
+
+  @override
+  String get excel_tutorial_help => 'View Instructions';
+
+  @override
+  String get excel_upload_file_cancelled => 'File selection was cancelled.';
+
+  @override
+  String get excel_upload_success_message => 'Timetable has been updated!';
+
+  @override
+  String excel_upload_refresh_failed(String error) {
+    return 'Refresh failed: $error';
+  }
+
+  @override
+  String excel_upload_failed(String error) {
+    return 'Upload failed: $error';
+  }
+
+  @override
+  String get excel_tutorial_step_1 =>
+      '1. Login to Woosong University Information System';
+
+  @override
+  String get excel_tutorial_url => 'https://wsinfo.wsu.ac.kr';
+
+  @override
+  String get excel_tutorial_image_load_error => 'Unable to load image';
+
+  @override
+  String get excel_tutorial_unknown_page => 'Unknown page';
 
   @override
   String get campus_navigator => 'Campus Navigator';
@@ -416,9 +684,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get unknown_error => 'Unknown error occurred';
 
   @override
-  String get select_auth_method => 'Select Authentication Method';
-
-  @override
   String get woosong_campus_guide_service =>
       'Woosong University Campus Guide Service';
 
@@ -440,6 +705,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get guest_mode => 'Guest Mode';
+
+  @override
+  String get guest_mode_confirm =>
+      'Would you like to enter guest mode?\n\nIn guest mode, you cannot use friend features and location sharing.';
+
+  @override
+  String get app_name => 'Ttarausong';
+
+  @override
+  String get welcome_to_ttarausong => 'Welcome to Ttarausong';
 
   @override
   String get guest_mode_description =>
@@ -722,7 +997,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get enterFriendIdPrompt => 'Please enter the ID of the friend to add';
+  String get enterFriendIdPrompt => 'Enter your friend\'s ID';
 
   @override
   String get friendId => 'Friend ID';
@@ -734,18 +1009,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendFriendRequest => 'Send Friend Request';
 
   @override
-  String get realTimeSyncActive => 'Real-time sync active • Auto update';
+  String get realTimeSyncActive => 'Real-time Sync Active';
 
   @override
-  String get noSentRequests => 'No sent friend requests';
+  String get noSentRequests => 'No sent requests';
 
   @override
   String newFriendRequests(int count) {
-    return '$count new friend requests';
+    return '$count New Friend Requests';
   }
 
   @override
-  String get noReceivedRequests => 'No received friend requests';
+  String get noReceivedRequests => 'No received requests';
 
   @override
   String get id => 'ID';
@@ -768,10 +1043,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contact => 'Contact';
 
   @override
-  String get noContactInfo => 'No contact information';
+  String get noContactInfo => 'No contact info';
 
   @override
-  String get friendOfflineError => 'Friend is offline';
+  String get friendOfflineError => 'Cannot view offline friend\'s location';
 
   @override
   String get removeLocation => 'Remove Location';
@@ -812,26 +1087,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get estimated_time => 'Estimated Time';
 
   @override
-  String get account_delete_title => 'Delete Account';
-
-  @override
-  String get account_delete_subtitle => 'Permanently delete your account';
-
-  @override
-  String get logout_title => 'Logout';
-
-  @override
-  String get logout_subtitle => 'Logout from current account';
-
-  @override
-  String get location_share_enabled_success =>
-      'Location sharing has been enabled';
-
-  @override
-  String get location_share_disabled_success =>
-      'Location sharing has been disabled';
-
-  @override
   String get location_share_update_failed =>
       'Failed to update location sharing settings';
 
@@ -841,9 +1096,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get no_changes => 'No changes';
-
-  @override
-  String get profile_edit_error => 'An error occurred while editing profile';
 
   @override
   String get password_confirm_title => 'Password Confirmation';
@@ -874,7 +1126,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get excel_file_tutorial => 'Excel File Tutorial';
 
   @override
-  String get image_attachment => 'Image Attached';
+  String get image_attachment => 'Image Attachment';
 
   @override
   String get max_one_image => 'Max 1 image';
@@ -915,7 +1167,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'An error occurred while processing your inquiry';
 
   @override
-  String get inquiry_category_bug => 'Bug';
+  String get inquiry_category_bug => 'Bug Report';
 
   @override
   String get inquiry_category_feature => 'Feature Request';
@@ -928,22 +1180,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inquiry_category_place_error => 'Place Error';
-
-  @override
-  String get location_share_title => 'Location Sharing';
-
-  @override
-  String get location_share_enabled => 'Location sharing enabled';
-
-  @override
-  String get location_share_disabled => 'Location sharing disabled';
-
-  @override
-  String get profile_edit_title => 'Edit Profile';
-
-  @override
-  String get profile_edit_subtitle =>
-      'You can modify your personal information';
 
   @override
   String get schedule => 'Schedule';
@@ -1152,12 +1388,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get current_location_departure => 'Depart from current location';
-
-  @override
-  String get current_location => 'Current Location';
-
-  @override
   String get available => 'Available';
 
   @override
@@ -1165,16 +1395,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'Start navigation from current location';
 
   @override
-  String get my_location_set_as_start =>
-      'My location has been set as the starting point';
-
-  @override
-  String get current_location_departure_default =>
-      'Depart from current location (default)';
+  String get my_location_set_as_start => 'My location set as start point';
 
   @override
   String get default_location_set_as_start =>
-      'Default location has been set as the starting point';
+      'Default location set as start point';
 
   @override
   String get start_navigation => 'Start Navigation';
@@ -1183,13 +1408,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navigation_ended => 'Navigation has ended';
 
   @override
-  String get departure => 'Departure';
-
-  @override
   String get arrival => 'Arrival';
-
-  @override
-  String get destination => 'Destination';
 
   @override
   String get outdoor_movement_distance => 'Outdoor Movement Distance';
@@ -1617,9 +1836,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get search_campus_buildings => 'Search campus buildings';
 
   @override
-  String get no_search_results => 'No search results';
-
-  @override
   String get building_details => 'Details';
 
   @override
@@ -1668,10 +1884,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get developer_name => 'Name: Hong Gil-dong';
 
   @override
-  String get developer_email => 'Email: example@email.com';
+  String get developer_email => 'Email: wsumap41@gmail.com';
 
   @override
-  String get developer_github => 'GitHub: github.com/yourid';
+  String get developer_github => 'GitHub: github.com/WSU-YJB/WSUMAP';
 
   @override
   String get no_help_images => 'No help images';
@@ -1839,9 +2055,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get basic_info => 'Basic Info';
 
   @override
-  String get category => 'Category';
-
-  @override
   String get status => 'Status';
 
   @override
@@ -1890,6 +2103,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get restaurant => 'Restaurant';
 
   @override
+  String get privacy_policy => 'Privacy Policy';
+
+  @override
+  String get fire_extinguisher => 'Fire Extinguisher';
+
+  @override
+  String get my_location_route_calculating =>
+      'Calculating route from my location to the building. Please wait a moment.';
+
+  @override
+  String get calculating => 'Calculating';
+
+  @override
+  String get set_both_locations => 'Please set both departure and destination';
+
+  @override
+  String get route_calculating => 'Calculating route...';
+
+  @override
+  String get search_error => 'Search Error';
+
+  @override
+  String get search_initial_guide => 'Search for a building or room';
+
+  @override
+  String get search_hint_example => 'e.g. W19, Engineering Hall, Room 401';
+
+  @override
+  String get search_loading => 'Searching...';
+
+  @override
+  String get search_no_result => 'No search results found';
+
+  @override
+  String get search_try_again => 'Try a different search term';
+
+  @override
   String get library => 'Library';
 
   @override
@@ -1905,7 +2155,53 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String friend_location_permission_denied(String name) {
-    return '$name has not allowed location sharing.';
+    return '$name has not allowed location sharing';
+  }
+
+  @override
+  String get no_friends_message =>
+      'You have no friends.\nPlease add friends and try again.';
+
+  @override
+  String offline_friends_not_displayed(int count) {
+    return '\n$count offline friends are not displayed.';
+  }
+
+  @override
+  String location_denied_friends_not_displayed(int count) {
+    return '\n$count friends who denied location sharing are not displayed.';
+  }
+
+  @override
+  String both_offline_and_location_denied(int offlineCount, int locationCount) {
+    return '\n$offlineCount offline friends and $locationCount friends who denied location sharing are not displayed.';
+  }
+
+  @override
+  String get all_friends_offline_or_location_denied =>
+      'All friends are offline or have denied location sharing.\nYou can check their location when they come online and allow location sharing.';
+
+  @override
+  String get all_friends_offline =>
+      'All friends are offline.\nYou can check their location when they come online.';
+
+  @override
+  String get all_friends_location_denied =>
+      'All friends have denied location sharing.\nYou can check their location when they allow location sharing.';
+
+  @override
+  String friends_location_display_success(int count) {
+    return 'Displayed location of $count friends on the map.';
+  }
+
+  @override
+  String friends_location_display_error(String error) {
+    return 'Cannot display friend locations: $error';
+  }
+
+  @override
+  String offline_friends_dialog_subtitle(int count) {
+    return '$count friends currently offline';
   }
 
   @override
@@ -1953,58 +2249,12 @@ class AppLocalizationsEn extends AppLocalizations {
       'Already adding friend. Preventing duplicate submission';
 
   @override
-  String get no_friends_message =>
-      'You have no friends.\nPlease add friends and try again.';
-
-  @override
   String friends_location_displayed(int count) {
     return 'Displayed location of $count friends.';
   }
 
   @override
-  String offline_friends_not_displayed(int count) {
-    return '\n$count offline friends are not displayed.';
-  }
-
-  @override
-  String location_denied_friends_not_displayed(int count) {
-    return '\n$count friends who denied location sharing are not displayed.';
-  }
-
-  @override
-  String both_offline_and_location_denied(int offlineCount, int locationCount) {
-    return '\n$offlineCount offline friends and $locationCount friends who denied location sharing are not displayed.';
-  }
-
-  @override
-  String get all_friends_offline_or_location_denied =>
-      'All friends are offline or have denied location sharing.\nYou can check their location when they come online and allow location sharing.';
-
-  @override
-  String get all_friends_offline =>
-      'All friends are offline.\nYou can check their location when they come online.';
-
-  @override
-  String get all_friends_location_denied =>
-      'All friends have denied location sharing.\nYou can check their location when they allow location sharing.';
-
-  @override
-  String friends_location_display_success(int count) {
-    return 'Displayed location of $count friends on the map.';
-  }
-
-  @override
-  String friends_location_display_error(String error) {
-    return 'Cannot display friend locations: $error';
-  }
-
-  @override
   String get offline_friends_dialog_title => 'Offline Friends';
-
-  @override
-  String offline_friends_dialog_subtitle(int count) {
-    return '$count friends currently offline';
-  }
 
   @override
   String friendRequestCancelled(String name) {
@@ -2036,4 +2286,7 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get friendLocationRemovedFromMap =>
       'Friend locations have been removed from the map.';
+
+  @override
+  String get info => 'Info';
 }

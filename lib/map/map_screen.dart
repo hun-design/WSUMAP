@@ -960,9 +960,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       ]);
     }
 
-    items.add(
-      _buildNavItem(3, Icons.person_outline, Icons.person, l10n.my_page),
-    );
+            items.add(
+          _buildNavItem(3, Icons.person_outline, Icons.person, l10n.my_page),
+        );
 
     return Container(
       decoration: BoxDecoration(

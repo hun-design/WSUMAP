@@ -45,6 +45,7 @@ class _SearchScreenState extends State<SearchScreen> {
 String _lastQuery = '';
 
 Future<void> _onSearchChanged() async {
+  final l10n = AppLocalizations.of(context)!;
   final query = _searchController.text.trim();
   _lastQuery = query;
 
@@ -71,7 +72,7 @@ Future<void> _onSearchChanged() async {
       });
     }
   } catch (e) {
-    debugPrint('검색 오류: $e');
+    debugPrint('${l10n.error}: $e');
     if (mounted && _lastQuery == query) {
       setState(() {
         _searchResults = [];
@@ -261,12 +262,12 @@ Widget build(BuildContext context) {
         const Icon(Icons.search, color: Colors.grey, size: 64),
         const SizedBox(height: 16),
         Text(
-          l10n.searchInitialGuide,
+          l10n.search_initial_guide,
           style: const TextStyle(color: Colors.grey, fontSize: 16),
         ),
         const SizedBox(height: 8),
         Text(
-          l10n.searchHintExample,
+          l10n.search_hint_example,
           style: const TextStyle(color: Colors.grey, fontSize: 14),
         ),
       ],
@@ -284,7 +285,7 @@ Widget _buildLoadingState() {
         const CircularProgressIndicator(color: Colors.indigo),
         const SizedBox(height: 16),
         Text(
-          l10n.searchLoading,
+          l10n.search_loading,
           style: const TextStyle(color: Colors.grey, fontSize: 16),
         ),
       ],
@@ -307,6 +308,8 @@ Widget _buildLoadingState() {
 // lib/map/widgets/search_screen.dart
 
 Widget _buildSearchResultItem(SearchResult result) {
+  final l10n = AppLocalizations.of(context)!;
+  
   return Container(
     margin: const EdgeInsets.only(bottom: 1),
     decoration: const BoxDecoration(
@@ -342,16 +345,16 @@ Widget _buildSearchResultItem(SearchResult result) {
       ),
       subtitle: Text(
         [
-          if (result.floorNumber != null) '${result.floorNumber}층',
+          if (result.floorNumber != null) '${result.floorNumber}${l10n.floor}',
           if (result.roomDescription?.isNotEmpty == true) result.roomDescription,
           // 괄호와 함께 방번호를 보여주는 줄을 삭제!
           // if (result.roomNumber != null && result.roomNumber!.isNotEmpty) '(${result.roomNumber})',
           if (result.roomUser != null && result.roomUser!.any((u) => u.isNotEmpty))
             result.roomUser!.where((u) => u.isNotEmpty).join(", "),
           if (result.roomPhone != null && result.roomPhone!.any((p) => p.isNotEmpty))
-            '전화: ${result.roomPhone!.where((p) => p.isNotEmpty).join(", ")}',
+            '${l10n.phone}: ${result.roomPhone!.where((p) => p.isNotEmpty).join(", ")}',
           if (result.roomEmail != null && result.roomEmail!.any((e) => e.isNotEmpty))
-            '메일: ${result.roomEmail!.where((e) => e.isNotEmpty).join(", ")}',
+            '${l10n.email}: ${result.roomEmail!.where((e) => e.isNotEmpty).join(", ")}',
         ].where((e) => e != null && e.isNotEmpty).join(' • '),
         style: TextStyle(
           fontSize: 13,
@@ -392,7 +395,7 @@ Widget _buildSearchResultItem(SearchResult result) {
         Icon(Icons.search_off, color: Colors.grey.shade400, size: 64),
         const SizedBox(height: 16),
         Text(
-          l10n.searchNoResult,
+          l10n.search_no_result,
           style: const TextStyle(
             color: Colors.grey,
             fontSize: 16,
@@ -401,7 +404,7 @@ Widget _buildSearchResultItem(SearchResult result) {
         ),
         const SizedBox(height: 8),
         Text(
-          l10n.searchTryAgain,
+          l10n.search_try_again,
           style: const TextStyle(color: Colors.grey, fontSize: 14),
         ),
       ],

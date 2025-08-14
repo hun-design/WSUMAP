@@ -9,6 +9,16 @@ class RouteRenderingService {
   // 경로 관련 오버레이 관리
   final List<String> _pathOverlayIds = [];
   final List<String> _routeMarkerIds = [];
+  
+  // 다국어 지원을 위한 텍스트
+  String _departureText = '출발지';
+  String _destinationText = '도착지';
+  
+  /// 다국어 텍스트 설정
+  void setLocalizedTexts({required String departure, required String destination}) {
+    _departureText = departure;
+    _destinationText = destination;
+  }
 
   // Getters
   List<String> get pathOverlayIds => _pathOverlayIds;
@@ -120,7 +130,7 @@ class RouteRenderingService {
         ),
         size: const Size(48, 48),
         caption: NOverlayCaption(
-          text: '출발지',
+          text: _departureText,
           color: Colors.white,
           haloColor: const Color(0xFF3B82F6),
           textSize: 14,
@@ -137,7 +147,7 @@ class RouteRenderingService {
         ),
         size: const Size(48, 48),
         caption: NOverlayCaption(
-          text: '도착지',
+          text: _destinationText,
           color: Colors.white,
           haloColor: const Color(0xFFEF4444),
           textSize: 14,
@@ -170,7 +180,7 @@ class RouteRenderingService {
         position: path.first,
         size: const Size(48, 48),
         caption: NOverlayCaption(
-          text: '출발지',
+          text: _departureText,
           color: Colors.white,
           haloColor: const Color(0xFF3B82F6),
           textSize: 14,
@@ -184,7 +194,7 @@ class RouteRenderingService {
         position: path.last,
         size: const Size(48, 48),
         caption: NOverlayCaption(
-          text: '도착지',
+          text: _destinationText,
           color: Colors.white,
           haloColor: const Color(0xFFEF4444),
           textSize: 14,

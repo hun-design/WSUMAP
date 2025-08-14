@@ -83,14 +83,21 @@ class _AuthSelectionViewState extends State<AuthSelectionView>
 
   /// 현재 언어 텍스트 반환
   String _getCurrentLanguageText() {
-    final locale = Localizations.localeOf(context);
+    final languageProvider = Provider.of<AppLanguageProvider>(context, listen: true);
+    final locale = languageProvider.locale;
     switch (locale.languageCode) {
       case 'ko':
         return '한국어';
-      case 'zh':
-        return '中文';
       case 'en':
         return 'English';
+      case 'zh':
+        return '中文';
+      case 'es':
+        return 'Español';
+      case 'ja':
+        return '日本語';
+      case 'ru':
+        return 'Русский';
       default:
         return '한국어';
     }
@@ -98,32 +105,120 @@ class _AuthSelectionViewState extends State<AuthSelectionView>
 
   /// 언어 선택 다이얼로그 표시
   void _showLanguageDialog() {
+    final l10n = AppLocalizations.of(context)!;
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Text(
-            '언어 선택',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF1E3A8A),
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
             ),
-            textAlign: TextAlign.center,
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildLanguageOption('한국어', 'ko'),
-              const SizedBox(height: 12),
-              _buildLanguageOption('中文', 'zh'),
-              const SizedBox(height: 12),
-              _buildLanguageOption('English', 'en'),
-            ],
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // 상단 아이콘 + 타이틀
+                Container(
+                  padding: const EdgeInsets.only(top: 32, bottom: 24),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1E3A8A).withValues(alpha: 0.05),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      topRight: Radius.circular(24),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.language_rounded,
+                          color: Color(0xFF1E3A8A),
+                          size: 32,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        l10n.language_selection,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1E3A8A),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        l10n.language_selection_description,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: const Color(0xFF1E3A8A).withValues(alpha: 0.7),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                // 언어 옵션들
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      _buildLanguageOption('한국어', 'ko'),
+                      const SizedBox(height: 12),
+                      _buildLanguageOption('English', 'en'),
+                      const SizedBox(height: 12),
+                      _buildLanguageOption('中文', 'zh'),
+                      const SizedBox(height: 12),
+                      _buildLanguageOption('Español', 'es'),
+                      const SizedBox(height: 12),
+                      _buildLanguageOption('日本語', 'ja'),
+                      const SizedBox(height: 12),
+                      _buildLanguageOption('Русский', 'ru'),
+                    ],
+                  ),
+                ),
+                
+                // 하단 버튼
+                Container(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFE2E8F0)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        '취소',
+                        style: TextStyle(
+                          color: Color(0xFF64748B),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -132,37 +227,91 @@ class _AuthSelectionViewState extends State<AuthSelectionView>
 
   /// 언어 옵션 위젯
   Widget _buildLanguageOption(String text, String languageCode) {
+    final currentLocale = Localizations.localeOf(context);
+    final isSelected = currentLocale.languageCode == languageCode;
+    
     return InkWell(
-             onTap: () {
-         final languageProvider = Provider.of<AppLanguageProvider>(context, listen: false);
-         switch (languageCode) {
-           case 'ko':
-             languageProvider.setLocale(const Locale('ko'));
-             break;
-           case 'zh':
-             languageProvider.setLocale(const Locale('zh'));
-             break;
-           case 'en':
-             languageProvider.setLocale(const Locale('en'));
-             break;
-         }
-         Navigator.of(context).pop();
-       },
+      onTap: () {
+        final languageProvider = Provider.of<AppLanguageProvider>(context, listen: false);
+        switch (languageCode) {
+          case 'ko':
+            languageProvider.setLocale(const Locale('ko'));
+            break;
+          case 'en':
+            languageProvider.setLocale(const Locale('en'));
+            break;
+          case 'zh':
+            languageProvider.setLocale(const Locale('zh'));
+            break;
+          case 'es':
+            languageProvider.setLocale(const Locale('es'));
+            break;
+          case 'ja':
+            languageProvider.setLocale(const Locale('ja'));
+            break;
+          case 'ru':
+            languageProvider.setLocale(const Locale('ru'));
+            break;
+        }
+        Navigator.of(context).pop();
+      },
+      borderRadius: BorderRadius.circular(16),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
         decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          text,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF1E3A8A),
+          color: isSelected 
+              ? const Color(0xFF1E3A8A).withValues(alpha: 0.1)
+              : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isSelected 
+                ? const Color(0xFF1E3A8A).withValues(alpha: 0.3)
+                : const Color(0xFFE2E8F0),
+            width: isSelected ? 2 : 1,
           ),
-          textAlign: TextAlign.center,
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isSelected 
+                    ? const Color(0xFF1E3A8A).withValues(alpha: 0.1)
+                    : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.flag_rounded,
+                color: isSelected ? const Color(0xFF1E3A8A) : const Color(0xFF64748B),
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Text(
+                text,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  color: isSelected ? const Color(0xFF1E3A8A) : const Color(0xFF334155),
+                ),
+              ),
+            ),
+            if (isSelected)
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF1E3A8A),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -435,7 +584,7 @@ Navigator.of(context).pushAndRemoveUntil(
               
               // 타이틀
               Text(
-                '따라우송',
+                l10n.app_name,
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w800,
@@ -766,7 +915,7 @@ Navigator.of(context).pushAndRemoveUntil(
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                '게스트 모드',
+                l10n.guest_mode,
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
@@ -779,7 +928,7 @@ Navigator.of(context).pushAndRemoveUntil(
         content: Padding(
           padding: const EdgeInsets.only(top: 8),
           child: Text(
-            '게스트 모드로 입장하시겠습니까?\n\n게스트 모드에서는 친구 기능과 위치 공유 기능을 사용할 수 없습니다.',
+            l10n.guest_mode_confirm,
             style: TextStyle(
               fontSize: 16,
               color: Colors.grey[700],
@@ -804,7 +953,7 @@ Navigator.of(context).pushAndRemoveUntil(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: Text(
-                      '취소',
+                      l10n.cancel,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -831,7 +980,7 @@ Navigator.of(context).pushAndRemoveUntil(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: Text(
-                      '확인',
+                      l10n.confirm,
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,

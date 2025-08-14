@@ -6,7 +6,10 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_en.dart';
+import 'app_localizations_es.dart';
+import 'app_localizations_ja.dart';
 import 'app_localizations_ko.dart';
+import 'app_localizations_ru.dart';
 import 'app_localizations_zh.dart';
 
 // ignore_for_file: type=lint
@@ -95,9 +98,12 @@ abstract class AppLocalizations {
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
-    Locale('en'),
     Locale('ko'),
+    Locale('en'),
     Locale('zh'),
+    Locale('es'),
+    Locale('ja'),
+    Locale('ru'),
   ];
 
   /// No description provided for @appTitle.
@@ -488,7 +494,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Floor'**
-  String get floor_number;
+  String floor_number(Object floor);
 
   /// No description provided for @room_name.
   ///
@@ -639,6 +645,480 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Woosong University'**
   String get woosong_university;
+
+  /// No description provided for @excel_upload_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Timetable Excel File'**
+  String get excel_upload_title;
+
+  /// No description provided for @excel_upload_description.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a Woosong University timetable Excel file (.xlsx)'**
+  String get excel_upload_description;
+
+  /// No description provided for @excel_file_select.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Excel File'**
+  String get excel_file_select;
+
+  /// No description provided for @excel_upload_uploading.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading Excel file...'**
+  String get excel_upload_uploading;
+
+  /// No description provided for @language_selection.
+  ///
+  /// In en, this message translates to:
+  /// **'Language Selection'**
+  String get language_selection;
+
+  /// No description provided for @language_selection_description.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select your preferred language'**
+  String get language_selection_description;
+
+  /// No description provided for @departure.
+  ///
+  /// In en, this message translates to:
+  /// **'Departure'**
+  String get departure;
+
+  /// No description provided for @destination.
+  ///
+  /// In en, this message translates to:
+  /// **'Destination'**
+  String get destination;
+
+  /// No description provided for @my_location.
+  ///
+  /// In en, this message translates to:
+  /// **'My Location'**
+  String get my_location;
+
+  /// No description provided for @current_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Current Location'**
+  String get current_location;
+
+  /// No description provided for @welcome_subtitle_1.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow Woosong in your hands,'**
+  String get welcome_subtitle_1;
+
+  /// No description provided for @welcome_subtitle_2.
+  ///
+  /// In en, this message translates to:
+  /// **'All building information is here!'**
+  String get welcome_subtitle_2;
+
+  /// No description provided for @select_language.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Language'**
+  String get select_language;
+
+  /// No description provided for @auth_selection_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication Method Selection'**
+  String get auth_selection_title;
+
+  /// No description provided for @auth_selection_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select your preferred login method'**
+  String get auth_selection_subtitle;
+
+  /// No description provided for @select_auth_method.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Authentication Method'**
+  String get select_auth_method;
+
+  /// No description provided for @total_floors.
+  ///
+  /// In en, this message translates to:
+  /// **'Total {count} floors'**
+  String total_floors(Object count);
+
+  /// No description provided for @floor_info.
+  ///
+  /// In en, this message translates to:
+  /// **'Floor Information'**
+  String get floor_info;
+
+  /// No description provided for @floor_with_category.
+  ///
+  /// In en, this message translates to:
+  /// **'Floor with {category}'**
+  String floor_with_category(Object category);
+
+  /// No description provided for @floor_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Floor'**
+  String get floor_label;
+
+  /// No description provided for @category.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get category;
+
+  /// No description provided for @excel_upload_success.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload Complete!'**
+  String get excel_upload_success;
+
+  /// No description provided for @guest_timetable_disabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest users cannot use the timetable feature.'**
+  String get guest_timetable_disabled;
+
+  /// No description provided for @guest_timetable_add_disabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest users cannot add timetables.'**
+  String get guest_timetable_add_disabled;
+
+  /// No description provided for @guest_timetable_edit_disabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest users cannot edit timetables.'**
+  String get guest_timetable_edit_disabled;
+
+  /// No description provided for @guest_timetable_delete_disabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest users cannot delete timetables.'**
+  String get guest_timetable_delete_disabled;
+
+  /// No description provided for @timetable_load_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load timetable.'**
+  String get timetable_load_failed;
+
+  /// No description provided for @timetable_add_success.
+  ///
+  /// In en, this message translates to:
+  /// **'Timetable added successfully.'**
+  String get timetable_add_success;
+
+  /// No description provided for @timetable_add_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to add timetable'**
+  String timetable_add_failed(Object error);
+
+  /// No description provided for @timetable_overlap.
+  ///
+  /// In en, this message translates to:
+  /// **'There is already a class registered at the same time.'**
+  String get timetable_overlap;
+
+  /// No description provided for @required_fields_missing.
+  ///
+  /// In en, this message translates to:
+  /// **'Please fill in all required fields.'**
+  String get required_fields_missing;
+
+  /// No description provided for @no_search_results.
+  ///
+  /// In en, this message translates to:
+  /// **'No search results'**
+  String get no_search_results;
+
+  /// No description provided for @excel_upload_refreshing.
+  ///
+  /// In en, this message translates to:
+  /// **'Refreshing timetable...'**
+  String get excel_upload_refreshing;
+
+  /// No description provided for @logout_processing.
+  ///
+  /// In en, this message translates to:
+  /// **'Logging out...'**
+  String get logout_processing;
+
+  /// No description provided for @logout_error_message.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred during logout, but moving to the initial screen.'**
+  String get logout_error_message;
+
+  /// No description provided for @data_to_be_deleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Data to be deleted'**
+  String get data_to_be_deleted;
+
+  /// No description provided for @deleting_account.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleting account...'**
+  String get deleting_account;
+
+  /// No description provided for @excel_tutorial_title.
+  ///
+  /// In en, this message translates to:
+  /// **'How to Download Excel File'**
+  String get excel_tutorial_title;
+
+  /// No description provided for @edit_profile_section.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Profile'**
+  String get edit_profile_section;
+
+  /// No description provided for @delete_account_section.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account'**
+  String get delete_account_section;
+
+  /// No description provided for @logout_section.
+  ///
+  /// In en, this message translates to:
+  /// **'Logout'**
+  String get logout_section;
+
+  /// No description provided for @location_share_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Location Sharing'**
+  String get location_share_title;
+
+  /// No description provided for @location_share_enabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Location sharing enabled'**
+  String get location_share_enabled;
+
+  /// No description provided for @location_share_disabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Location sharing disabled'**
+  String get location_share_disabled;
+
+  /// No description provided for @excel_tutorial_previous.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous'**
+  String get excel_tutorial_previous;
+
+  /// No description provided for @room_route_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Error calculating room route. Please search by building.'**
+  String get room_route_error;
+
+  /// No description provided for @location_check_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to check current location. Please try again.'**
+  String get location_check_error;
+
+  /// No description provided for @server_connection_error.
+  ///
+  /// In en, this message translates to:
+  /// **'There is a problem with server connection. Please try again later.'**
+  String get server_connection_error;
+
+  /// No description provided for @route_calculation_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Error occurred while calculating route. Please try again.'**
+  String get route_calculation_error;
+
+  /// No description provided for @try_again.
+  ///
+  /// In en, this message translates to:
+  /// **'Try Again'**
+  String get try_again;
+
+  /// No description provided for @current_location_departure.
+  ///
+  /// In en, this message translates to:
+  /// **'Depart from Current Location'**
+  String get current_location_departure;
+
+  /// No description provided for @current_location_departure_default.
+  ///
+  /// In en, this message translates to:
+  /// **'Depart from Default Location'**
+  String get current_location_departure_default;
+
+  /// No description provided for @current_location_navigation_start.
+  ///
+  /// In en, this message translates to:
+  /// **'Start navigation from current location'**
+  String get current_location_navigation_start;
+
+  /// No description provided for @excel_tutorial_next.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get excel_tutorial_next;
+
+  /// No description provided for @profile_edit_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Profile'**
+  String get profile_edit_title;
+
+  /// No description provided for @profile_edit_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You can modify your personal information'**
+  String get profile_edit_subtitle;
+
+  /// No description provided for @account_delete_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account'**
+  String get account_delete_title;
+
+  /// No description provided for @account_delete_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Permanently delete your account'**
+  String get account_delete_subtitle;
+
+  /// No description provided for @logout_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Logout'**
+  String get logout_title;
+
+  /// No description provided for @logout_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Logout from current account'**
+  String get logout_subtitle;
+
+  /// No description provided for @location_share_enabled_success.
+  ///
+  /// In en, this message translates to:
+  /// **'Location sharing has been enabled'**
+  String get location_share_enabled_success;
+
+  /// No description provided for @location_share_disabled_success.
+  ///
+  /// In en, this message translates to:
+  /// **'Location sharing has been disabled'**
+  String get location_share_disabled_success;
+
+  /// No description provided for @profile_edit_error.
+  ///
+  /// In en, this message translates to:
+  /// **'An error occurred while editing profile'**
+  String get profile_edit_error;
+
+  /// No description provided for @inquiry_load_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load inquiry list'**
+  String get inquiry_load_failed;
+
+  /// No description provided for @pull_to_refresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Pull down to refresh'**
+  String get pull_to_refresh;
+
+  /// No description provided for @app_version_number.
+  ///
+  /// In en, this message translates to:
+  /// **'v1.0.0'**
+  String get app_version_number;
+
+  /// No description provided for @developer_email_address.
+  ///
+  /// In en, this message translates to:
+  /// **'wsumap41@gmail.com'**
+  String get developer_email_address;
+
+  /// No description provided for @developer_github_url.
+  ///
+  /// In en, this message translates to:
+  /// **'https://github.com/WSU-YJB/WSUMAP'**
+  String get developer_github_url;
+
+  /// No description provided for @friend_management.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend Management'**
+  String get friend_management;
+
+  /// No description provided for @excel_tutorial_file_select.
+  ///
+  /// In en, this message translates to:
+  /// **'Select File'**
+  String get excel_tutorial_file_select;
+
+  /// No description provided for @excel_tutorial_help.
+  ///
+  /// In en, this message translates to:
+  /// **'View Instructions'**
+  String get excel_tutorial_help;
+
+  /// No description provided for @excel_upload_file_cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'File selection was cancelled.'**
+  String get excel_upload_file_cancelled;
+
+  /// No description provided for @excel_upload_success_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Timetable has been updated!'**
+  String get excel_upload_success_message;
+
+  /// No description provided for @excel_upload_refresh_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh failed: {error}'**
+  String excel_upload_refresh_failed(String error);
+
+  /// No description provided for @excel_upload_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload failed: {error}'**
+  String excel_upload_failed(String error);
+
+  /// No description provided for @excel_tutorial_step_1.
+  ///
+  /// In en, this message translates to:
+  /// **'1. Login to Woosong University Information System'**
+  String get excel_tutorial_step_1;
+
+  /// No description provided for @excel_tutorial_url.
+  ///
+  /// In en, this message translates to:
+  /// **'https://wsinfo.wsu.ac.kr'**
+  String get excel_tutorial_url;
+
+  /// No description provided for @excel_tutorial_image_load_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Unable to load image'**
+  String get excel_tutorial_image_load_error;
+
+  /// No description provided for @excel_tutorial_unknown_page.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown page'**
+  String get excel_tutorial_unknown_page;
 
   /// No description provided for @campus_navigator.
   ///
@@ -874,12 +1354,6 @@ abstract class AppLocalizations {
   /// **'Unknown error occurred'**
   String get unknown_error;
 
-  /// No description provided for @select_auth_method.
-  ///
-  /// In en, this message translates to:
-  /// **'Select Authentication Method'**
-  String get select_auth_method;
-
   /// No description provided for @woosong_campus_guide_service.
   ///
   /// In en, this message translates to:
@@ -921,6 +1395,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Guest Mode'**
   String get guest_mode;
+
+  /// No description provided for @guest_mode_confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Would you like to enter guest mode?\n\nIn guest mode, you cannot use friend features and location sharing.'**
+  String get guest_mode_confirm;
+
+  /// No description provided for @app_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Ttarausong'**
+  String get app_name;
+
+  /// No description provided for @welcome_to_ttarausong.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to Ttarausong'**
+  String get welcome_to_ttarausong;
 
   /// No description provided for @guest_mode_description.
   ///
@@ -1471,7 +1963,7 @@ abstract class AppLocalizations {
   /// No description provided for @enterFriendIdPrompt.
   ///
   /// In en, this message translates to:
-  /// **'Please enter the ID of the friend to add'**
+  /// **'Enter your friend\'s ID'**
   String get enterFriendIdPrompt;
 
   /// No description provided for @friendId.
@@ -1495,25 +1987,25 @@ abstract class AppLocalizations {
   /// No description provided for @realTimeSyncActive.
   ///
   /// In en, this message translates to:
-  /// **'Real-time sync active • Auto update'**
+  /// **'Real-time Sync Active'**
   String get realTimeSyncActive;
 
   /// No description provided for @noSentRequests.
   ///
   /// In en, this message translates to:
-  /// **'No sent friend requests'**
+  /// **'No sent requests'**
   String get noSentRequests;
 
   /// No description provided for @newFriendRequests.
   ///
   /// In en, this message translates to:
-  /// **'{count} new friend requests'**
+  /// **'{count} New Friend Requests'**
   String newFriendRequests(int count);
 
   /// No description provided for @noReceivedRequests.
   ///
   /// In en, this message translates to:
-  /// **'No received friend requests'**
+  /// **'No received requests'**
   String get noReceivedRequests;
 
   /// No description provided for @id.
@@ -1555,13 +2047,13 @@ abstract class AppLocalizations {
   /// No description provided for @noContactInfo.
   ///
   /// In en, this message translates to:
-  /// **'No contact information'**
+  /// **'No contact info'**
   String get noContactInfo;
 
   /// No description provided for @friendOfflineError.
   ///
   /// In en, this message translates to:
-  /// **'Friend is offline'**
+  /// **'Cannot view offline friend\'s location'**
   String get friendOfflineError;
 
   /// No description provided for @removeLocation.
@@ -1630,42 +2122,6 @@ abstract class AppLocalizations {
   /// **'Estimated Time'**
   String get estimated_time;
 
-  /// No description provided for @account_delete_title.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete Account'**
-  String get account_delete_title;
-
-  /// No description provided for @account_delete_subtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Permanently delete your account'**
-  String get account_delete_subtitle;
-
-  /// No description provided for @logout_title.
-  ///
-  /// In en, this message translates to:
-  /// **'Logout'**
-  String get logout_title;
-
-  /// No description provided for @logout_subtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Logout from current account'**
-  String get logout_subtitle;
-
-  /// No description provided for @location_share_enabled_success.
-  ///
-  /// In en, this message translates to:
-  /// **'Location sharing has been enabled'**
-  String get location_share_enabled_success;
-
-  /// No description provided for @location_share_disabled_success.
-  ///
-  /// In en, this message translates to:
-  /// **'Location sharing has been disabled'**
-  String get location_share_disabled_success;
-
   /// No description provided for @location_share_update_failed.
   ///
   /// In en, this message translates to:
@@ -1683,12 +2139,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No changes'**
   String get no_changes;
-
-  /// No description provided for @profile_edit_error.
-  ///
-  /// In en, this message translates to:
-  /// **'An error occurred while editing profile'**
-  String get profile_edit_error;
 
   /// No description provided for @password_confirm_title.
   ///
@@ -1747,7 +2197,7 @@ abstract class AppLocalizations {
   /// No description provided for @image_attachment.
   ///
   /// In en, this message translates to:
-  /// **'Image Attached'**
+  /// **'Image Attachment'**
   String get image_attachment;
 
   /// No description provided for @max_one_image.
@@ -1825,7 +2275,7 @@ abstract class AppLocalizations {
   /// No description provided for @inquiry_category_bug.
   ///
   /// In en, this message translates to:
-  /// **'Bug'**
+  /// **'Bug Report'**
   String get inquiry_category_bug;
 
   /// No description provided for @inquiry_category_feature.
@@ -1851,36 +2301,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Place Error'**
   String get inquiry_category_place_error;
-
-  /// No description provided for @location_share_title.
-  ///
-  /// In en, this message translates to:
-  /// **'Location Sharing'**
-  String get location_share_title;
-
-  /// No description provided for @location_share_enabled.
-  ///
-  /// In en, this message translates to:
-  /// **'Location sharing enabled'**
-  String get location_share_enabled;
-
-  /// No description provided for @location_share_disabled.
-  ///
-  /// In en, this message translates to:
-  /// **'Location sharing disabled'**
-  String get location_share_disabled;
-
-  /// No description provided for @profile_edit_title.
-  ///
-  /// In en, this message translates to:
-  /// **'Edit Profile'**
-  String get profile_edit_title;
-
-  /// No description provided for @profile_edit_subtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'You can modify your personal information'**
-  String get profile_edit_subtitle;
 
   /// No description provided for @schedule.
   ///
@@ -2254,18 +2674,6 @@ abstract class AppLocalizations {
   /// **'{hours} hours {minutes} minutes'**
   String hours_and_minutes(Object hours, Object minutes);
 
-  /// No description provided for @current_location_departure.
-  ///
-  /// In en, this message translates to:
-  /// **'Depart from current location'**
-  String get current_location_departure;
-
-  /// No description provided for @current_location.
-  ///
-  /// In en, this message translates to:
-  /// **'Current Location'**
-  String get current_location;
-
   /// No description provided for @available.
   ///
   /// In en, this message translates to:
@@ -2281,19 +2689,13 @@ abstract class AppLocalizations {
   /// No description provided for @my_location_set_as_start.
   ///
   /// In en, this message translates to:
-  /// **'My location has been set as the starting point'**
+  /// **'My location set as start point'**
   String get my_location_set_as_start;
-
-  /// No description provided for @current_location_departure_default.
-  ///
-  /// In en, this message translates to:
-  /// **'Depart from current location (default)'**
-  String get current_location_departure_default;
 
   /// No description provided for @default_location_set_as_start.
   ///
   /// In en, this message translates to:
-  /// **'Default location has been set as the starting point'**
+  /// **'Default location set as start point'**
   String get default_location_set_as_start;
 
   /// No description provided for @start_navigation.
@@ -2308,23 +2710,11 @@ abstract class AppLocalizations {
   /// **'Navigation has ended'**
   String get navigation_ended;
 
-  /// No description provided for @departure.
-  ///
-  /// In en, this message translates to:
-  /// **'Departure'**
-  String get departure;
-
   /// No description provided for @arrival.
   ///
   /// In en, this message translates to:
   /// **'Arrival'**
   String get arrival;
-
-  /// No description provided for @destination.
-  ///
-  /// In en, this message translates to:
-  /// **'Destination'**
-  String get destination;
 
   /// No description provided for @outdoor_movement_distance.
   ///
@@ -3106,12 +3496,6 @@ abstract class AppLocalizations {
   /// **'Search campus buildings'**
   String get search_campus_buildings;
 
-  /// No description provided for @no_search_results.
-  ///
-  /// In en, this message translates to:
-  /// **'No search results'**
-  String get no_search_results;
-
   /// No description provided for @building_details.
   ///
   /// In en, this message translates to:
@@ -3211,13 +3595,13 @@ abstract class AppLocalizations {
   /// No description provided for @developer_email.
   ///
   /// In en, this message translates to:
-  /// **'Email: example@email.com'**
+  /// **'Email: wsumap41@gmail.com'**
   String get developer_email;
 
   /// No description provided for @developer_github.
   ///
   /// In en, this message translates to:
-  /// **'GitHub: github.com/yourid'**
+  /// **'GitHub: github.com/WSU-YJB/WSUMAP'**
   String get developer_github;
 
   /// No description provided for @no_help_images.
@@ -3520,12 +3904,6 @@ abstract class AppLocalizations {
   /// **'Basic Info'**
   String get basic_info;
 
-  /// No description provided for @category.
-  ///
-  /// In en, this message translates to:
-  /// **'Category'**
-  String get category;
-
   /// No description provided for @status.
   ///
   /// In en, this message translates to:
@@ -3622,6 +4000,78 @@ abstract class AppLocalizations {
   /// **'Restaurant'**
   String get restaurant;
 
+  /// No description provided for @privacy_policy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacy_policy;
+
+  /// No description provided for @fire_extinguisher.
+  ///
+  /// In en, this message translates to:
+  /// **'Fire Extinguisher'**
+  String get fire_extinguisher;
+
+  /// No description provided for @my_location_route_calculating.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculating route from my location to the building. Please wait a moment.'**
+  String get my_location_route_calculating;
+
+  /// No description provided for @calculating.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculating'**
+  String get calculating;
+
+  /// No description provided for @set_both_locations.
+  ///
+  /// In en, this message translates to:
+  /// **'Please set both departure and destination'**
+  String get set_both_locations;
+
+  /// No description provided for @route_calculating.
+  ///
+  /// In en, this message translates to:
+  /// **'Calculating route...'**
+  String get route_calculating;
+
+  /// No description provided for @search_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Search Error'**
+  String get search_error;
+
+  /// No description provided for @search_initial_guide.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for a building or room'**
+  String get search_initial_guide;
+
+  /// No description provided for @search_hint_example.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. W19, Engineering Hall, Room 401'**
+  String get search_hint_example;
+
+  /// No description provided for @search_loading.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching...'**
+  String get search_loading;
+
+  /// No description provided for @search_no_result.
+  ///
+  /// In en, this message translates to:
+  /// **'No search results found'**
+  String get search_no_result;
+
+  /// No description provided for @search_try_again.
+  ///
+  /// In en, this message translates to:
+  /// **'Try a different search term'**
+  String get search_try_again;
+
   /// No description provided for @library.
   ///
   /// In en, this message translates to:
@@ -3649,8 +4099,68 @@ abstract class AppLocalizations {
   /// No description provided for @friend_location_permission_denied.
   ///
   /// In en, this message translates to:
-  /// **'{name} has not allowed location sharing.'**
+  /// **'{name} has not allowed location sharing'**
   String friend_location_permission_denied(String name);
+
+  /// No description provided for @no_friends_message.
+  ///
+  /// In en, this message translates to:
+  /// **'You have no friends.\nPlease add friends and try again.'**
+  String get no_friends_message;
+
+  /// No description provided for @offline_friends_not_displayed.
+  ///
+  /// In en, this message translates to:
+  /// **'\n{count} offline friends are not displayed.'**
+  String offline_friends_not_displayed(int count);
+
+  /// No description provided for @location_denied_friends_not_displayed.
+  ///
+  /// In en, this message translates to:
+  /// **'\n{count} friends who denied location sharing are not displayed.'**
+  String location_denied_friends_not_displayed(int count);
+
+  /// No description provided for @both_offline_and_location_denied.
+  ///
+  /// In en, this message translates to:
+  /// **'\n{offlineCount} offline friends and {locationCount} friends who denied location sharing are not displayed.'**
+  String both_offline_and_location_denied(int offlineCount, int locationCount);
+
+  /// No description provided for @all_friends_offline_or_location_denied.
+  ///
+  /// In en, this message translates to:
+  /// **'All friends are offline or have denied location sharing.\nYou can check their location when they come online and allow location sharing.'**
+  String get all_friends_offline_or_location_denied;
+
+  /// No description provided for @all_friends_offline.
+  ///
+  /// In en, this message translates to:
+  /// **'All friends are offline.\nYou can check their location when they come online.'**
+  String get all_friends_offline;
+
+  /// No description provided for @all_friends_location_denied.
+  ///
+  /// In en, this message translates to:
+  /// **'All friends have denied location sharing.\nYou can check their location when they allow location sharing.'**
+  String get all_friends_location_denied;
+
+  /// No description provided for @friends_location_display_success.
+  ///
+  /// In en, this message translates to:
+  /// **'Displayed location of {count} friends on the map.'**
+  String friends_location_display_success(int count);
+
+  /// No description provided for @friends_location_display_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot display friend locations: {error}'**
+  String friends_location_display_error(String error);
+
+  /// No description provided for @offline_friends_dialog_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} friends currently offline'**
+  String offline_friends_dialog_subtitle(int count);
 
   /// No description provided for @friend_location_display_error.
   ///
@@ -3736,77 +4246,17 @@ abstract class AppLocalizations {
   /// **'Already adding friend. Preventing duplicate submission'**
   String get already_adding_friend;
 
-  /// No description provided for @no_friends_message.
-  ///
-  /// In en, this message translates to:
-  /// **'You have no friends.\nPlease add friends and try again.'**
-  String get no_friends_message;
-
   /// No description provided for @friends_location_displayed.
   ///
   /// In en, this message translates to:
   /// **'Displayed location of {count} friends.'**
   String friends_location_displayed(int count);
 
-  /// No description provided for @offline_friends_not_displayed.
-  ///
-  /// In en, this message translates to:
-  /// **'\n{count} offline friends are not displayed.'**
-  String offline_friends_not_displayed(int count);
-
-  /// No description provided for @location_denied_friends_not_displayed.
-  ///
-  /// In en, this message translates to:
-  /// **'\n{count} friends who denied location sharing are not displayed.'**
-  String location_denied_friends_not_displayed(int count);
-
-  /// No description provided for @both_offline_and_location_denied.
-  ///
-  /// In en, this message translates to:
-  /// **'\n{offlineCount} offline friends and {locationCount} friends who denied location sharing are not displayed.'**
-  String both_offline_and_location_denied(int offlineCount, int locationCount);
-
-  /// No description provided for @all_friends_offline_or_location_denied.
-  ///
-  /// In en, this message translates to:
-  /// **'All friends are offline or have denied location sharing.\nYou can check their location when they come online and allow location sharing.'**
-  String get all_friends_offline_or_location_denied;
-
-  /// No description provided for @all_friends_offline.
-  ///
-  /// In en, this message translates to:
-  /// **'All friends are offline.\nYou can check their location when they come online.'**
-  String get all_friends_offline;
-
-  /// No description provided for @all_friends_location_denied.
-  ///
-  /// In en, this message translates to:
-  /// **'All friends have denied location sharing.\nYou can check their location when they allow location sharing.'**
-  String get all_friends_location_denied;
-
-  /// No description provided for @friends_location_display_success.
-  ///
-  /// In en, this message translates to:
-  /// **'Displayed location of {count} friends on the map.'**
-  String friends_location_display_success(int count);
-
-  /// No description provided for @friends_location_display_error.
-  ///
-  /// In en, this message translates to:
-  /// **'Cannot display friend locations: {error}'**
-  String friends_location_display_error(String error);
-
   /// No description provided for @offline_friends_dialog_title.
   ///
   /// In en, this message translates to:
   /// **'Offline Friends'**
   String get offline_friends_dialog_title;
-
-  /// No description provided for @offline_friends_dialog_subtitle.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} friends currently offline'**
-  String offline_friends_dialog_subtitle(int count);
 
   /// No description provided for @friendRequestCancelled.
   ///
@@ -3849,6 +4299,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Friend locations have been removed from the map.'**
   String get friendLocationRemovedFromMap;
+
+  /// No description provided for @info.
+  ///
+  /// In en, this message translates to:
+  /// **'Info'**
+  String get info;
 }
 
 class _AppLocalizationsDelegate
@@ -3861,8 +4317,14 @@ class _AppLocalizationsDelegate
   }
 
   @override
-  bool isSupported(Locale locale) =>
-      <String>['en', 'ko', 'zh'].contains(locale.languageCode);
+  bool isSupported(Locale locale) => <String>[
+    'en',
+    'es',
+    'ja',
+    'ko',
+    'ru',
+    'zh',
+  ].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -3873,8 +4335,14 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   switch (locale.languageCode) {
     case 'en':
       return AppLocalizationsEn();
+    case 'es':
+      return AppLocalizationsEs();
+    case 'ja':
+      return AppLocalizationsJa();
     case 'ko':
       return AppLocalizationsKo();
+    case 'ru':
+      return AppLocalizationsRu();
     case 'zh':
       return AppLocalizationsZh();
   }

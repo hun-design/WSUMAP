@@ -292,7 +292,7 @@ class FriendsTabs {
     try {
       return await AuthService().getUserList();
     } catch (e) {
-      debugPrint('사용자 목록 가져오기 오류: $e');
+      debugPrint('User list fetch error: $e');
       return [];
     }
   }
