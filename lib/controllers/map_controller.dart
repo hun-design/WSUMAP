@@ -619,7 +619,7 @@ class MapScreenController extends ChangeNotifier {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              AppLocalizations.of(context)!.offline_friends_dialog_title,
+                              AppLocalizations.of(_currentContext!)!.offline_friends_dialog_title,
                               style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w600,
@@ -628,7 +628,7 @@ class MapScreenController extends ChangeNotifier {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              AppLocalizations.of(context)!.offline_friends_dialog_subtitle(offlineCount),
+                              AppLocalizations.of(_currentContext!)!.offline_friends_dialog_subtitle(offlineCount),
                               style: TextStyle(
                                 fontSize: 14,
                                 color: Colors.grey[600],
@@ -688,7 +688,7 @@ class MapScreenController extends ChangeNotifier {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
-                                  AppLocalizations.of(context)!.offline,
+                                  AppLocalizations.of(_currentContext!)!.offline,
                                   style: TextStyle(
                                     fontSize: 10,
                                     color: Colors.grey[600],
@@ -720,7 +720,7 @@ class MapScreenController extends ChangeNotifier {
                       ),
                     ),
                     child: Text(
-                      AppLocalizations.of(context)!.confirm,
+                      AppLocalizations.of(_currentContext!)!.confirm,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 16,

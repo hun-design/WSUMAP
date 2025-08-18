@@ -21,7 +21,18 @@
     "search_hint_example",
     "search_loading",
     "search_no_result",
-    "search_try_again"
+    "search_try_again",
+    "room_info_processing_error",
+    "selection_error",
+    "building_selection_error",
+    "navigation_start_error",
+    "item_selection_error",
+    "dialog_display_error",
+    "enter_start_location",
+    "room_set_as_start",
+    "room_set_as_end",
+    "building_set_as_start",
+    "building_set_as_end"
   ],
 
   "ja": [
@@ -46,7 +57,18 @@
     "search_hint_example",
     "search_loading",
     "search_no_result",
-    "search_try_again"
+    "search_try_again",
+    "room_info_processing_error",
+    "selection_error",
+    "building_selection_error",
+    "navigation_start_error",
+    "item_selection_error",
+    "dialog_display_error",
+    "enter_start_location",
+    "room_set_as_start",
+    "room_set_as_end",
+    "building_set_as_start",
+    "building_set_as_end"
   ],
 
   "ko": [
@@ -60,25 +82,8 @@
     "clear_all",
     "searching",
     "try_different_keyword",
-    "enter_end_location",
-    "route_preview",
-    "calculating_optimal_route",
     "set_departure_and_destination",
     "start_unified_navigation",
-    "departure_indoor",
-    "to_building_exit",
-    "outdoor_movement",
-    "to_destination_building",
-    "arrival_indoor",
-    "to_final_destination",
-    "total_distance",
-    "route_type",
-    "building_to_building",
-    "room_to_building",
-    "building_to_room",
-    "room_to_room",
-    "location_to_building",
-    "unified_route",
     "status_offline",
     "status_open",
     "status_closed",
@@ -105,7 +110,6 @@
     "finding_optimal_route",
     "clear_route",
     "location_permission_denied",
-    "estimated_time",
     "image_attachment",
     "cafeteria",
     "educational_facility",
@@ -143,7 +147,18 @@
     "search_loading",
     "search_no_result",
     "search_try_again",
-    "info"
+    "info",
+    "room_info_processing_error",
+    "selection_error",
+    "building_selection_error",
+    "navigation_start_error",
+    "item_selection_error",
+    "dialog_display_error",
+    "enter_start_location",
+    "room_set_as_start",
+    "room_set_as_end",
+    "building_set_as_start",
+    "building_set_as_end"
   ],
 
   "zh": [
@@ -291,6 +306,17 @@
     "content",
     "enter_content",
     "restaurant",
-    "library"
+    "library",
+    "room_info_processing_error",
+    "selection_error",
+    "building_selection_error",
+    "navigation_start_error",
+    "item_selection_error",
+    "dialog_display_error",
+    "enter_start_location",
+    "room_set_as_start",
+    "room_set_as_end",
+    "building_set_as_start",
+    "building_set_as_end"
   ]
 }

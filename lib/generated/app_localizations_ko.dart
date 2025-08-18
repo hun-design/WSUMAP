@@ -845,13 +845,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get try_different_keyword => 'Try a different keyword';
 
   @override
-  String get enter_end_location => 'Enter destination';
+  String get enter_end_location => '도착지를 입력하세요';
 
   @override
-  String get route_preview => 'Route Preview';
+  String get route_preview => '경로 미리보기';
 
   @override
-  String get calculating_optimal_route => 'Calculating optimal route...';
+  String get calculating_optimal_route => '최적 경로를 계산하고 있습니다';
 
   @override
   String get set_departure_and_destination => 'Set departure and destination';
@@ -860,46 +860,46 @@ class AppLocalizationsKo extends AppLocalizations {
   String get start_unified_navigation => 'Start Unified Navigation';
 
   @override
-  String get departure_indoor => 'Departure (Indoor)';
+  String get departure_indoor => '실내 출발';
 
   @override
-  String get to_building_exit => 'To Building Exit';
+  String get to_building_exit => '건물 출구로';
 
   @override
-  String get outdoor_movement => 'Outdoor Movement';
+  String get outdoor_movement => '실외 이동';
 
   @override
-  String get to_destination_building => 'To Destination Building';
+  String get to_destination_building => '목적지 건물로';
 
   @override
-  String get arrival_indoor => 'Arrival (Indoor)';
+  String get arrival_indoor => '실내 도착';
 
   @override
-  String get to_final_destination => 'To Final Destination';
+  String get to_final_destination => '최종 목적지로';
 
   @override
-  String get total_distance => 'Total Distance';
+  String get total_distance => '총 거리';
 
   @override
-  String get route_type => 'Route Type';
+  String get route_type => '경로 유형';
 
   @override
-  String get building_to_building => 'Building to Building';
+  String get building_to_building => '건물 → 건물';
 
   @override
-  String get room_to_building => 'Room to Building';
+  String get room_to_building => '호실 → 건물';
 
   @override
-  String get building_to_room => 'Building to Room';
+  String get building_to_room => '건물 → 호실';
 
   @override
-  String get room_to_room => 'Room to Room';
+  String get room_to_room => '호실 → 호실';
 
   @override
-  String get location_to_building => 'Location to Building';
+  String get location_to_building => '현재 위치 → 건물';
 
   @override
-  String get unified_route => 'Unified Route';
+  String get unified_route => '통합 경로';
 
   @override
   String get status_offline => 'Offline';
@@ -1051,7 +1051,7 @@ class AppLocalizationsKo extends AppLocalizations {
       'Location permission denied.\nPlease allow location permission in settings.';
 
   @override
-  String get estimated_time => 'Estimated Time';
+  String get estimated_time => '예상 시간';
 
   @override
   String get location_share_update_failed => '위치 공유 설정 업데이트에 실패했습니다';
@@ -2230,4 +2230,37 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get info => '알림';
+
+  @override
+  String get room_info_processing_error => '방 정보 처리 중 오류가 발생했습니다';
+
+  @override
+  String get selection_error => '선택 중 오류가 발생했습니다. 다시 시도해주세요';
+
+  @override
+  String get building_selection_error => '건물 선택 중 오류가 발생했습니다. 다시 시도해주세요';
+
+  @override
+  String get navigation_start_error => '네비게이션을 시작할 수 없습니다. 경로를 다시 확인해주세요';
+
+  @override
+  String get item_selection_error => '항목 선택 중 오류가 발생했습니다';
+
+  @override
+  String get dialog_display_error => '다이얼로그 표시 중 오류가 발생했습니다';
+
+  @override
+  String get enter_start_location => '출발지를 입력하세요';
+
+  @override
+  String get room_set_as_start => '호가 출발지로 설정되었습니다';
+
+  @override
+  String get room_set_as_end => '호가 도착지로 설정되었습니다';
+
+  @override
+  String get building_set_as_start => '이 출발지로 설정되었습니다';
+
+  @override
+  String get building_set_as_end => '이 도착지로 설정되었습니다';
 }

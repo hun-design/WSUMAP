@@ -136,6 +136,7 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
   }
 
   void _handleRoomData(Map<String, dynamic> roomData) {
+    final l10n = AppLocalizations.of(context)!;
     try {
       debugPrint('=== _handleRoomData 시작 ===');
       debugPrint('받은 방 정보: $roomData');
@@ -201,7 +202,7 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('방 정보 처리 중 오류가 발생했습니다: $e'),
+            content: Text('${l10n.room_info_processing_error}: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -539,8 +540,10 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
       // 🔥 "내 위치"든 일반 건물이든 동일하게 처리
       debugPrint('✅ 건물-건물 경로: $startName → $endName');
 
-              // 🔥 내위치에서 출발하는 경우 특별 처리
-        if (startName == l10n.my_location || startName == l10n.current_location_departure) {
+      // 🔥 내위치에서 출발하는 경우 특별 처리
+      if (_startBuilding!.isMyLocation || 
+          startName == l10n.my_location || 
+          startName == l10n.current_location_departure) {
         debugPrint('📍 내위치에서 출발하는 경로 계산');
         
         // 내위치에서 건물로의 경로 계산 (기존 API 사용)
@@ -837,6 +840,7 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
 
   // 2. 검색 결과 선택 시 (건물/호실 모두 건물 코드만 사용)
   void _onSearchResultSelected(SearchResult result) {
+    final l10n = AppLocalizations.of(context)!;
     try {
       Building building;
       Map<String, dynamic>? roomInfo;
@@ -925,8 +929,8 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
       debugPrint('❌ 검색 결과 선택 오류: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('선택 중 오류가 발생했습니다. 다시 시도해주세요.'),
+          SnackBar(
+            content: Text(l10n.selection_error),
             backgroundColor: Colors.red,
             duration: Duration(seconds: 2),
           ),
@@ -936,6 +940,7 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
   }
 
   void _onBuildingSelected(Building building) {
+    final l10n = AppLocalizations.of(context)!;
     try {
       final buildingCode = _extractBuildingCode(building.name);
       final cleanBuilding = Building(
@@ -1011,8 +1016,8 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
       debugPrint('❌ 건물 선택 오류: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('건물 선택 중 오류가 발생했습니다. 다시 시도해주세요.'),
+          SnackBar(
+            content: Text(l10n.building_selection_error),
             backgroundColor: Colors.red,
             duration: Duration(seconds: 2),
           ),
@@ -1063,7 +1068,12 @@ void _setMyLocationAsStart(BuildContext context) {
         SnackBar(
           content: Row(
             children: [
-              const Icon(Icons.my_location, color: Colors.white, size: 16),
+              Image.asset(
+                'assets/images/my_location_marker.png',
+                width: 16,
+                height: 16,
+                color: Colors.white,
+              ),
               const SizedBox(width: 8),
               Text(l10n.my_location_set_as_start),  // 다국어 처리된 메시지
             ],
@@ -1353,11 +1363,12 @@ void _setMyLocationAsStart(BuildContext context) {
   }
 
   void _handleNavigationFailure() {
+    final l10n = AppLocalizations.of(context)!;
     if (mounted) {
       ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('네비게이션을 시작할 수 없습니다. 경로를 다시 확인해주세요.'),
+        SnackBar(
+          content: Text(l10n.navigation_start_error),
           backgroundColor: Colors.red,
           duration: Duration(seconds: 4),
         ),
@@ -1377,6 +1388,7 @@ void _setMyLocationAsStart(BuildContext context) {
   }
 
   void _stopNavigation() {
+    final l10n = AppLocalizations.of(context)!;
     setState(() {
       _isNavigationActive = false;
       _estimatedDistance = '';
@@ -1384,8 +1396,8 @@ void _setMyLocationAsStart(BuildContext context) {
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('길찾기가 종료되었습니다'),
+      SnackBar(
+        content: Text(l10n.navigation_ended),
         backgroundColor: Colors.grey,
         duration: Duration(seconds: 2),
       ),
@@ -1677,6 +1689,7 @@ void _setMyLocationAsStart(BuildContext context) {
   }
 
   void _handleSearchResultTap(SearchResult result) {
+    final l10n = AppLocalizations.of(context)!;
     try {
       if (_searchType != null) {
         // 길찾기 모드: 출발지/도착지 설정
@@ -1694,8 +1707,8 @@ void _setMyLocationAsStart(BuildContext context) {
       debugPrint('❌ 검색 결과 탭 처리 오류: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('항목 선택 중 오류가 발생했습니다'),
+          SnackBar(
+            content: Text(l10n.item_selection_error),
             backgroundColor: Colors.red,
           ),
         );
@@ -1705,6 +1718,7 @@ void _setMyLocationAsStart(BuildContext context) {
 
   // 🔥 강의실 검색 결과에서 팝업 다이얼로그 표시하는 메서드
   void _showRoomSelectionDialog(SearchResult result) {
+    final l10n = AppLocalizations.of(context)!;
     try {
       if (!result.isRoom) {
         debugPrint('❌ 유효하지 않은 강의실 정보');
@@ -1733,8 +1747,8 @@ void _setMyLocationAsStart(BuildContext context) {
       debugPrint('❌ 강의실 팝업 다이얼로그 표시 오류: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('다이얼로그 표시 중 오류가 발생했습니다'),
+          SnackBar(
+            content: Text(l10n.dialog_display_error),
             backgroundColor: Colors.red,
           ),
         );
@@ -1896,9 +1910,9 @@ void _setMyLocationAsStart(BuildContext context) {
             // 출발지 입력
             _buildLocationInput(
               isStartLocation: true,
-              icon: Icons.my_location,
+              icon: Icons.location_on,
               iconColor: const Color(0xFF10B981),
-              hint: '내 위치',
+              hint: l10n.enter_start_location,
               selectedBuilding: _startBuilding ?? _getDefaultMyLocation(),
               roomInfo: _startRoomInfo,
               onTap: _selectStartLocation,
@@ -2277,20 +2291,22 @@ void _setMyLocationAsStart(BuildContext context) {
   }
 
   String _getPresetMessage() {
+    final l10n = AppLocalizations.of(context)!;
+    
     if (widget.roomData != null) {
       final type = widget.roomData!['type'] ?? '';
       final roomName = widget.roomData!['roomName'] ?? '';
       final buildingName = widget.roomData!['buildingName'] ?? '';
 
       if (type == 'start') {
-        return '$buildingName $roomName호가 출발지로 설정되었습니다';
+        return '$buildingName $roomName${l10n.room_set_as_start}';
       } else {
-        return '$buildingName $roomName호가 도착지로 설정되었습니다';
+        return '$buildingName $roomName${l10n.room_set_as_end}';
       }
     } else if (widget.presetStart != null) {
-      return '${widget.presetStart!.name}이 출발지로 설정되었습니다';
+      return '${widget.presetStart!.name}${l10n.building_set_as_start}';
     } else if (widget.presetEnd != null) {
-      return '${widget.presetEnd!.name}이 도착지로 설정되었습니다';
+      return '${widget.presetEnd!.name}${l10n.building_set_as_end}';
     }
     return '';
   }
@@ -2334,7 +2350,13 @@ void _setMyLocationAsStart(BuildContext context) {
                     color: iconColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Icon(icon, color: iconColor, size: 20),
+                  child: icon == Icons.my_location
+                      ? Image.asset(
+                          'assets/images/my_location_marker.png',
+                          width: 24,
+                          height: 24,
+                        )
+                      : Icon(icon, color: iconColor, size: 20),
                 ),
                 const SizedBox(width: 16),
                 Expanded(

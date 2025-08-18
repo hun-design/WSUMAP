@@ -305,9 +305,7 @@ class UnifiedPathService {
     required Building toBuilding,
   }) async {
     // 🔥 "내 위치"인 경우 좌표 기반 요청으로 변경
-    if (fromBuilding.name == '내 위치' ||
-        fromBuilding.name == 'My Location' ||
-        fromBuilding.name == '当前位置') {
+    if (fromBuilding.isMyLocation) {
       debugPrint('🔄 "내 위치"를 좌표 기반 요청으로 변경');
       debugPrint('   좌표: (${fromBuilding.lat}, ${fromBuilding.lng})');
 
@@ -369,9 +367,7 @@ class UnifiedPathService {
     required String toRoom,
   }) async {
     // 🔥 "내 위치"인 경우 좌표 기반 요청으로 변경
-    if (fromBuilding.name == '내 위치' ||
-        fromBuilding.name == 'My Location' ||
-        fromBuilding.name == '当前位置') {
+    if (fromBuilding.isMyLocation) {
       debugPrint('🔄 "내 위치"를 좌표 기반 요청으로 변경');
       debugPrint('   좌표: (${fromBuilding.lat}, ${fromBuilding.lng})');
 

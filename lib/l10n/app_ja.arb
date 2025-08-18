@@ -574,7 +574,7 @@
   "woosong_tower_desc": "総合教育施設",
   "complex_facility": "総合施設",
   "culinary_center_w14": "調理センター (W14)",
-  "culinary_center_info": "1F\t教室/実習室\n2F\t教室/実習室\n3F\t教室/実습실\n4F\t教室/実習室\n5F\t教室/実習室",
+  "culinary_center_info": "1F\t教室/実習室\n2F\t教室/実習室\n3F\t教室/実習室\n4F\t教室/実習室\n5F\t教室/実習室",
   "culinary_center_desc": "調理専攻教育施設",
   "food_architecture_w15": "食品建築館 (W15)",
   "food_architecture_info": "B1F\t実習室\n1F\t実習室\n2F\t教室\n3F\t教室\n4F\t教室\n5F\t教室",
@@ -745,23 +745,23 @@
       }
     }
   },
-  "arrivalPoint": "도착지",
-  "friend_location_display_error": "친구 위치를 표시할 수 없습니다.",
-  "friend_location_remove_error": "위치를 제거할 수 없습니다.",
-  "phone_app_error": "전화앱을 열 수 없습니다.",
-  "add_friend_error": "친구 추가 중 오류가 발생했습니다",
-  "user_not_found": "존재하지 않는 사용자입니다",
-  "already_friend": "이미 친구인 사용자입니다",
-  "already_requested": "이미 친구 요청을 보낸 사용자입니다",
-  "cannot_add_self": "자기 자신을 친구로 추가할 수 없습니다",
-  "invalid_user_id": "잘못된 사용자 ID입니다",
-  "server_error_retry": "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요",
-  "cancel_request_description": "보낸 친구 요청을 취소합니다",
-  "enter_id_prompt": "아이디를 입력하세요",
-  "friend_request_sent_success": "친구 요청이 성공적으로 전송되었습니다",
-  "already_adding_friend": "이미 친구 추가 중입니다. 중복 제출 방지",
-  "no_friends_message": "친구가 없습니다.\n친구를 추가한 후 다시 시도해주세요.",
-  "friends_location_displayed": "친구 {count}명의 위치를 표시했습니다.",
+  "arrivalPoint": "到着地",
+  "friend_location_display_error": "友達の位置を表示できません。",
+  "friend_location_remove_error": "位置を削除できません。",
+  "phone_app_error": "電話アプリを開けません。",
+  "add_friend_error": "友達追加中にエラーが発生しました",
+  "user_not_found": "存在しないユーザーです",
+  "already_friend": "既に友達のユーザーです",
+  "already_requested": "既に友達リクエストを送信済みです",
+  "cannot_add_self": "自分自身を友達として追加できません",
+  "invalid_user_id": "無効なユーザーIDです",
+  "server_error_retry": "サーバーエラーが発生しました。しばらく後にもう一度お試しください",
+  "cancel_request_description": "送信した友達リクエストをキャンセルします",
+  "enter_id_prompt": "IDを入力してください",
+  "friend_request_sent_success": "友達リクエストが正常に送信されました",
+  "already_adding_friend": "既に友達追加中です。重複送信を防止しました",
+  "no_friends_message": "友達がいません。\n友達を追加してからもう一度お試しください。",
+  "friends_location_displayed": "友達{count}名の位置を表示しました。",
   "@friends_location_displayed": {
     "placeholders": {
       "count": {
@@ -769,7 +769,7 @@
       }
     }
   },
-  "offline_friends_not_displayed": "\n오프라인 친구 {count}명은 표시되지 않습니다.",
+  "offline_friends_not_displayed": "\nオフラインの友達{count}名は表示されません。",
   "@offline_friends_not_displayed": {
     "placeholders": {
       "count": {
@@ -777,7 +777,7 @@
       }
     }
   },
-  "location_denied_friends_not_displayed": "\n위치 공유 미허용 친구 {count}명은 표시되지 않습니다.",
+  "location_denied_friends_not_displayed": "\n位置共有を許可していない友達{count}名は表示されません。",
   "@location_denied_friends_not_displayed": {
     "placeholders": {
       "count": {
@@ -785,7 +785,7 @@
       }
     }
   },
-  "both_offline_and_location_denied": "\n오프라인 친구 {offlineCount}명, 위치 공유 미허용 친구 {locationCount}명은 표시되지 않습니다.",
+  "both_offline_and_location_denied": "\nオフラインの友達{offlineCount}名、位置共有を許可していない友達{locationCount}名は表示されません。",
   "@both_offline_and_location_denied": {
     "placeholders": {
       "offlineCount": {
@@ -796,10 +796,10 @@
       }
     }
   },
-  "all_friends_offline_or_location_denied": "모든 친구가 오프라인이거나 위치 공유를 허용하지 않습니다.\n친구가 온라인에 접속하고 위치 공유를 허용하면 위치를 확인할 수 있습니다.",
-  "all_friends_offline": "모든 친구가 오프라인 상태입니다.\n친구가 온라인에 접속하면 위치를 확인할 수 있습니다.",
-  "all_friends_location_denied": "모든 친구가 위치 공유를 허용하지 않습니다.\n친구가 위치 공유를 허용하면 위치를 확인할 수 있습니다.",
-  "friends_location_display_success": "친구 {count}명의 위치를 지도에 표시했습니다.",
+  "all_friends_offline_or_location_denied": "すべての友達がオフラインまたは位置共有を許可していません。\n友達がオンラインに接続し位置共有を許可すると位置を確認できます。",
+  "all_friends_offline": "すべての友達がオフライン状態です。\n友達がオンラインに接続すると位置を確認できます。",
+  "all_friends_location_denied": "すべての友達が位置共有を許可していません。\n友達が位置共有を許可すると位置を確認できます。",
+  "friends_location_display_success": "友達{count}名の位置を地図に表示しました。",
   "@friends_location_display_success": {
     "placeholders": {
       "count": {
@@ -807,7 +807,7 @@
       }
     }
   },
-  "friends_location_display_error": "친구 위치를 표시할 수 없습니다: {error}",
+  "friends_location_display_error": "友達の位置を表示できません：{error}",
   "@friends_location_display_error": {
     "placeholders": {
       "error": {
@@ -815,8 +815,8 @@
       }
     }
   },
-  "offline_friends_dialog_title": "오프라인 친구",
-  "offline_friends_dialog_subtitle": "현재 접속하지 않은 친구 {count}명",
+  "offline_friends_dialog_title": "オフラインの友達",
+  "offline_friends_dialog_subtitle": "現在接続していない友達{count}名",
   "@offline_friends_dialog_subtitle": {
     "placeholders": {
       "count": {
@@ -824,8 +824,8 @@
       }
     }
   },
-  "offline": "오프라인",
-  "friendRequestCancelled": "{name}님에게 보낸 친구 요청을 취소했습니다.",
+  "offline": "オフライン",
+  "friendRequestCancelled": "{name}さんに送信した友達リクエストをキャンセルしました。",
   "@friendRequestCancelled": {
     "placeholders": {
       "name": {
@@ -833,8 +833,8 @@
       }
     }
   },
-  "friendRequestCancelError": "친구 요청 취소 중 오류가 발생했습니다.",
-  "friendRequestAccepted": "{name}님의 친구 요청을 수락했습니다.",
+  "friendRequestCancelError": "友達リクエストのキャンセル中にエラーが発生しました。",
+  "friendRequestAccepted": "{name}さんの友達リクエストを承認しました。",
   "@friendRequestAccepted": {
     "placeholders": {
       "name": {
@@ -842,8 +842,8 @@
       }
     }
   },
-  "friendRequestAcceptError": "친구 요청 수락 중 오류가 발생했습니다.",
-  "friendRequestRejected": "{name}님의 친구 요청을 거절했습니다.",
+  "friendRequestAcceptError": "友達リクエストの承認中にエラーが発生しました。",
+  "friendRequestRejected": "{name}さんの友達リクエストを拒否しました。",
   "@friendRequestRejected": {
     "placeholders": {
       "name": {
@@ -851,8 +851,8 @@
       }
     }
   },
-  "friendRequestRejectError": "친구 요청 거절 중 오류가 발생했습니다.",
-  "friendLocationRemovedFromMap": "친구 위치를 지도에서 제거했습니다.",
+  "friendRequestRejectError": "友達リクエストの拒否中にエラーが発生しました。",
+  "friendLocationRemovedFromMap": "友達の位置を地図から削除しました。",
   "language_selection": "言語選択",
   "language_selection_description": "使用する言語を選択してください",
   "departure": "出発地",

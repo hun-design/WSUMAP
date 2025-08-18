@@ -15,7 +15,7 @@ class ScheduleScreen extends StatefulWidget {
 }
 
 class _ScheduleScreenState extends State<ScheduleScreen> {
-  late String _currentSemester;
+
   List<ScheduleItem> _scheduleItems = [];
   bool _isInitialized = false;
   bool _isLoading = false;
@@ -32,7 +32,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     super.didChangeDependencies();
     if (!_isInitialized) {
       _isInitialized = true;
-      _currentSemester = _getCurrentSemester();
     }
   }
 
@@ -385,7 +384,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          _currentSemester,
+                          _getCurrentSemester(),
                           style: TextStyle(
                             fontSize: isSmallScreen ? 12 : 14,
                             color: const Color(0xFF1E3A8A),
@@ -2266,11 +2265,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                           children: [
                             const Icon(Icons.directions, size: 18),
                             const SizedBox(width: 8),
-                            Text(
-                              l10n.recommend_route,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
+                            Flexible(
+                              child: Text(
+                                l10n.recommend_route,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -2296,11 +2298,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                           children: [
                             const Icon(Icons.location_on, size: 18),
                             const SizedBox(width: 8),
-                            Text(
-                              l10n.view_location,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
+                            Flexible(
+                              child: Text(
+                                l10n.view_location,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -2325,11 +2330,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                           children: [
                             const Icon(Icons.edit, size: 18),
                             const SizedBox(width: 8),
-                            Text(
-                              l10n.edit,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
+                            Flexible(
+                              child: Text(
+                                l10n.edit,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -2348,30 +2356,112 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           elevation: 2,
+                          padding: EdgeInsets.zero, // 패딩 제거로 정확한 중앙 정렬
                         ),
-                        child: const Icon(Icons.delete, size: 18),
+                        child: const Center( // Center로 감싸서 정확한 중앙 정렬
+                          child: Icon(Icons.delete, size: 18),
+                        ),
                       );
 
                       if (isSmallScreen) {
-                        return Column(
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(child: SizedBox(height: 48, child: recommendRouteButton)),
-                                const SizedBox(width: 8),
-                                Expanded(child: SizedBox(height: 48, child: viewLocationButton)),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Expanded(child: SizedBox(height: 48, child: editButton)),
-                                const SizedBox(width: 8),
-                                SizedBox(width: 48, height: 48, child: deleteButton),
-                              ],
-                            ),
-                          ],
-                        );
+                        // 작은 화면에서는 더 작은 화면인지 추가 확인
+                        final isVerySmallScreen = constraints.maxWidth < 300;
+                        
+                        if (isVerySmallScreen) {
+                          // 매우 작은 화면: 아이콘만 표시
+                          return Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: SizedBox(
+                                      height: 48,
+                                      child: ElevatedButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                          _showRecommendRoute(item);
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(0xFF1E3A8A),
+                                          foregroundColor: Colors.white,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                          elevation: 2,
+                                        ),
+                                        child: const Icon(Icons.directions, size: 18),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: SizedBox(
+                                      height: 48,
+                                      child: ElevatedButton(
+                                        onPressed: () {
+                                          debugPrint('🔘 위치 보기 버튼 클릭됨!');
+                                          Navigator.pop(context);
+                                          _showBuildingLocation(item);
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(0xFF3B82F6),
+                                          foregroundColor: Colors.white,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                          elevation: 2,
+                                        ),
+                                        child: const Icon(Icons.location_on, size: 18),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: SizedBox(
+                                      height: 48,
+                                      child: ElevatedButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                          _showEditScheduleDialog(item);
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(0xFF64748B),
+                                          foregroundColor: Colors.white,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                          elevation: 2,
+                                        ),
+                                        child: const Icon(Icons.edit, size: 18),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  SizedBox(width: 48, height: 48, child: deleteButton),
+                                ],
+                              ),
+                            ],
+                          );
+                        } else {
+                          // 작은 화면: 아이콘 + 텍스트 (오버플로우 방지)
+                          return Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(child: SizedBox(height: 48, child: recommendRouteButton)),
+                                  const SizedBox(width: 8),
+                                  Expanded(child: SizedBox(height: 48, child: viewLocationButton)),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Expanded(child: SizedBox(height: 48, child: editButton)),
+                                  const SizedBox(width: 8),
+                                  SizedBox(width: 48, height: 48, child: deleteButton),
+                                ],
+                              ),
+                            ],
+                          );
+                        }
                       } else {
                         return Row(
                           children: [

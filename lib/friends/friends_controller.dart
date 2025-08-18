@@ -49,6 +49,12 @@ class FriendsController extends ChangeNotifier {
       return;
     }
 
+    // 중복 초기화 방지
+    if (_wsService.isConnected) {
+      debugPrint('⚠️ 웹소켓이 이미 연결됨 - 초기화 건너뜀');
+      return;
+    }
+
     // 알림 서비스 초기화
     await NotificationService.initialize();
 

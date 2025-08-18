@@ -116,7 +116,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get departurePoint => '出発';
 
   @override
-  String get arrivalPoint => '도착지';
+  String get arrivalPoint => '到着地';
 
   @override
   String get all => 'すべて';
@@ -1008,7 +1008,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get online => 'オンライン';
 
   @override
-  String get offline => '오프라인';
+  String get offline => 'オフライン';
 
   @override
   String get contact => '連絡先';
@@ -1734,7 +1734,7 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get culinary_center_info =>
-      '1F\t教室/実習室\n2F\t教室/実習室\n3F\t教室/実습실\n4F\t教室/実習室\n5F\t教室/実習室';
+      '1F\t教室/実習室\n2F\t教室/実習室\n3F\t教室/実習室\n4F\t教室/実習室\n5F\t教室/実習室';
 
   @override
   String get culinary_center_desc => '調理専攻教育施設';
@@ -2111,127 +2111,164 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get no_friends_message => '친구가 없습니다.\n친구를 추가한 후 다시 시도해주세요.';
+  String get no_friends_message => '友達がいません。\n友達を追加してからもう一度お試しください。';
 
   @override
   String offline_friends_not_displayed(int count) {
-    return '\n오프라인 친구 $count명은 표시되지 않습니다.';
+    return '\nオフラインの友達$count名は表示されません。';
   }
 
   @override
   String location_denied_friends_not_displayed(int count) {
-    return '\n위치 공유 미허용 친구 $count명은 표시되지 않습니다.';
+    return '\n位置共有を許可していない友達$count名は表示されません。';
   }
 
   @override
   String both_offline_and_location_denied(int offlineCount, int locationCount) {
-    return '\n오프라인 친구 $offlineCount명, 위치 공유 미허용 친구 $locationCount명은 표시되지 않습니다.';
+    return '\nオフラインの友達$offlineCount名、位置共有を許可していない友達$locationCount名は表示されません。';
   }
 
   @override
   String get all_friends_offline_or_location_denied =>
-      '모든 친구가 오프라인이거나 위치 공유를 허용하지 않습니다.\n친구가 온라인에 접속하고 위치 공유를 허용하면 위치를 확인할 수 있습니다.';
+      'すべての友達がオフラインまたは位置共有を許可していません。\n友達がオンラインに接続し位置共有を許可すると位置を確認できます。';
 
   @override
   String get all_friends_offline =>
-      '모든 친구가 오프라인 상태입니다.\n친구가 온라인에 접속하면 위치를 확인할 수 있습니다.';
+      'すべての友達がオフライン状態です。\n友達がオンラインに接続すると位置を確認できます。';
 
   @override
   String get all_friends_location_denied =>
-      '모든 친구가 위치 공유를 허용하지 않습니다.\n친구가 위치 공유를 허용하면 위치를 확인할 수 있습니다.';
+      'すべての友達が位置共有を許可していません。\n友達が位置共有を許可すると位置を確認できます。';
 
   @override
   String friends_location_display_success(int count) {
-    return '친구 $count명의 위치를 지도에 표시했습니다.';
+    return '友達$count名の位置を地図に表示しました。';
   }
 
   @override
   String friends_location_display_error(String error) {
-    return '친구 위치를 표시할 수 없습니다: $error';
+    return '友達の位置を表示できません：$error';
   }
 
   @override
   String offline_friends_dialog_subtitle(int count) {
-    return '현재 접속하지 않은 친구 $count명';
+    return '現在接続していない友達$count名';
   }
 
   @override
-  String get friend_location_display_error => '친구 위치를 표시할 수 없습니다.';
+  String get friend_location_display_error => '友達の位置を表示できません。';
 
   @override
-  String get friend_location_remove_error => '위치를 제거할 수 없습니다.';
+  String get friend_location_remove_error => '位置を削除できません。';
 
   @override
-  String get phone_app_error => '전화앱을 열 수 없습니다.';
+  String get phone_app_error => '電話アプリを開けません。';
 
   @override
-  String get add_friend_error => '친구 추가 중 오류가 발생했습니다';
+  String get add_friend_error => '友達追加中にエラーが発生しました';
 
   @override
-  String get user_not_found => '존재하지 않는 사용자입니다';
+  String get user_not_found => '存在しないユーザーです';
 
   @override
-  String get already_friend => '이미 친구인 사용자입니다';
+  String get already_friend => '既に友達のユーザーです';
 
   @override
-  String get already_requested => '이미 친구 요청을 보낸 사용자입니다';
+  String get already_requested => '既に友達リクエストを送信済みです';
 
   @override
-  String get cannot_add_self => '자기 자신을 친구로 추가할 수 없습니다';
+  String get cannot_add_self => '自分自身を友達として追加できません';
 
   @override
-  String get invalid_user_id => '잘못된 사용자 ID입니다';
+  String get invalid_user_id => '無効なユーザーIDです';
 
   @override
-  String get server_error_retry => '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요';
+  String get server_error_retry => 'サーバーエラーが発生しました。しばらく後にもう一度お試しください';
 
   @override
-  String get cancel_request_description => '보낸 친구 요청을 취소합니다';
+  String get cancel_request_description => '送信した友達リクエストをキャンセルします';
 
   @override
-  String get enter_id_prompt => '아이디를 입력하세요';
+  String get enter_id_prompt => 'IDを入力してください';
 
   @override
-  String get friend_request_sent_success => '친구 요청이 성공적으로 전송되었습니다';
+  String get friend_request_sent_success => '友達リクエストが正常に送信されました';
 
   @override
-  String get already_adding_friend => '이미 친구 추가 중입니다. 중복 제출 방지';
+  String get already_adding_friend => '既に友達追加中です。重複送信を防止しました';
 
   @override
   String friends_location_displayed(int count) {
-    return '친구 $count명의 위치를 표시했습니다.';
+    return '友達$count名の位置を表示しました。';
   }
 
   @override
-  String get offline_friends_dialog_title => '오프라인 친구';
+  String get offline_friends_dialog_title => 'オフラインの友達';
 
   @override
   String friendRequestCancelled(String name) {
-    return '$name님에게 보낸 친구 요청을 취소했습니다.';
+    return '$nameさんに送信した友達リクエストをキャンセルしました。';
   }
 
   @override
-  String get friendRequestCancelError => '친구 요청 취소 중 오류가 발생했습니다.';
+  String get friendRequestCancelError => '友達リクエストのキャンセル中にエラーが発生しました。';
 
   @override
   String friendRequestAccepted(String name) {
-    return '$name님의 친구 요청을 수락했습니다.';
+    return '$nameさんの友達リクエストを承認しました。';
   }
 
   @override
-  String get friendRequestAcceptError => '친구 요청 수락 중 오류가 발생했습니다.';
+  String get friendRequestAcceptError => '友達リクエストの承認中にエラーが発生しました。';
 
   @override
   String friendRequestRejected(String name) {
-    return '$name님의 친구 요청을 거절했습니다.';
+    return '$nameさんの友達リクエストを拒否しました。';
   }
 
   @override
-  String get friendRequestRejectError => '친구 요청 거절 중 오류가 발생했습니다.';
+  String get friendRequestRejectError => '友達リクエストの拒否中にエラーが発生しました。';
 
   @override
-  String get friendLocationRemovedFromMap => '친구 위치를 지도에서 제거했습니다.';
+  String get friendLocationRemovedFromMap => '友達の位置を地図から削除しました。';
 
   @override
   String get info => '情報';
+
+  @override
+  String get room_info_processing_error =>
+      'Error occurred while processing room information';
+
+  @override
+  String get selection_error =>
+      'Error occurred during selection. Please try again';
+
+  @override
+  String get building_selection_error =>
+      'Error occurred while selecting building. Please try again';
+
+  @override
+  String get navigation_start_error =>
+      'Cannot start navigation. Please check the route again';
+
+  @override
+  String get item_selection_error => 'Error occurred while selecting item';
+
+  @override
+  String get dialog_display_error => 'Error occurred while displaying dialog';
+
+  @override
+  String get enter_start_location => 'Enter departure point';
+
+  @override
+  String get room_set_as_start => ' room has been set as departure point';
+
+  @override
+  String get room_set_as_end => ' room has been set as destination';
+
+  @override
+  String get building_set_as_start => ' has been set as departure point';
+
+  @override
+  String get building_set_as_end => ' has been set as destination';
 }

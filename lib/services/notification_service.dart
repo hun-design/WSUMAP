@@ -45,10 +45,18 @@ class NotificationService {
 
   // 📱 권한 요청
   static Future<void> _requestPermissions() async {
+    // 이미 권한이 요청되었는지 확인
     if (defaultTargetPlatform == TargetPlatform.android) {
+      final currentStatus = await Permission.notification.status;
+      if (currentStatus.isGranted || currentStatus.isDenied) {
+        debugPrint('📱 안드로이드 알림 권한 이미 설정됨: $currentStatus');
+        return;
+      }
+      
       final status = await Permission.notification.request();
       debugPrint('📱 안드로이드 알림 권한: $status');
     } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+      // iOS에서는 권한 상태를 확인할 수 없으므로 한 번만 요청
       final bool? result = await _notificationsPlugin
           .resolvePlatformSpecificImplementation<
             IOSFlutterLocalNotificationsPlugin

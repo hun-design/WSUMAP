@@ -1747,7 +1747,7 @@ abstract class AppLocalizations {
   /// No description provided for @calculating_optimal_route.
   ///
   /// In en, this message translates to:
-  /// **'Calculating optimal route...'**
+  /// **'Calculating optimal route'**
   String get calculating_optimal_route;
 
   /// No description provided for @set_departure_and_destination.
@@ -1765,13 +1765,13 @@ abstract class AppLocalizations {
   /// No description provided for @departure_indoor.
   ///
   /// In en, this message translates to:
-  /// **'Departure (Indoor)'**
+  /// **'Indoor Departure'**
   String get departure_indoor;
 
   /// No description provided for @to_building_exit.
   ///
   /// In en, this message translates to:
-  /// **'To Building Exit'**
+  /// **'To building exit'**
   String get to_building_exit;
 
   /// No description provided for @outdoor_movement.
@@ -1783,19 +1783,19 @@ abstract class AppLocalizations {
   /// No description provided for @to_destination_building.
   ///
   /// In en, this message translates to:
-  /// **'To Destination Building'**
+  /// **'To destination building'**
   String get to_destination_building;
 
   /// No description provided for @arrival_indoor.
   ///
   /// In en, this message translates to:
-  /// **'Arrival (Indoor)'**
+  /// **'Indoor Arrival'**
   String get arrival_indoor;
 
   /// No description provided for @to_final_destination.
   ///
   /// In en, this message translates to:
-  /// **'To Final Destination'**
+  /// **'To final destination'**
   String get to_final_destination;
 
   /// No description provided for @total_distance.
@@ -1813,31 +1813,31 @@ abstract class AppLocalizations {
   /// No description provided for @building_to_building.
   ///
   /// In en, this message translates to:
-  /// **'Building to Building'**
+  /// **'Building → Building'**
   String get building_to_building;
 
   /// No description provided for @room_to_building.
   ///
   /// In en, this message translates to:
-  /// **'Room to Building'**
+  /// **'Room → Building'**
   String get room_to_building;
 
   /// No description provided for @building_to_room.
   ///
   /// In en, this message translates to:
-  /// **'Building to Room'**
+  /// **'Building → Room'**
   String get building_to_room;
 
   /// No description provided for @room_to_room.
   ///
   /// In en, this message translates to:
-  /// **'Room to Room'**
+  /// **'Room → Room'**
   String get room_to_room;
 
   /// No description provided for @location_to_building.
   ///
   /// In en, this message translates to:
-  /// **'Location to Building'**
+  /// **'Current Location → Building'**
   String get location_to_building;
 
   /// No description provided for @unified_route.
@@ -4305,6 +4305,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Info'**
   String get info;
+
+  /// No description provided for @room_info_processing_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Error occurred while processing room information'**
+  String get room_info_processing_error;
+
+  /// No description provided for @selection_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Error occurred during selection. Please try again'**
+  String get selection_error;
+
+  /// No description provided for @building_selection_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Error occurred while selecting building. Please try again'**
+  String get building_selection_error;
+
+  /// No description provided for @navigation_start_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot start navigation. Please check the route again'**
+  String get navigation_start_error;
+
+  /// No description provided for @item_selection_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Error occurred while selecting item'**
+  String get item_selection_error;
+
+  /// No description provided for @dialog_display_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Error occurred while displaying dialog'**
+  String get dialog_display_error;
+
+  /// No description provided for @enter_start_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter departure point'**
+  String get enter_start_location;
+
+  /// No description provided for @room_set_as_start.
+  ///
+  /// In en, this message translates to:
+  /// **' room has been set as departure point'**
+  String get room_set_as_start;
+
+  /// No description provided for @room_set_as_end.
+  ///
+  /// In en, this message translates to:
+  /// **' room has been set as destination'**
+  String get room_set_as_end;
+
+  /// No description provided for @building_set_as_start.
+  ///
+  /// In en, this message translates to:
+  /// **' has been set as departure point'**
+  String get building_set_as_start;
+
+  /// No description provided for @building_set_as_end.
+  ///
+  /// In en, this message translates to:
+  /// **' has been set as destination'**
+  String get building_set_as_end;
 }
 
 class _AppLocalizationsDelegate

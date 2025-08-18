@@ -98,6 +98,22 @@ class Building {
   }
 
   bool get isOpen => status == '운영중' || status == 'open';
+  
+  /// 현재 위치인지 확인하는 getter
+  bool get isMyLocation {
+    return name == '내 위치' ||
+           name == '내위치' ||
+           name == 'My Location' ||
+           name == '当前位置' ||
+           name == 'Mi ubicación' ||
+           name == 'Мое местоположение' ||
+           name == 'マイ場所' ||
+           name == '현재위치' ||
+           name == 'Current Location' ||
+           name == 'Ubicación actual' ||
+           name == 'Текущее местоположение' ||
+           name == '現在地';
+  }
 
   String get nextStatusChangeTime {
     final now = DateTime.now();

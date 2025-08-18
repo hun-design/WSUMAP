@@ -2324,4 +2324,41 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get info => 'Información';
+
+  @override
+  String get room_info_processing_error =>
+      'Error occurred while processing room information';
+
+  @override
+  String get selection_error =>
+      'Error occurred during selection. Please try again';
+
+  @override
+  String get building_selection_error =>
+      'Error occurred while selecting building. Please try again';
+
+  @override
+  String get navigation_start_error =>
+      'Cannot start navigation. Please check the route again';
+
+  @override
+  String get item_selection_error => 'Error occurred while selecting item';
+
+  @override
+  String get dialog_display_error => 'Error occurred while displaying dialog';
+
+  @override
+  String get enter_start_location => 'Enter departure point';
+
+  @override
+  String get room_set_as_start => ' room has been set as departure point';
+
+  @override
+  String get room_set_as_end => ' room has been set as destination';
+
+  @override
+  String get building_set_as_start => ' has been set as departure point';
+
+  @override
+  String get building_set_as_end => ' has been set as destination';
 }

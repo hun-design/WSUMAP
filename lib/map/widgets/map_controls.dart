@@ -299,11 +299,17 @@ class MapControls extends StatelessWidget {
                     strokeWidth: 2,
                   ),
                 )
-              : Icon(
-                  hasLocation ? Icons.my_location : Icons.location_searching,
-                  color: const Color(0xFF1E3A8A),
-                  size: 24,
-                ),
+              : hasLocation
+                  ? Image.asset(
+                      'assets/images/my_location_marker.png',
+                      width: 24,
+                      height: 24,
+                    )
+                  : Icon(
+                      Icons.location_searching,
+                      color: const Color(0xFF1E3A8A),
+                      size: 24,
+                    ),
         ),
       ),
     );

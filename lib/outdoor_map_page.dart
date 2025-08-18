@@ -93,29 +93,27 @@ class _OutdoorMapPageState extends State<OutdoorMapPage> {
       id: 'current_location',
     ));
 
-    // 현재 위치 마커 추가
+    // 현재 위치 마커 추가 (지도와 동일한 파란 원형 스타일)
     final currentLocationMarker = NMarker(
       id: 'current_location',
       position: _currentLocation!,
       icon: await NOverlayImage.fromWidget(
         context: context,
         widget: Container(
-          width: 24,
-          height: 24,
+          width: 20,
+          height: 20,
           decoration: BoxDecoration(
-            color: const Color(0xFF3B82F6),
+            color: const Color(0xFF1E3A8A).withOpacity(0.3), // 지도와 동일한 파란색 투명
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 2),
-          ),
-          child: const Icon(
-            Icons.my_location,
-            color: Colors.white,
-            size: 14,
+            border: Border.all(
+              color: const Color(0xFF1E3A8A), // 지도와 동일한 파란색 테두리
+              width: 2,
+            ),
           ),
         ),
-        size: const Size(24, 24),
+        size: const Size(20, 20),
       ),
-      size: const Size(24, 24),
+      size: const Size(20, 20),
     );
 
     _mapController!.addOverlay(currentLocationMarker);
