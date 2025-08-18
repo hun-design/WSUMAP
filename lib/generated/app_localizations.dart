@@ -3763,7 +3763,7 @@ abstract class AppLocalizations {
   /// No description provided for @inquiry_default_answer.
   ///
   /// In en, this message translates to:
-  /// **'This is the answer to your inquiry. Please contact us if you have further questions.'**
+  /// **'This is the answer to your inquiry. If you have any additional questions, please feel free to contact us.'**
   String get inquiry_default_answer;
 
   /// No description provided for @answer_date_prefix.

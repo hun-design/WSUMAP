@@ -915,5 +915,14 @@
         "type": "int"
       }
     }
-  }
+  },
+  "image_attachment": "Прикрепить изображение",
+  "waiting_answer_status": "Ожидание ответа",
+  "waiting_answer_message": "Мы рассматриваем ваш запрос. Мы ответим вам как можно скорее.",
+  "attached_image": "Прикрепленное изображение",
+  "answer_section_title": "Ответ",
+  "inquiry_default_answer": "Это ответ на ваш запрос. Если у вас есть дополнительные вопросы, не стесняйтесь обращаться к нам в любое время.",
+  "answer_date_prefix": "Дата ответа:",
+  "status_pending": "Ожидание ответа",
+  "status_answered": "Ответ получен"
 }

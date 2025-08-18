@@ -909,5 +909,14 @@
   "friend_management": "友達管理",
   "confirm": "確認",
   "cancel": "キャンセル",
-  "info": "情報"
+  "info": "情報",
+  "image_attachment": "画像添付",
+  "waiting_answer_status": "回答待ち",
+  "waiting_answer_message": "お問い合わせいただいた内容を確認中です。できるだけ早く回答いたします。",
+  "attached_image": "添付画像",
+  "answer_section_title": "回答",
+  "inquiry_default_answer": "お問い合わせいただいた内容への回答です。追加のご質問がございましたら、いつでもお気軽にお問い合わせください。",
+  "answer_date_prefix": "回答日：",
+  "status_pending": "回答待ち",
+  "status_answered": "回答完了"
 }

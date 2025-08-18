@@ -1141,7 +1141,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get excel_file_tutorial => 'Cómo usar archivo Excel';
 
   @override
-  String get image_attachment => 'Image Attachment';
+  String get image_attachment => 'Adjuntar imagen';
 
   @override
   String get max_one_image => 'Máximo 1 imagen';

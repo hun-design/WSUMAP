@@ -6,6 +6,8 @@ import '../auth/user_auth.dart';
 import '../components/woosong_input_field.dart';
 import '../components/woosong_button.dart';
 import '../generated/app_localizations.dart';
+import '../welcome_view.dart';
+import '../map/map_screen.dart';
 
 class LoginFormView extends StatefulWidget {
   const LoginFormView({super.key});
@@ -77,8 +79,11 @@ class _LoginFormViewState extends State<LoginFormView> with TickerProviderStateM
     );
 
     if (success && mounted) {
-      // 홈(route.isFirst)로 돌아가도록만 처리하고, 홈에서 상태 기반으로 MapScreen을 렌더링
-      Navigator.of(context).popUntil((route) => route.isFirst);
+      // 로그인 성공 후 MapScreen으로 이동
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const MapScreen()),
+        (route) => false,
+      );
     } else if (mounted) {
       _showErrorDialog(userAuth.lastError ?? l10n.login_error);
     }
@@ -195,8 +200,11 @@ class _LoginFormViewState extends State<LoginFormView> with TickerProviderStateM
       await userAuth.loginAsGuest(context: context);
 
       if (mounted) {
-        // 홈(route.isFirst)로 돌아가도록만 처리하고, 홈에서 상태 기반으로 MapScreen을 렌더링
-        Navigator.of(context).popUntil((route) => route.isFirst);
+        // 게스트 로그인 후 MapScreen으로 이동
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const MapScreen()),
+          (route) => false,
+        );
       }
     }
   }

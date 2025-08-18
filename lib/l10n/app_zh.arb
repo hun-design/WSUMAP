@@ -892,5 +892,14 @@
   "my_location_set_as_start": "我的位置已设为起点",
   "default_location_set_as_start": "默认位置已设为起点",
   "searchHint": "按建筑物或房间搜索",
-  "searchHintExample": "例如：W19、工程馆、401室"
+  "searchHintExample": "例如：W19、工程馆、401室",
+  "image_attachment": "图片附件",
+  "waiting_answer_status": "等待答复",
+  "waiting_answer_message": "我们正在审核您的查询，将尽快回复。",
+  "attached_image": "附加图片",
+  "answer_section_title": "答复",
+  "inquiry_default_answer": "这是您查询的答复。如有其他问题，请随时联系我们。",
+  "answer_date_prefix": "答复日期：",
+  "status_pending": "等待中",
+  "status_answered": "已答复"
 }

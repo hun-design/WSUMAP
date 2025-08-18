@@ -854,10 +854,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get calculating_optimal_route => '최적 경로를 계산하고 있습니다';
 
   @override
-  String get set_departure_and_destination => 'Set departure and destination';
+  String get set_departure_and_destination => '출발지와 도착지를 설정하세요';
 
   @override
-  String get start_unified_navigation => 'Start Unified Navigation';
+  String get start_unified_navigation => '통합 내비게이션 시작';
 
   @override
   String get departure_indoor => '실내 출발';
@@ -1090,7 +1090,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get excel_file_tutorial => '엑셀 파일 사용법';
 
   @override
-  String get image_attachment => 'Image Attachment';
+  String get image_attachment => '사진 첨부';
 
   @override
   String get max_one_image => '최대 1장';
@@ -1917,30 +1917,28 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get attached_image => 'Attached Image';
+  String get attached_image => '첨부된 이미지';
 
   @override
-  String get answer_section_title => 'Answer';
+  String get answer_section_title => '답변';
 
   @override
-  String get inquiry_default_answer =>
-      'This is the answer to your inquiry. Please contact us if you have further questions.';
+  String get inquiry_default_answer => '문의에 대한 답변입니다. 추가 문의사항이 있으시면 언제든 연락주세요.';
 
   @override
-  String get answer_date_prefix => 'Answered on:';
+  String get answer_date_prefix => '답변일:';
 
   @override
-  String get waiting_answer_status => 'Waiting for answer';
+  String get waiting_answer_status => '답변 대기';
 
   @override
-  String get waiting_answer_message =>
-      'We are reviewing your inquiry and will reply as soon as possible.';
+  String get waiting_answer_message => '문의 내용을 검토 중입니다. 최대한 빨리 답변드리겠습니다.';
 
   @override
-  String get status_pending => 'Pending';
+  String get status_pending => '답변 대기';
 
   @override
-  String get status_answered => 'Answered';
+  String get status_answered => '답변 완료';
 
   @override
   String get cancelRequest => '요청 취소';

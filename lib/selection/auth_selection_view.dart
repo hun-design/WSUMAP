@@ -9,6 +9,7 @@ import '../generated/app_localizations.dart';
 import 'package:flutter_application_1/welcome_view.dart';
 import '../providers/app_language_provider.dart';
 import '../providers/category_provider.dart';
+import '../map/map_screen.dart';
 
 class AuthSelectionView extends StatefulWidget {
   const AuthSelectionView({super.key});
@@ -330,8 +331,11 @@ class _AuthSelectionViewState extends State<AuthSelectionView>
     ]);
     
     if (mounted) {
-      // 홈(route.isFirst)로 돌아가도록만 처리하고, 홈에서 상태 기반으로 MapScreen을 렌더링
-      Navigator.of(context).popUntil((route) => route.isFirst);
+      // 게스트 로그인 후 MapScreen으로 이동
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const MapScreen()),
+        (route) => false,
+      );
     }
   }
 
@@ -481,12 +485,12 @@ Widget _buildHeader(AppLocalizations l10n) {
           
           // 약간의 지연 후 네비게이션 (상태 변경이 적용되도록)
           Future.delayed(const Duration(milliseconds: 100), () {
-Navigator.of(context).pushAndRemoveUntil(
-  MaterialPageRoute(
-    builder: (context) => const WelcomeView(),
-  ),
-  (route) => false,
-);
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (context) => const MapScreen(),
+            ),
+            (route) => false,
+          );
           });
         },
         icon: const Icon(

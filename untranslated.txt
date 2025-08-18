@@ -6,7 +6,6 @@
     "route_calculation_error",
     "try_again",
     "current_location_navigation_start",
-    "image_attachment",
     "cafeteria",
     "educational_facility",
     "operating",
@@ -42,7 +41,6 @@
     "route_calculation_error",
     "try_again",
     "current_location_navigation_start",
-    "image_attachment",
     "cafeteria",
     "educational_facility",
     "operating",
@@ -82,8 +80,6 @@
     "clear_all",
     "searching",
     "try_different_keyword",
-    "set_departure_and_destination",
-    "start_unified_navigation",
     "status_offline",
     "status_open",
     "status_closed",
@@ -110,18 +106,9 @@
     "finding_optimal_route",
     "clear_route",
     "location_permission_denied",
-    "image_attachment",
     "cafeteria",
     "educational_facility",
-    "operating",
-    "attached_image",
-    "answer_section_title",
-    "inquiry_default_answer",
-    "answer_date_prefix",
-    "waiting_answer_status",
-    "waiting_answer_message",
-    "status_pending",
-    "status_answered"
+    "operating"
   ],
 
   "ru": [
@@ -131,7 +118,6 @@
     "route_calculation_error",
     "try_again",
     "current_location_navigation_start",
-    "image_attachment",
     "cafeteria",
     "educational_facility",
     "operating",
@@ -162,7 +148,6 @@
   ],
 
   "zh": [
-    "image_attachment",
     "educational_facility",
     "operating",
     "sol_cafe",

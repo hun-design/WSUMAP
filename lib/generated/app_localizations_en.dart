@@ -1974,7 +1974,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inquiry_default_answer =>
-      'This is the answer to your inquiry. Please contact us if you have further questions.';
+      'This is the answer to your inquiry. If you have any additional questions, please feel free to contact us.';
 
   @override
   String get answer_date_prefix => 'Answered on:';

@@ -1079,7 +1079,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get excel_file_tutorial => 'Excel文件教程';
 
   @override
-  String get image_attachment => 'Image Attachment';
+  String get image_attachment => '图片附件';
 
   @override
   String get max_one_image => '最多1张';

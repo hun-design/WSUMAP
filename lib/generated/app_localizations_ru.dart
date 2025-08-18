@@ -1142,7 +1142,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get excel_file_tutorial => 'Как использовать файл Excel';
 
   @override
-  String get image_attachment => 'Image Attachment';
+  String get image_attachment => 'Прикрепить изображение';
 
   @override
   String get max_one_image => 'Максимум 1 изображение';

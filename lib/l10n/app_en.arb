@@ -813,7 +813,7 @@
   "inquiry_category_other": "Other",
   "attached_image": "Attached Image",
   "answer_section_title": "Answer",
-  "inquiry_default_answer": "This is the answer to your inquiry. Please contact us if you have further questions.",
+  "inquiry_default_answer": "This is the answer to your inquiry. If you have any additional questions, please feel free to contact us.",
   "answer_date_prefix": "Answered on:",
   "waiting_answer_status": "Waiting for answer",
   "waiting_answer_message": "We are reviewing your inquiry and will reply as soon as possible.",
@@ -1092,5 +1092,14 @@
   "room_set_as_start": " room has been set as departure point",
   "room_set_as_end": " room has been set as destination",
   "building_set_as_start": " has been set as departure point",
-  "building_set_as_end": " has been set as destination"
+  "building_set_as_end": " has been set as destination",
+  "image_attachment": "Image Attachment",
+  "waiting_answer_status": "Waiting for answer",
+  "waiting_answer_message": "We are reviewing your inquiry and will reply as soon as possible.",
+  "attached_image": "Attached Image",
+  "answer_section_title": "Answer",
+  "inquiry_default_answer": "This is the answer to your inquiry. If you have any additional questions, please feel free to contact us.",
+  "answer_date_prefix": "Answered on:",
+  "status_pending": "Pending",
+  "status_answered": "Answered"
 }

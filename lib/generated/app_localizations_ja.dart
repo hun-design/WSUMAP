@@ -1094,7 +1094,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get excel_file_tutorial => 'エクセルファイルの使い方';
 
   @override
-  String get image_attachment => 'Image Attachment';
+  String get image_attachment => '画像添付';
 
   @override
   String get max_one_image => '最大1枚';

@@ -871,5 +871,16 @@
   "room_set_as_start": "호가 출발지로 설정되었습니다",
   "room_set_as_end": "호가 도착지로 설정되었습니다",
   "building_set_as_start": "이 출발지로 설정되었습니다",
-  "building_set_as_end": "이 도착지로 설정되었습니다"
+  "building_set_as_end": "이 도착지로 설정되었습니다",
+  "image_attachment": "사진 첨부",
+  "waiting_answer_status": "답변 대기",
+  "waiting_answer_message": "문의 내용을 검토 중입니다. 최대한 빨리 답변드리겠습니다.",
+  "attached_image": "첨부된 이미지",
+  "answer_section_title": "답변",
+  "inquiry_default_answer": "문의에 대한 답변입니다. 추가 문의사항이 있으시면 언제든 연락주세요.",
+  "answer_date_prefix": "답변일:",
+  "status_pending": "답변 대기",
+  "status_answered": "답변 완료",
+  "set_departure_and_destination": "출발지와 도착지를 설정하세요",
+  "start_unified_navigation": "통합 내비게이션 시작"
 }

@@ -909,5 +909,14 @@
   "welcome_to_ttarausong": "Bienvenido a Ttarausong",
   "success": "Éxito",
   "error": "Error",
-  "info": "Información"
+  "info": "Información",
+  "image_attachment": "Adjuntar imagen",
+  "waiting_answer_status": "Esperando respuesta",
+  "waiting_answer_message": "Estamos revisando su consulta. Le responderemos lo antes posible.",
+  "attached_image": "Imagen adjunta",
+  "answer_section_title": "Respuesta",
+  "inquiry_default_answer": "Esta es la respuesta a su consulta. Si tiene preguntas adicionales, no dude en contactarnos en cualquier momento.",
+  "answer_date_prefix": "Fecha de respuesta:",
+  "status_pending": "Pendiente de respuesta",
+  "status_answered": "Respondido"
 }
