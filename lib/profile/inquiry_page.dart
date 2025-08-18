@@ -245,33 +245,7 @@ void didChangeDependencies() {
               ),
               const SizedBox(height: 16),
 
-              // 개인정보 처리방침 버튼
-              Center(
-                child: TextButton.icon(
-                  onPressed: () => _openPrivacyPolicy(),
-                  icon: const Icon(
-                    Icons.privacy_tip_outlined,
-                    size: 18,
-                    color: Color(0xFF1E3A8A),
-                  ),
-                  label: Text(
-                    l10n.privacy_policy,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF1E3A8A),
-                      fontWeight: FontWeight.w500,
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    backgroundColor: const Color(0xFF1E3A8A).withOpacity(0.05),
-                  ),
-                ),
-              ),
+
             ],
           ),
         ),
@@ -566,6 +540,7 @@ void didChangeDependencies() {
         GestureDetector(
           onTap: _selectedImages.isNotEmpty ? null : _showImagePickerDialog,
           child: Container(
+            width: double.infinity, // 양옆으로 꽉 차게 설정
             height: 120,
             decoration: BoxDecoration(
               color: _selectedImages.isNotEmpty
@@ -863,42 +838,7 @@ void didChangeDependencies() {
     }
   }
 
-    /// 개인정보 처리방침 열기
-  Future<void> _openPrivacyPolicy() async {
-    final url = Uri.parse('https://github.com/myhyun01/wsumap');
-    
-    try {
-      // GitHub 저장소를 브라우저에서 열기
-      if (await canLaunchUrl(url)) {
-        await launchUrl(
-          url,
-          mode: LaunchMode.externalApplication, // 외부 브라우저에서 열기
-        );
-      } else {
-        // 링크를 열 수 없는 경우 클립보드에 복사
-        await Clipboard.setData(ClipboardData(text: url.toString()));
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('GitHub 링크가 클립보드에 복사되었습니다.'),
-              backgroundColor: Colors.orange,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      // 오류 발생 시 클립보드에 복사
-      await Clipboard.setData(ClipboardData(text: url.toString()));
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('링크 열기 실패. GitHub 링크가 클립보드에 복사되었습니다.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
+
 
   Future<void> _submitInquiry() async {
   if (_isDisposed) return;

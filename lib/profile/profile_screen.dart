@@ -1,5 +1,6 @@
 // lib/profile/profile_screen.dart - 완전 수정된 버전
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/auth/user_auth.dart';
 import 'package:flutter_application_1/selection/auth_selection_view.dart';
@@ -9,6 +10,7 @@ import 'package:flutter_application_1/services/auth_service.dart';
 import 'package:flutter_application_1/services/websocket_service.dart'; // 🔥 WebSocket 추가
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_application_1/providers/app_language_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'help_page.dart';
 import 'app_info_page.dart';
@@ -600,6 +602,13 @@ class _ProfileScreenState extends State<ProfileScreen>
           'subtitle': l10n.inquiry_content_hint,
           'color': const Color(0xFFF59E0B),
         },
+      // 🔥 개인정보 처리 방침 버튼 추가
+      {
+        'icon': Icons.privacy_tip_outlined,
+        'title': l10n.privacy_policy,
+        'subtitle': '개인정보 처리 방침을 확인하세요',
+        'color': const Color(0xFF8B5CF6),
+      },
     ];
 
     return Column(
@@ -1199,6 +1208,8 @@ class _ProfileScreenState extends State<ProfileScreen>
         context,
         MaterialPageRoute(builder: (_) => InquiryPage(userAuth: userAuth)),
       );
+    } else if (title == l10n.privacy_policy) {
+      _openPrivacyPolicy();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1816,5 +1827,83 @@ class _ProfileScreenState extends State<ProfileScreen>
       MaterialPageRoute(builder: (_) => const WelcomeView()),
       (route) => false,
     );
+  }
+
+  /// ================================
+  /// 개인정보 처리 방침 열기
+  /// ================================
+  Future<void> _openPrivacyPolicy() async {
+    // 현재 언어 설정에 따라 다른 링크로 이동
+    final currentLocale = Localizations.localeOf(context);
+    final languageCode = currentLocale.languageCode;
+    
+    String privacyPolicyUrl;
+    String languageName;
+    
+    switch (languageCode) {
+      case 'ko':
+        privacyPolicyUrl = 'https://www.notion.so/24c8988c2e2f80bd9c42c99bbbeb034b?source=copy_link';
+        languageName = '한국어';
+        break;
+      case 'en':
+        privacyPolicyUrl = 'https://www.notion.so/Privacy-Policy-ENG-24e8988c2e2f80bb9349cc2bdbc740fc?source=copy_link';
+        languageName = '영어';
+        break;
+      case 'ja':
+        privacyPolicyUrl = 'https://www.notion.so/JPN-24e8988c2e2f80fcad4fc246c3911127?source=copy_link';
+        languageName = '일본어';
+        break;
+      case 'zh':
+        privacyPolicyUrl = 'https://www.notion.so/CHN-24e8988c2e2f808fbda0e94c4d92212d?source=copy_link';
+        languageName = '중국어';
+        break;
+      case 'ru':
+        privacyPolicyUrl = 'https://www.notion.so/RUS-24e8988c2e2f80d88872cafc31bfd06c?source=copy_link';
+        languageName = '러시아어';
+        break;
+      case 'es':
+        privacyPolicyUrl = 'https://www.notion.so/Pol-tica-de-Privacidad-ES-24e8988c2e2f80e1abcce5dbfac4fcd9?source=copy_link';
+        languageName = '스페인어';
+        break;
+      default:
+        // 기본값은 영어
+        privacyPolicyUrl = 'https://www.notion.so/Privacy-Policy-ENG-24e8988c2e2f80bb9349cc2bdbc740fc?source=copy_link';
+        languageName = '영어';
+        break;
+    }
+    
+    final url = Uri.parse(privacyPolicyUrl);
+    
+    try {
+      // 개인정보 처리 방침 페이지를 브라우저에서 열기
+      if (await canLaunchUrl(url)) {
+        await launchUrl(
+          url,
+          mode: LaunchMode.externalApplication, // 외부 브라우저에서 열기
+        );
+      } else {
+        // 링크를 열 수 없는 경우 클립보드에 복사
+        await Clipboard.setData(ClipboardData(text: url.toString()));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$languageName 개인정보 처리 방침 링크가 클립보드에 복사되었습니다.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // 오류 발생 시 클립보드에 복사
+      await Clipboard.setData(ClipboardData(text: url.toString()));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('$languageName 개인정보 처리 방침 링크 열기 실패. 링크가 클립보드에 복사되었습니다.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }
