@@ -606,7 +606,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       {
         'icon': Icons.privacy_tip_outlined,
         'title': l10n.privacy_policy,
-        'subtitle': '개인정보 처리 방침을 확인하세요',
+        'subtitle': l10n.privacy_policy_subtitle,
         'color': const Color(0xFF8B5CF6),
       },
     ];

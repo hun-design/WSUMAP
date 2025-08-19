@@ -93,7 +93,7 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
 
     // 🔥 이미 연결되어 있고 같은 사용자인 경우
     if (_isConnected && _userId == userId) {
-      debugPrint('⚠️ 이미 연결되어 있습니다: $userId');
+      debugPrint('✅ 이미 연결되어 있습니다: $userId');
       return;
     }
 
@@ -552,6 +552,31 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     await disconnect();
 
     debugPrint('✅ 로그아웃 및 웹소켓 연결 해제 완료');
+  }
+
+  // 🔥 로그아웃 알림만 전송 (웹소켓 연결은 유지)
+  Future<void> sendLogoutNotification() async {
+    debugPrint('🚪 로그아웃 알림 전송 시작 (웹소켓 연결 유지)...');
+
+    if (!_isConnected || _userId == null) {
+      debugPrint('⚠️ 웹소켓이 연결되지 않음 - 로그아웃 알림 전송 불가');
+      return;
+    }
+
+    try {
+      // 🔥 서버에 로그아웃 알림 메시지 전송
+      _sendMessage({
+        'type': 'logout',
+        'userId': _userId,
+        'timestamp': DateTime.now().toIso8601String(),
+      });
+
+      // 서버가 메시지를 처리할 시간 확보
+      await Future.delayed(const Duration(milliseconds: 200));
+      debugPrint('✅ 로그아웃 알림 전송 완료 (웹소켓 연결 유지)');
+    } catch (e) {
+      debugPrint('❌ 로그아웃 알림 전송 실패: $e');
+    }
   }
 
   // 📤 메시지 전송 (연결 상태 체크 포함)

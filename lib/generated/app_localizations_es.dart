@@ -2135,7 +2135,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get restaurant => 'Restaurante';
 
   @override
-  String get privacy_policy => 'Privacy Policy';
+  String get privacy_policy => 'Política de Privacidad';
+
+  @override
+  String get privacy_policy_subtitle => 'Consulte la Política de Privacidad';
 
   @override
   String get fire_extinguisher => 'Fire Extinguisher';

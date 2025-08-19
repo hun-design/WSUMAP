@@ -2052,6 +2052,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get privacy_policy => '개인정보 처리방침';
 
   @override
+  String get privacy_policy_subtitle => '개인정보 처리 방침을 확인하세요';
+
+  @override
   String get fire_extinguisher => '소화기';
 
   @override

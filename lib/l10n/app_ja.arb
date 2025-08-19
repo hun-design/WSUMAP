@@ -918,5 +918,7 @@
   "inquiry_default_answer": "お問い合わせいただいた内容への回答です。追加のご質問がございましたら、いつでもお気軽にお問い合わせください。",
   "answer_date_prefix": "回答日：",
   "status_pending": "回答待ち",
-  "status_answered": "回答完了"
+  "status_answered": "回答完了",
+  "privacy_policy": "プライバシーポリシー",
+  "privacy_policy_subtitle": "プライバシーポリシーをご確認ください"
 }

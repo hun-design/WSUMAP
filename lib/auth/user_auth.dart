@@ -229,12 +229,13 @@ class UserAuth extends ChangeNotifier {
       if (_userId != null && _userId != 'guest' && _userId != 'admin') {
         debugPrint('🔄 서버 전용 로그아웃 시도 - 사용자: $_userId');
 
-        // 🔥 1. 먼저 웹소켓을 통해 친구들에게 로그아웃 알림 전송
+        // 🔥 1. 먼저 웹소켓을 통해 친구들에게 로그아웃 알림 전송 (웹소켓 연결은 유지)
         try {
           final wsService = WebSocketService();
           if (wsService.isConnected) {
             debugPrint('🔥 서버 전용 로그아웃: 웹소켓을 통한 로그아웃 알림 전송');
-            await wsService.logoutAndDisconnect();
+            // 🔥 웹소켓 연결은 유지하고 로그아웃 알림만 전송
+            await wsService.sendLogoutNotification();
             debugPrint('✅ 서버 전용 로그아웃: 웹소켓 로그아웃 알림 완료');
           } else {
             debugPrint('ℹ️ 서버 전용 로그아웃: 웹소켓이 연결되지 않음');
@@ -535,10 +536,11 @@ class UserAuth extends ChangeNotifier {
       if (_userRole == UserRole.external || !rememberMe) {
         debugPrint('🔄 자동 로그아웃 실행 - 사용자: $_userId, 역할: $_userRole');
 
-        // 🔥 자동 로그아웃 시 위치 전송 중지 및 웹소켓 연결 해제
+        // 🔥 자동 로그아웃 시 위치 전송만 중지 (웹소켓 연결은 유지)
         if (context != null) {
           _stopLocationSending(context);
-          _stopWebSocketConnection();
+          // 🔥 웹소켓 연결은 유지 (실시간 통신 필요)
+          debugPrint('✅ 자동 로그아웃 - 위치 전송만 중지, 웹소켓 연결 유지');
         }
 
         if (_userId != null && _userId != 'guest' && _userId != 'admin') {
@@ -677,13 +679,8 @@ class UserAuth extends ChangeNotifier {
 
   /// 🔥 회원 탈퇴 - 위치 전송 중지 및 웹소켓 연결 해제 추가
   Future<bool> deleteAccount({BuildContext? context}) async {
-    if (_userId == null || !_isLoggedIn) {
-      if (context != null) {
-        final l10n = AppLocalizations.of(context)!;
-        _setError(l10n.login_required);
-      } else {
-        _setError('로그인이 필요합니다.');
-      }
+    if (_userId == null) {
+      _setError('사용자 ID가 없습니다.');
       return false;
     }
 
@@ -691,10 +688,11 @@ class UserAuth extends ChangeNotifier {
     _clearError();
 
     try {
-      // 🔥 회원 탈퇴 시 위치 전송 중지 및 웹소켓 연결 해제
+      // 🔥 회원 탈퇴 시 위치 전송만 중지 (웹소켓 연결은 유지)
       if (context != null) {
         _stopLocationSending(context);
-        _stopWebSocketConnection();
+        // 🔥 웹소켓 연결은 유지 (실시간 통신 필요)
+        debugPrint('✅ 회원 탈퇴 - 위치 전송만 중지, 웹소켓 연결 유지');
       }
 
       final result = await AuthService.deleteUser(id: _userId!);

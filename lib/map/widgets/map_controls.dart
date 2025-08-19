@@ -300,10 +300,10 @@ class MapControls extends StatelessWidget {
                   ),
                 )
               : hasLocation
-                  ? Image.asset(
-                      'assets/images/my_location_marker.png',
-                      width: 24,
-                      height: 24,
+                  ? const Icon(
+                      Icons.my_location,
+                      color: Color(0xFF1E3A8A),
+                      size: 24,
                     )
                   : Icon(
                       Icons.location_searching,

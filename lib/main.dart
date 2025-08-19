@@ -129,20 +129,23 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
       }
     });
 
-    // 네트워크 상태 변화 감지 및 WebSocket 재연결
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((
-      List<ConnectivityResult> results,
-    ) {
-      // 하나라도 연결된 네트워크가 있으면 재연결 시도 (게스트 모드 제외)
-      final hasConnection = results.any((r) => r != ConnectivityResult.none);
-      if (hasConnection &&
-          !_disposed &&
-          _userAuth.isLoggedIn &&
+    // 🔥 네트워크 상태 변경 감지
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((result) {
+      debugPrint('🌐 네트워크 상태 변경: $result');
+      
+      // 🔥 게스트가 아닌 로그인 사용자에게만 위치 전송 및 웹소켓 연결
+      if (_userAuth.isLoggedIn &&
           _userAuth.userId != null &&
           !_userAuth.userId!.startsWith('guest_') &&
           _userAuth.userRole != UserRole.external) {
-        WebSocketService().connect(_userAuth.userId!);
-        debugPrint('🌐 네트워크 변경 감지 - 웹소켓 재연결 시도');
+        
+        // 🔥 웹소켓 연결은 이미 앱 초기화 시에 완료되었으므로 재연결하지 않음
+        final wsService = WebSocketService();
+        if (wsService.isConnected) {
+          debugPrint('🌐 네트워크 변경 감지 - 웹소켓 이미 연결됨');
+        } else {
+          debugPrint('⚠️ 네트워크 변경 감지 - 웹소켓 연결되지 않음 (앱 초기화에서 처리)');
+        }
       }
     });
   }
@@ -232,50 +235,39 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
         await _userAuth.autoLoginToServer();
       }
 
-      // 위치 전송 및 웹소켓 연결 재시작
+      // 위치 전송만 재시작 (웹소켓은 이미 연결되어 있음)
       _locationManager.startPeriodicLocationSending(userId: _userAuth.userId!);
-      WebSocketService().connect(_userAuth.userId!);
+      
+      // 🔥 웹소켓 연결은 이미 앱 초기화 시에 완료되었으므로 재연결하지 않음
+      final wsService = WebSocketService();
+      if (wsService.isConnected) {
+        debugPrint('✅ 포그라운드 복귀 - 웹소켓 이미 연결됨');
+      } else {
+        debugPrint('⚠️ 포그라운드 복귀 - 웹소켓 연결되지 않음 (앱 초기화에서 처리)');
+      }
     } catch (e) {
       debugPrint('❌ 포그라운드 복귀 처리 오류: $e');
     }
   }
 
-  /// 🔥 백그라운드 이동 시 - 플랫폼 무관하게 위치 전송 및 웹소켓 연결 중지
+  /// 백그라운드 이동
   Future<void> _handleAppPaused() async {
-    _systemUIResetTimer?.cancel(); // 👈 백그라운드 이동 시 타이머 중지
+    debugPrint('📱 앱 백그라운드 이동 처리');
 
-    // 🔥 iOS에서는 백그라운드 이동 시에도 즉시 로그아웃 처리 (앱 강제 종료 대응)
-    if (Platform.isIOS) {
-      await _handleAppDetached();
+    // 🔥 게스트 사용자는 처리 제외
+    if (!_userAuth.isLoggedIn ||
+        _userAuth.userRole == UserRole.external ||
+        _userAuth.userId == null ||
+        _userAuth.userId!.startsWith('guest_')) {
       return;
     }
 
-    // 🔥 Android에서는 기존 방식 유지
     try {
+      // 🔥 웹소켓 연결은 유지하고 위치 전송만 중지 (백그라운드에서도 실시간 통신 유지)
       _locationManager.stopPeriodicLocationSending();
-
-      // 🔥 웹소켓을 통해 서버에 로그아웃 상태 알림 (중복 방지)
-      final wsService = WebSocketService();
-      if (wsService.isConnected) {
-        await wsService.logoutAndDisconnect();
-      } else {
-        wsService.disconnect();
-      }
+      debugPrint('✅ 백그라운드 이동 - 위치 전송만 중지, 웹소켓 연결 유지');
     } catch (e) {
-      debugPrint('❌ 위치 전송 및 웹소켓 연결 중지 오류: $e');
-    }
-
-    // 🔥 일반 사용자만 서버 로그아웃 처리 (UserAuth에서 중복 처리하지 않도록 주의)
-    if (_userAuth.isLoggedIn &&
-        _userAuth.userRole != UserRole.external &&
-        _userAuth.userId != null &&
-        !_userAuth.userId!.startsWith('guest_')) {
-      try {
-        // 🔥 UserAuth의 logout() 메서드 호출하지 않고 서버 로그아웃만 처리
-        await _userAuth.logoutServerOnly();
-      } catch (e) {
-        debugPrint('❌ 서버 로그아웃 오류: $e');
-      }
+      debugPrint('❌ 백그라운드 이동 처리 오류: $e');
     }
   }
 
@@ -283,26 +275,19 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
   Future<void> _handleAppDetached() async {
     _systemUIResetTimer?.cancel(); // 👈 앱 종료 시 타이머 중지
 
-    // 🔥 강제 위치 전송 및 웹소켓 연결 중지
+    // 🔥 앱이 완전히 종료될 때만 웹소켓 연결 해제
+    // 백그라운드 이동 시에는 웹소켓 연결 유지
     try {
       _locationManager.stopPeriodicLocationSending();
-      WebSocketService().disconnect();
+      // 🔥 웹소켓 연결은 유지 (백그라운드에서도 실시간 통신 필요)
+      debugPrint('✅ 백그라운드 이동 - 위치 전송만 중지, 웹소켓 연결 유지');
     } catch (e) {
-      debugPrint('❌ 연결 강제 중지 오류: $e');
+      debugPrint('❌ 위치 전송 중지 오류: $e');
     }
 
-    // 🔥 일반 사용자만 서버 로그아웃 처리 (동기)
-    if (_userAuth.isLoggedIn &&
-        _userAuth.userRole != UserRole.external &&
-        _userAuth.userId != null &&
-        !_userAuth.userId!.startsWith('guest_')) {
-      try {
-        // 동기적으로 서버 로그아웃 처리 (간단한 HTTP 요청)
-        _userAuth.logoutServerOnly();
-      } catch (e) {
-        debugPrint('❌ 서버 로그아웃 오류: $e');
-      }
-    }
+    // 🔥 백그라운드 이동 시에는 서버 로그아웃 처리하지 않음
+    // 웹소켓 연결을 유지하여 실시간 통신 계속
+    debugPrint('✅ 백그라운드 이동 - 웹소켓 연결 유지, 서버 로그아웃 스킵');
   }
 
   /// 🔥 앱 완전 종료 시 - 강제 중지 (동기)
@@ -312,34 +297,18 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
 
     _systemUIResetTimer?.cancel(); // 👈 앱 종료 시 타이머 중지
 
-    // 🔥 강제 위치 전송 및 웹소켓 연결 중지 (동기)
+    // 🔥 강제 위치 전송 중지 (웹소켓 연결은 유지)
     try {
       _locationManager.forceStopLocationSending();
-
-      // 🔥 웹소켓 연결 해제 (동기)
-      final wsService = WebSocketService();
-      if (wsService.isConnected) {
-        wsService.disconnect();
-      }
-      debugPrint('✅ 모든 연결 강제 중지 완료');
+      // 🔥 웹소켓 연결은 유지 (앱이 완전히 종료될 때까지)
+      debugPrint('✅ 앱 dispose - 위치 전송만 중지, 웹소켓 연결 유지');
     } catch (e) {
-      debugPrint('❌ 연결 강제 중지 오류: $e');
+      debugPrint('❌ 위치 전송 중지 오류: $e');
     }
 
-    // 🔥 일반 사용자만 서버 로그아웃 처리 (동기)
-    if (_userAuth.isLoggedIn &&
-        _userAuth.userRole != UserRole.external &&
-        _userAuth.userId != null &&
-        !_userAuth.userId!.startsWith('guest_')) {
-      try {
-        debugPrint('🔥 앱 dispose: 서버 로그아웃 처리 시작');
-        // 동기적으로 서버 로그아웃 처리 (간단한 HTTP 요청)
-        _userAuth.logoutServerOnly();
-        debugPrint('✅ 서버 로그아웃 완료');
-      } catch (e) {
-        debugPrint('❌ 서버 로그아웃 오류: $e');
-      }
-    }
+    // 🔥 앱 dispose 시에도 서버 로그아웃 처리하지 않음
+    // 웹소켓 연결을 유지하여 실시간 통신 계속
+    debugPrint('✅ 앱 dispose - 웹소켓 연결 유지, 서버 로그아웃 스킵');
   }
 
   // ---------- 앱 초기화 ----------
@@ -365,7 +334,16 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
         _locationManager.startPeriodicLocationSending(
           userId: _userAuth.userId!,
         );
-        WebSocketService().connect(_userAuth.userId!);
+        
+        // 🔥 웹소켓이 이미 연결되지 않은 경우에만 연결
+        final wsService = WebSocketService();
+        if (!wsService.isConnected) {
+          WebSocketService().connect(_userAuth.userId!);
+          debugPrint('✅ 일반 사용자 웹소켓 연결 시작');
+        } else {
+          debugPrint('✅ 웹소켓 이미 연결됨');
+        }
+        
         debugPrint('✅ 일반 사용자 위치 전송 및 웹소켓 연결 시작');
       } else if (_userAuth.isLoggedIn &&
           _userAuth.userRole == UserRole.external) {

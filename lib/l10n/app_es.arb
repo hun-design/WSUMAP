@@ -918,5 +918,7 @@
   "inquiry_default_answer": "Esta es la respuesta a su consulta. Si tiene preguntas adicionales, no dude en contactarnos en cualquier momento.",
   "answer_date_prefix": "Fecha de respuesta:",
   "status_pending": "Pendiente de respuesta",
-  "status_answered": "Respondido"
+  "status_answered": "Respondido",
+  "privacy_policy": "Política de Privacidad",
+  "privacy_policy_subtitle": "Consulte la Política de Privacidad"
 }

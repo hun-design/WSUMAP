@@ -2106,6 +2106,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get privacy_policy => 'Privacy Policy';
 
   @override
+  String get privacy_policy_subtitle => 'Please review the Privacy Policy';
+
+  @override
   String get fire_extinguisher => 'Fire Extinguisher';
 
   @override

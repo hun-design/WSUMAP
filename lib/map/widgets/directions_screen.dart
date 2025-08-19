@@ -1068,11 +1068,10 @@ void _setMyLocationAsStart(BuildContext context) {
         SnackBar(
           content: Row(
             children: [
-              Image.asset(
-                'assets/images/my_location_marker.png',
-                width: 16,
-                height: 16,
+              const Icon(
+                Icons.my_location,
                 color: Colors.white,
+                size: 16,
               ),
               const SizedBox(width: 8),
               Text(l10n.my_location_set_as_start),  // 다국어 처리된 메시지
@@ -2351,10 +2350,10 @@ void _setMyLocationAsStart(BuildContext context) {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: icon == Icons.my_location
-                      ? Image.asset(
-                          'assets/images/my_location_marker.png',
-                          width: 24,
-                          height: 24,
+                      ? const Icon(
+                          Icons.my_location,
+                          color: Color(0xFF1E3A8A),
+                          size: 20,
                         )
                       : Icon(icon, color: iconColor, size: 20),
                 ),

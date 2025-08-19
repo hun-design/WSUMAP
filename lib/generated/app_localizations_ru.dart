@@ -2134,7 +2134,11 @@ class AppLocalizationsRu extends AppLocalizations {
   String get restaurant => 'Ресторан';
 
   @override
-  String get privacy_policy => 'Privacy Policy';
+  String get privacy_policy => 'Политика конфиденциальности';
+
+  @override
+  String get privacy_policy_subtitle =>
+      'Ознакомьтесь с политикой конфиденциальности';
 
   @override
   String get fire_extinguisher => 'Fire Extinguisher';

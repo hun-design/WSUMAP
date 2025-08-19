@@ -1059,12 +1059,12 @@ class FriendsController extends ChangeNotifier {
       debugPrint('⚠️ 웹소켓 구독 정리 중 오류: $e');
     }
 
-    // 🔥 웹소켓 연결 해제
+    // 🔥 글로벌 웹소켓은 해제하지 않음 (앱 전역에서 공유됨)
+    // 기존: _wsService.disconnect(); → 제거
     try {
-      _wsService.disconnect();
-      debugPrint('✅ 웹소켓 연결 해제 완료');
+      debugPrint('✅ 웹소켓 연결 유지 (FriendsController dispose)');
     } catch (e) {
-      debugPrint('⚠️ 웹소켓 연결 해제 중 오류: $e');
+      debugPrint('⚠️ 웹소켓 연결 유지 처리 중 오류: $e');
     }
 
     super.dispose();
