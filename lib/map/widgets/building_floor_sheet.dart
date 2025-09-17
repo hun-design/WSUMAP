@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/inside/building_map_page.dart';
 import 'package:flutter_application_1/utils/CategoryLocalization.dart';
-import 'package:flutter_application_1/map/widgets/building_info_sheet.dart';
 import 'package:flutter_application_1/map/widgets/directions_screen.dart';
 import 'package:flutter_application_1/models/building.dart';
 import 'package:flutter_application_1/generated/app_localizations.dart';

@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'timetable_item.dart';
 import 'package:flutter_application_1/config/api_config.dart';
 import 'package:uuid/uuid.dart'; // 👈 추가
-import 'package:flutter/foundation.dart'; // 👈 추가
 
 class TimetableApiService {
   static String get timetableBase => ApiConfig.timetableBase;

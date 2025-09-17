@@ -6,7 +6,6 @@ import '../signup/sign_up_view.dart';
 import '../login/login_form_view.dart';
 import '../auth/user_auth.dart';
 import '../generated/app_localizations.dart';
-import 'package:flutter_application_1/welcome_view.dart';
 import '../providers/app_language_provider.dart';
 import '../providers/category_provider.dart';
 import '../map/map_screen.dart';

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/services/category_api_service.dart';
 import 'package:flutter_application_1/data/category_fallback_data.dart';
-import 'package:flutter_application_1/providers/app_language_provider.dart';
 
 class CategoryProvider extends ChangeNotifier {
   List<String> _categories = [];

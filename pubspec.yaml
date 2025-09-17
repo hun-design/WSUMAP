@@ -40,6 +40,7 @@ dependencies:
   web_socket_channel: ^3.0.3
   device_info_plus: ^11.5.0
   flutter_local_notifications: ^19.3.1
+  sensors_plus: ^4.0.2
 
 dev_dependencies:
   flutter_test:
@@ -87,6 +88,8 @@ flutter:
     - lib/asset/3.png
     - lib/asset/4.png
     - lib/asset/app_icon.png
+    - lib/asset/user_location_marker.svg
+    - lib/asset/direction_arrow.svg
     - assets/timetable/tutorial/1.png
     - assets/timetable/tutorial/2.png
     - assets/timetable/tutorial/3.png

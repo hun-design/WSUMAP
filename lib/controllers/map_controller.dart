@@ -186,6 +186,9 @@ class MapScreenController extends ChangeNotifier {
 
     // 🔥 친구 위치 마커 서비스에도 Context 설정
     _friendLocationMarkerService.setContext(context);
+    
+    // 🔥 LocationController에도 Context 설정
+    _locationController?.setContext(context);
 
     debugPrint('✅ MapController에 Context 설정 완료');
 

@@ -773,6 +773,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                 await _controller.moveToMyLocation();
               },
               onTap: () => _controller.closeInfoWindow(_infoWindowController),
+              onMapRotationChanged: (rotation) {
+                // 지도 회전 각도를 LocationController에 전달
+                _locationController.updateMapRotation(rotation);
+              },
             ),
             if (_controller.isCategoryLoading) _buildCategoryLoadingIndicator(),
             // 검색바와 카테고리 칩들

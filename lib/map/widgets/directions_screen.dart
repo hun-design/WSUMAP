@@ -47,6 +47,7 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
   List<Building> _recentSearches = [];
 
   bool _needsCoordinateUpdate = false;
+  bool _roomDataProcessed = false; // roomData 처리 완료 플래그
 
   // 네비게이션 상태 관련
   bool _isNavigationActive = false;
@@ -61,9 +62,8 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
   void initState() {
     super.initState();
 
-    if (widget.roomData != null) {
-      _handleRoomData(widget.roomData!);
-    } else {
+    // roomData 처리는 didChangeDependencies로 이동 (inherited widget 접근 문제 해결)
+    if (widget.roomData == null) {
       // 🔥 preset 건물들도 건물 코드 추출
       if (widget.presetStart != null) {
         final startCode = _extractBuildingCode(widget.presetStart!.name);
@@ -237,6 +237,12 @@ class _DirectionsScreenState extends State<DirectionsScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+
+    // roomData 처리를 여기서 수행 (inherited widget 접근 문제 해결)
+    if (widget.roomData != null && !_roomDataProcessed) {
+      _handleRoomData(widget.roomData!);
+      _roomDataProcessed = true;
+    }
 
     // 🔥 좌표 업데이트가 필요한 경우
     if (_needsCoordinateUpdate) {

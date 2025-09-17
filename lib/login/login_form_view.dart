@@ -6,7 +6,6 @@ import '../auth/user_auth.dart';
 import '../components/woosong_input_field.dart';
 import '../components/woosong_button.dart';
 import '../generated/app_localizations.dart';
-import '../welcome_view.dart';
 import '../map/map_screen.dart';
 
 class LoginFormView extends StatefulWidget {
