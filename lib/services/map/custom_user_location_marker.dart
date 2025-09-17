@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:io';
 import 'package:sensors_plus/sensors_plus.dart';
 
 /// 커스텀 사용자 위치 마커 서비스
@@ -22,6 +23,8 @@ class CustomUserLocationMarker {
   double _currentHeading = 0.0;
   double _mapRotation = 0.0; // 지도 회전 각도 추적
   bool _isDirectionEnabled = false;
+  bool _isMagnetometerAvailable = true; // 자력계 센서 사용 가능 여부
+  int _magnetometerErrorCount = 0; // 자력계 오류 카운트
   
   // 마커 스타일 설정 (파란색 디자인)
   static const Color _primaryBlue = Color(0xFF3B82F6); // 메인 파란색
@@ -78,10 +81,16 @@ class CustomUserLocationMarker {
       // 사용자 위치 마커 추가
       await _addUserLocationMarker(position);
       
-      // 방향 화살표 항상 활성화 (기기 방향 추적)
+      // 방향 화살표 활성화 (기기 방향 추적)
       _isDirectionEnabled = true;
       await _addDirectionArrow(position);
       await _startDirectionTracking();
+      
+      // 자력계 센서가 사용 불가능한 경우 경고 메시지
+      if (!_isMagnetometerAvailable) {
+        debugPrint('⚠️ 자력계 센서를 사용할 수 없습니다. 방향 화살표가 작동하지 않을 수 있습니다.');
+        debugPrint('💡 iOS 사용자: 설정 > 개인정보 보호 및 보안 > 위치 서비스 > 시스템 서비스 > 나침반 보정을 활성화해주세요.');
+      }
       
       // 카메라 이동 (옵션)
       if (shouldMoveCamera) {
@@ -116,7 +125,7 @@ class CustomUserLocationMarker {
       }
       
       // 방향 화살표 업데이트 (위치 이동 및 회전)
-      if (_directionArrow != null && updateDirection) {
+      if (_directionArrow != null && updateDirection && _isMagnetometerAvailable) {
         _directionArrow!.setPosition(position);
         await _updateDirectionArrowRotation();
       }
@@ -313,30 +322,95 @@ class CustomUserLocationMarker {
     try {
       debugPrint('🧭 기기 방향 추적 시작');
       
-      _magnetometerSubscription = magnetometerEventStream().listen((event) {
-        // 자력계 데이터를 방향으로 변환
-        final heading = _calculateHeading(event.x, event.y);
-        
-        // 방향이 변경된 경우에만 업데이트 (더 민감하게)
-        if ((heading - _currentHeading).abs() > 2.0) {
-          _currentHeading = heading;
-          _updateDirectionArrowRotation();
+      // iOS에서 자력계 센서 사용 가능 여부 확인
+      if (Platform.isIOS) {
+        try {
+          // iOS에서 자력계 센서 테스트
+          await magnetometerEventStream().first.timeout(
+            const Duration(seconds: 2),
+            onTimeout: () => throw Exception('자력계 센서 접근 타임아웃'),
+          );
+          debugPrint('✅ iOS 자력계 센서 접근 가능');
+        } catch (e) {
+          debugPrint('⚠️ iOS 자력계 센서 접근 불가: $e');
+          _isMagnetometerAvailable = false;
+          return;
         }
-      });
+      }
+      
+      _magnetometerSubscription = magnetometerEventStream().listen(
+        (event) {
+          try {
+            // 자력계 데이터 유효성 검사
+            if (!_isValidMagnetometerData(event.x, event.y)) {
+              _magnetometerErrorCount++;
+              if (_magnetometerErrorCount > 10) {
+                debugPrint('⚠️ 자력계 데이터 오류가 너무 많음. 센서 비활성화');
+                _isMagnetometerAvailable = false;
+                _stopDirectionTracking();
+                return;
+              }
+              return;
+            }
+            
+            // 자력계 데이터를 방향으로 변환
+            final heading = _calculateHeading(event.x, event.y);
+            
+            // 방향이 변경된 경우에만 업데이트 (플랫폼별 민감도 조정)
+            double threshold = Platform.isIOS ? 3.0 : 2.0;
+            if ((heading - _currentHeading).abs() > threshold) {
+              _currentHeading = heading;
+              _updateDirectionArrowRotation();
+              _magnetometerErrorCount = 0; // 성공 시 오류 카운트 리셋
+            }
+          } catch (e) {
+            debugPrint('❌ 자력계 데이터 처리 오류: $e');
+            _magnetometerErrorCount++;
+          }
+        },
+        onError: (error) {
+          debugPrint('❌ 자력계 스트림 오류: $error');
+          _magnetometerErrorCount++;
+          
+          // iOS에서 권한 오류인 경우
+          if (Platform.isIOS && error.toString().contains('permission')) {
+            debugPrint('⚠️ iOS 자력계 센서 권한이 필요합니다. 설정에서 허용해주세요.');
+            _isMagnetometerAvailable = false;
+            _stopDirectionTracking();
+          }
+        },
+      );
       
       debugPrint('✅ 기기 방향 추적 시작 완료');
     } catch (e) {
       debugPrint('❌ 기기 방향 추적 시작 실패: $e');
+      _isMagnetometerAvailable = false;
     }
   }
   
-  /// 자력계 데이터를 방향으로 변환 - 기기 방향 계산
+  /// 자력계 데이터 유효성 검사
+  bool _isValidMagnetometerData(double x, double y) {
+    // 자력계 데이터가 너무 작거나 큰 값인지 확인
+    const double minThreshold = 0.1;
+    const double maxThreshold = 100.0;
+    
+    double magnitude = math.sqrt(x * x + y * y);
+    return magnitude > minThreshold && magnitude < maxThreshold;
+  }
+  
+  /// 자력계 데이터를 방향으로 변환 - 기기 방향 계산 (플랫폼별 최적화)
   double _calculateHeading(double x, double y) {
     // 자력계 데이터를 도 단위로 변환
     double heading = math.atan2(y, x) * 180 / math.pi;
     
-    // 북쪽을 0도로 맞추기 위해 90도 회전
-    heading = (heading + 90) % 360;
+    // 플랫폼별 보정 적용
+    if (Platform.isIOS) {
+      // iOS는 다른 보정이 필요할 수 있음
+      heading = (heading + 90) % 360;
+    } else {
+      // Android 보정
+      heading = (heading + 90) % 360;
+    }
     
     // 화살표가 반대 방향을 가리키는 문제 해결을 위해 180도 반전
     heading = (heading + 180) % 360;
@@ -346,8 +420,9 @@ class CustomUserLocationMarker {
       heading += 360;
     }
     
-    // 부드러운 회전을 위해 반올림
-    return heading.roundToDouble();
+    // 부드러운 회전을 위해 반올림 (iOS는 더 부드럽게)
+    double roundValue = Platform.isIOS ? 1.0 : 1.0;
+    return (heading / roundValue).round() * roundValue;
   }
   
   /// 방향 화살표 회전 업데이트 - 기기 방향에 따라 화살표 회전 (지도 회전 보정)
@@ -426,6 +501,7 @@ class CustomUserLocationMarker {
       _magnetometerSubscription?.cancel();
       _magnetometerSubscription = null;
       _isDirectionEnabled = false;
+      _magnetometerErrorCount = 0;
       debugPrint('✅ 기기 방향 추적 중지 완료');
     } catch (e) {
       debugPrint('❌ 기기 방향 추적 중지 실패: $e');
@@ -437,6 +513,9 @@ class CustomUserLocationMarker {
   
   /// 방향 추적 활성화 여부
   bool get isDirectionEnabled => _isDirectionEnabled;
+  
+  /// 자력계 센서 사용 가능 여부
+  bool get isMagnetometerAvailable => _isMagnetometerAvailable;
   
   /// 사용자 위치 마커 표시 여부
   bool get hasUserLocationMarker => _userLocationMarker != null;
@@ -453,5 +532,8 @@ class CustomUserLocationMarker {
     _userLocationMarker = null;
     _accuracyCircle = null;
     _directionArrow = null;
+    _isMagnetometerAvailable = true;
+    _magnetometerErrorCount = 0;
   }
 }
+

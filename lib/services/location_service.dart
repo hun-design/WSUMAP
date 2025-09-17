@@ -55,8 +55,8 @@ class LocationService {
   Timer? _requestTimer;
   Completer<LocationResult>? _currentRequest;
 
-  // 캐시 유효 시간 (2분에서 30초로 다시 조정)
-  static const Duration _cacheValidDuration = Duration(seconds: 30);
+  // 캐시 유효 시간 (30초에서 2분으로 다시 조정 - 위치 안정성 향상)
+  static const Duration _cacheValidDuration = Duration(minutes: 2);
 
   // 🔥 위치 전송 성공 콜백들
   final List<LocationSentCallback> _locationSentCallbacks = [];
@@ -285,30 +285,30 @@ class LocationService {
     };
   }
 
-  /// 위치 서비스 초기화
+  /// 위치 서비스 초기화 (초고속 버전)
   Future<void> initialize() async {
     try {
       debugPrint('🚀 LocationService 초기화...');
 
-      // 플랫폼별 설정 (타임아웃 추가)
+      // 플랫폼별 설정 (초고속 설정)
       if (Platform.isIOS) {
         // iOS는 기본 설정 사용
         debugPrint('📱 iOS 플랫폼 감지 - 기본 설정 사용');
       } else {
-        // Android 설정 (더 빠른 설정)
+        // 🔥 Android 초고속 설정
         try {
           await _location.changeSettings(
-            accuracy: loc.LocationAccuracy.balanced,
-            interval: 3000, // 5000에서 3000으로 단축
-            distanceFilter: 5, // 10에서 5로 단축
+            accuracy: loc.LocationAccuracy.high, // balanced에서 high로 변경
+            interval: 1000, // 3000에서 1000으로 더 단축
+            distanceFilter: 1, // 5에서 1로 더 단축
           ).timeout(
-            const Duration(seconds: 1), // 1초 타임아웃
+            const Duration(milliseconds: 500), // 1초에서 0.5초로 단축
             onTimeout: () {
               debugPrint('⏰ Android 설정 타임아웃 - 기본값 사용');
-              throw TimeoutException('Android 설정 타임아웃', const Duration(seconds: 1));
+              throw TimeoutException('Android 설정 타임아웃', const Duration(milliseconds: 500));
             },
           );
-          debugPrint('🤖 Android 설정 완료');
+          debugPrint('🤖 Android 초고속 설정 완료');
         } catch (e) {
           debugPrint('⚠️ Android 설정 실패, 기본값 사용: $e');
         }
@@ -347,10 +347,10 @@ class LocationService {
     return await _requestLocationWithRetry(timeout: timeout);
   }
 
-  /// 🔥 재시도가 포함된 위치 요청 (개선된 버전)
+  /// 🔥 재시도가 포함된 위치 요청 (초고속 버전)
   Future<LocationResult> _requestLocationWithRetry({
     Duration? timeout,
-    int maxRetries = 2,  // 3에서 2로 줄임
+    int maxRetries = 1,  // 2에서 1로 더 줄임
   }) async {
     if (_isRequesting) {
       debugPrint('⚠️ 이미 위치 요청 중');
@@ -364,8 +364,9 @@ class LocationService {
       for (int attempt = 1; attempt <= maxRetries; attempt++) {
         debugPrint('🔄 위치 요청 시도 $attempt/$maxRetries');
 
+        // 🔥 초고속 타임아웃: 첫 시도 1초, 재시도 2초
         final timeoutDuration =
-            timeout ?? Duration(seconds: attempt == 1 ? 3 : 5);  // 5초에서 3초, 8초에서 5초로 더 단축
+            timeout ?? Duration(seconds: attempt == 1 ? 1 : 2);
 
         try {
           final locationData = await _location.getLocation().timeout(
@@ -404,8 +405,8 @@ class LocationService {
           debugPrint('❌ 위치 요청 시도 $attempt 실패: $e');
 
           if (attempt < maxRetries) {
-            // 재시도 전 잠시 대기
-            await Future.delayed(Duration(seconds: attempt));
+            // 🔥 재시도 전 대기 시간 단축
+            await Future.delayed(Duration(milliseconds: 500));
             continue;
           }
 

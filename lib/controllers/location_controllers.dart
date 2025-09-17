@@ -73,6 +73,66 @@ class LocationController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// 🔥 초고속 위치 요청 (MapScreen용)
+  Future<void> requestCurrentLocationQuickly() async {
+    if (_isRequesting) return;
+
+    try {
+      _isRequesting = true;
+      _hasLocationPermissionError = false;
+      notifyListeners();
+
+      // 🔥 빠른 권한 확인 (캐시 우선)
+      final permissionResult = await _permissionManager.checkPermissionStatus(
+        forceRefresh: false, // 캐시 사용
+      );
+
+      if (permissionResult != PermissionResult.granted) {
+        // 빠른 권한 요청
+        final requestResult = await _permissionManager.requestPermission();
+        if (requestResult != PermissionResult.granted) {
+          _hasLocationPermissionError = true;
+          return;
+        }
+      }
+
+      // 🔥 초고속 위치 획득 (1초 타임아웃)
+      final locationResult = await _locationService.getCurrentLocation(
+        forceRefresh: true,
+        timeout: const Duration(seconds: 1),
+      );
+
+      if (locationResult.isSuccess && locationResult.hasValidLocation) {
+        _currentLocation = locationResult.locationData;
+        _hasValidLocation = true;
+
+        // 🔥 즉시 지도에 위치 표시
+        await _mapLocationService.showMyLocation(
+          locationResult.locationData!,
+          shouldMoveCamera: true,
+        );
+      } else {
+        // fallback 위치 사용
+        final fallbackResult = _locationService.getFallbackLocation();
+        if (fallbackResult.isSuccess) {
+          _currentLocation = fallbackResult.locationData;
+          _hasValidLocation = true;
+
+          await _mapLocationService.showMyLocation(
+            fallbackResult.locationData!,
+            shouldMoveCamera: true,
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('초고속 위치 요청 실패: $e');
+      _hasLocationPermissionError = true;
+    } finally {
+      _isRequesting = false;
+      notifyListeners();
+    }
+  }
+
   /// 현재 위치 요청 (메인 API)
   Future<void> requestCurrentLocation({bool forceRefresh = false}) async {
     if (_isRequesting) return;
@@ -96,9 +156,10 @@ class LocationController extends ChangeNotifier {
         }
       }
 
-      // 2. 위치 획득
+      // 2. 위치 획득 (타임아웃 단축)
       final locationResult = await _locationService.getCurrentLocation(
         forceRefresh: forceRefresh,
+        timeout: const Duration(seconds: 2), // 3초에서 2초로 단축
       );
 
       if (locationResult.isSuccess && locationResult.hasValidLocation) {

@@ -69,7 +69,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     debugPrint('🗺️ MapScreen 초기화 시작');
     _initializeMapScreen();
 
-    // 지도 진입 시 Welcome에서 받아온 위치가 있으면 즉시 표시
+    // 🔥 지도 진입 시 Welcome에서 받아온 위치가 있으면 즉시 표시 (개선된 버전)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final locationManager = context.read<LocationManager>();
       if (locationManager.hasValidLocation &&
@@ -81,6 +81,17 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             locationManager.currentLocation!.longitude!,
           ),
         );
+        
+        // 🔥 즉시 내 위치로 이동 (지연 없이)
+        Future.delayed(const Duration(milliseconds: 100), () {
+          _controller.moveToMyLocation();
+        });
+      } else {
+        // 🔥 위치가 없으면 즉시 빠른 위치 요청
+        debugPrint('⚡ 위치가 없음 - 즉시 빠른 위치 요청');
+        Future.delayed(const Duration(milliseconds: 200), () {
+          _locationController.requestCurrentLocationQuickly();
+        });
       }
     });
   }
@@ -769,8 +780,22 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               onMapReady: (mapController) async {
                 await _controller.onMapReady(mapController);
                 debugPrint('🗺️ 지도 준비 완료!');
-                // ✅ 지도 준비 완료 후 내 위치로 자동 이동
-                await _controller.moveToMyLocation();
+                
+                // 🔥 지도 준비 완료 시 즉시 위치 확인 및 이동
+                final locationManager = context.read<LocationManager>();
+                if (locationManager.hasValidLocation &&
+                    locationManager.currentLocation != null) {
+                  debugPrint('⚡ 지도 준비 완료 - 즉시 내 위치로 이동');
+                  await _controller.moveToMyLocation();
+                } else {
+                  debugPrint('⚡ 지도 준비 완료 - 빠른 위치 요청 후 이동');
+                  // 빠른 위치 요청 후 이동
+                  _locationController.requestCurrentLocationQuickly().then((_) {
+                    if (_locationController.hasValidLocation) {
+                      _controller.moveToMyLocation();
+                    }
+                  });
+                }
               },
               onTap: () => _controller.closeInfoWindow(_infoWindowController),
               onMapRotationChanged: (rotation) {

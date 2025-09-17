@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:location/location.dart' as loc;
 import 'dart:async';
 import 'dart:io';
-import 'package:location/location.dart';
 import '../services/location_service.dart';
 
 /// 🔥 UI 갱신 콜백 타입들
@@ -52,8 +51,8 @@ class LocationManager extends ChangeNotifier {
   // 캐시 관리
   DateTime? _lastLocationTime;
   static const Duration _cacheValidDuration = Duration(
-    seconds: 30,
-  ); // 2분에서 30초로 다시 조정
+    minutes: 2,
+  ); // 30초에서 2분으로 조정 - 위치 안정성 향상
 
   // 🔥 앱 생명주기 상태 추적
   AppLifecycleState? _lastLifecycleState;
@@ -118,69 +117,6 @@ class LocationManager extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 🔥 빠른 위치 요청 (중복 방지 강화)
-  Future<LocationData?> requestLocationQuickly() async {
-    // 이미 요청 중이면 기존 요청 대기
-    if (_currentLocationRequest != null) {
-      debugPrint('⏳ 기존 위치 요청 대기 중...');
-      return await _currentLocationRequest!.future;
-    }
-
-    if (hasValidLocation && currentLocation != null && _isCacheValid()) {
-      debugPrint('⚡ 캐시된 위치 반환');
-      return currentLocation;
-    }
-
-    // 🔥 단순화된 빠른 위치 요청
-    return await _requestLocationSimple();
-  }
-
-  /// 🔥 단순화된 위치 요청 (빠른 응답)
-  Future<LocationData?> _requestLocationSimple() async {
-    if (_currentLocationRequest != null) {
-      return await _currentLocationRequest!.future;
-    }
-
-    final completer = Completer<LocationData?>();
-    _currentLocationRequest = completer;
-
-    try {
-      debugPrint('🚀 단순화된 위치 요청 시작...');
-
-      // 직접 위치 요청 (1.5초 타임아웃)
-      final locationData = await _location.getLocation().timeout(
-        const Duration(milliseconds: 1500), // 1.5초로 단축
-        onTimeout: () {
-          debugPrint('⏰ 위치 요청 타임아웃 (1.5초)');
-          throw TimeoutException(
-            '위치 요청 타임아웃',
-            const Duration(milliseconds: 1500),
-          );
-        },
-      );
-
-      if (locationData.latitude != null && locationData.longitude != null) {
-        currentLocation = locationData;
-        _lastLocationTime = DateTime.now();
-        _hasLocationPermissionError = false;
-        notifyListeners();
-
-        debugPrint('✅ 단순화된 위치 요청 성공!');
-        completer.complete(locationData);
-        return locationData;
-      } else {
-        debugPrint('❌ 유효하지 않은 위치 데이터');
-        completer.complete(null);
-        return null;
-      }
-    } catch (e) {
-      debugPrint('❌ 단순화된 위치 요청 실패: $e');
-      completer.complete(null);
-      return null;
-    } finally {
-      _currentLocationRequest = null;
-    }
-  }
 
   /// 🔥 개선된 초기화 (권한 요청 추가)
   Future<void> _initializeImproved() async {
@@ -363,6 +299,60 @@ class LocationManager extends ChangeNotifier {
     return LocationService.isActualGPSLocation(locationData);
   }
 
+  /// 🔥 초고속 위치 요청 (Welcome 화면용)
+  Future<loc.LocationData?> requestLocationQuickly() async {
+    debugPrint('⚡ 초고속 위치 요청 시작...');
+
+    try {
+      // 1. 캐시 확인 (더 빠른 캐시 사용)
+      if (_isCacheValid() && currentLocation != null) {
+        debugPrint('⚡ 캐시된 위치 즉시 사용');
+        if (isActualGPSLocation(currentLocation!)) {
+          _scheduleLocationCallback(currentLocation!);
+          return currentLocation;
+        }
+      }
+
+      // 2. 🔥 초고속 위치 요청 (1초 타임아웃)
+      final locationResult = await _locationService.getCurrentLocation(
+        forceRefresh: true,
+        timeout: const Duration(seconds: 1), // 1초로 단축
+      );
+
+      if (locationResult.isSuccess && locationResult.locationData != null) {
+        final locationData = locationResult.locationData!;
+
+        if (LocationService.isValidLocation(locationData)) {
+          currentLocation = locationData;
+          _lastLocationTime = DateTime.now();
+          _hasLocationPermissionError = false;
+
+          debugPrint('✅ 초고속 위치 획득 성공!');
+          debugPrint(
+            '📍 위치: ${locationData.latitude}, ${locationData.longitude}',
+          );
+          debugPrint('📊 정확도: ${locationData.accuracy?.toStringAsFixed(1)}m');
+
+          // 🔥 실제 GPS 위치 확인 및 콜백 호출
+          if (isActualGPSLocation(locationData)) {
+            debugPrint('🎯 실제 GPS 위치 확인됨');
+            _scheduleLocationCallback(locationData);
+          } else {
+            debugPrint('⚠️ Fallback 위치일 가능성 있음');
+          }
+
+          return locationData;
+        }
+      }
+
+      debugPrint('❌ 초고속 위치 획득 실패');
+      return null;
+    } catch (e) {
+      debugPrint('❌ 초고속 위치 요청 오류: $e');
+      return null;
+    }
+  }
+
   /// 🔥 개선된 위치 요청 (중복 방지 및 상태 관리 강화)
   Future<loc.LocationData?> requestLocation() async {
     // 이미 요청 중이면 기존 요청 대기
@@ -391,10 +381,10 @@ class LocationManager extends ChangeNotifier {
         }
       }
 
-      // 2. 🔥 LocationService를 통한 위치 요청
+      // 2. 🔥 LocationService를 통한 위치 요청 (타임아웃 단축)
       final locationResult = await _locationService.getCurrentLocation(
         forceRefresh: true,
-        timeout: const Duration(seconds: 5), // 8초에서 5초로 더 단축
+        timeout: const Duration(seconds: 2), // 5초에서 2초로 더 단축
       );
 
       if (locationResult.isSuccess && locationResult.locationData != null) {

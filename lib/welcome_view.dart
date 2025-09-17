@@ -161,7 +161,7 @@ class _WelcomeViewState extends State<WelcomeView>
     super.dispose();
   }
 
-  /// 🔥 백그라운드에서 위치 미리 준비 (최적화된 버전)
+  /// 🔥 백그라운드에서 위치 미리 준비 (초고속 버전)
   Future<void> _prepareLocationInBackground() async {
     if (_isPreparingLocation || _locationPrepared) return;
 
@@ -169,39 +169,39 @@ class _WelcomeViewState extends State<WelcomeView>
       _isPreparingLocation = true;
       debugPrint('🔄 Welcome 화면에서 위치 미리 준비 시작...');
 
-      // 대기 시간 단축 (1.5초에서 0.5초로)
-      await Future.delayed(const Duration(milliseconds: 500));
+      // 🔥 대기 시간 더 단축 (0.5초에서 0.2초로)
+      await Future.delayed(const Duration(milliseconds: 200));
       final locationManager = Provider.of<LocationManager>(context, listen: false);
 
-      // LocationManager 초기화 대기 (최대 1초)
+      // LocationManager 초기화 대기 (최대 0.5초로 단축)
       int retries = 0;
-      while (!locationManager.isInitialized && retries < 10) {
+      while (!locationManager.isInitialized && retries < 5) {
         await Future.delayed(const Duration(milliseconds: 100));
         retries++;
       }
 
       if (locationManager.isInitialized) {
         debugPrint('🔍 Welcome에서 위치 권한 확인 중...');
-        await Future.delayed(const Duration(milliseconds: 200)); // 300ms에서 200ms로 단축
+        await Future.delayed(const Duration(milliseconds: 100)); // 200ms에서 100ms로 단축
         await locationManager.recheckPermissionStatus();
 
-        // 권한 상태 확인 (최대 0.5초 대기)
+        // 권한 상태 확인 (최대 0.3초 대기로 단축)
         int permissionRetries = 0;
-        while (locationManager.permissionStatus == null && permissionRetries < 5) {
+        while (locationManager.permissionStatus == null && permissionRetries < 3) {
           await Future.delayed(const Duration(milliseconds: 100));
           permissionRetries++;
         }
 
         debugPrint('🔍 최종 권한 상태: ${locationManager.permissionStatus}');
-        debugPrint('✅ Welcome에서 빠른 위치 요청 시작...');
+        debugPrint('✅ Welcome에서 초고속 위치 요청 시작...');
 
         try {
-          // 🔥 빠른 위치 요청 (1초 타임아웃)
+          // 🔥 초고속 위치 요청 (0.5초 타임아웃)
           await locationManager.requestLocationQuickly().timeout(
-            const Duration(seconds: 1), // 3초에서 1초로 단축
+            const Duration(milliseconds: 500), // 1초에서 0.5초로 단축
             onTimeout: () {
-              debugPrint('⏰ Welcome 위치 요청 타임아웃 (1초) - 정상 진행');
-              throw TimeoutException('Welcome 위치 타임아웃', const Duration(seconds: 1));
+              debugPrint('⏰ Welcome 위치 요청 타임아웃 (0.5초) - 정상 진행');
+              throw TimeoutException('Welcome 위치 타임아웃', const Duration(milliseconds: 500));
             },
           );
 
