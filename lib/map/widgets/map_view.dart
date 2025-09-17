@@ -39,14 +39,24 @@ class _MapViewState extends State<MapView> {
           await widget.onMapReady(controller);
         },
         onCameraChange: (cameraUpdate, isGesture) async {
-          // 제스처로 인한 지도 회전 감지
-          if (widget.onMapRotationChanged != null && isGesture && _mapController != null) {
+          // 지도 회전 감지 (제스처 여부와 관계없이)
+          if (widget.onMapRotationChanged != null && _mapController != null) {
             try {
-              // 지도 컨트롤러에서 현재 카메라 상태 가져오기
               final cameraPosition = await _mapController!.getCameraPosition();
               widget.onMapRotationChanged!(cameraPosition.bearing);
             } catch (e) {
               debugPrint('❌ 지도 회전 감지 실패: $e');
+            }
+          }
+        },
+        onCameraIdle: () async {
+          // 회전 종료 시 최종 베어링 전달
+          if (widget.onMapRotationChanged != null && _mapController != null) {
+            try {
+              final cameraPosition = await _mapController!.getCameraPosition();
+              widget.onMapRotationChanged!(cameraPosition.bearing);
+            } catch (e) {
+              debugPrint('❌ 지도 회전(Idle) 감지 실패: $e');
             }
           }
         },

@@ -7,6 +7,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:io';
 import 'package:sensors_plus/sensors_plus.dart';
+import 'package:flutter_compass/flutter_compass.dart';
 
 /// 커스텀 사용자 위치 마커 서비스
 class CustomUserLocationMarker {
@@ -20,6 +21,7 @@ class CustomUserLocationMarker {
   
   // 방향 관련 (기기가 바라보는 방향 추적)
   StreamSubscription<MagnetometerEvent>? _magnetometerSubscription;
+  StreamSubscription<CompassEvent>? _compassSubscription; // iOS용 heading 스트림
   double _currentHeading = 0.0;
   double _mapRotation = 0.0; // 지도 회전 각도 추적
   bool _isDirectionEnabled = false;
@@ -33,8 +35,34 @@ class CustomUserLocationMarker {
   void setMapController(NaverMapController controller) {
     _mapController = controller;
     debugPrint('✅ CustomUserLocationMarker 지도 컨트롤러 설정 완료');
+    // 지도 준비 시점부터 방향 추적을 시작해 항상 heading이 갱신되도록 함
+    if (_magnetometerSubscription == null) {
+      _isDirectionEnabled = true;
+      _startDirectionTracking();
+    }
   }
   
+  void _startIOSCompassTracking() {
+    _compassSubscription?.cancel();
+    _compassSubscription = FlutterCompass.events?.listen((CompassEvent event) {
+      try {
+        final double? heading = event.heading;
+        if (heading == null) return;
+        // heading은 0~360(북 기준). 지도 회전 보정은 별도 적용됨
+        double newHeading = heading;
+        // 더 민감하게: 임계값 0.5도
+        if ((newHeading - _currentHeading).abs() > 0.5) {
+          _currentHeading = newHeading;
+          _updateDirectionArrowRotation();
+        }
+      } catch (e) {
+        debugPrint('❌ iOS Compass 처리 오류: $e');
+      }
+    }, onError: (error) {
+      debugPrint('❌ iOS Compass 스트림 오류: $error');
+    });
+  }
+
   /// 컨텍스트 설정
   void setContext(BuildContext context) {
     _context = context;
@@ -44,8 +72,8 @@ class CustomUserLocationMarker {
   /// 지도 회전 각도 업데이트 (지도 회전 감지, 실시간 보정)
   void updateMapRotation(double rotation) {
     _mapRotation = rotation;
-    // 화살표가 있을 때 즉시 회전 보정 적용
-    if (_directionArrow != null && _isDirectionEnabled) {
+    // 화살표가 있을 때 즉시 회전 보정 적용 (방향 추적 플래그와 무관하게 반영)
+    if (_directionArrow != null) {
       _updateDirectionArrowRotation();
     }
   }
@@ -324,18 +352,10 @@ class CustomUserLocationMarker {
       
       // iOS에서 자력계 센서 사용 가능 여부 확인
       if (Platform.isIOS) {
-        try {
-          // iOS에서 자력계 센서 테스트
-          await magnetometerEventStream().first.timeout(
-            const Duration(seconds: 2),
-            onTimeout: () => throw Exception('자력계 센서 접근 타임아웃'),
-          );
-          debugPrint('✅ iOS 자력계 센서 접근 가능');
-        } catch (e) {
-          debugPrint('⚠️ iOS 자력계 센서 접근 불가: $e');
-          _isMagnetometerAvailable = false;
-          return;
-        }
+        // iOS는 CoreLocation 기반 나침반 스트림 사용 (flutter_compass)
+        _startIOSCompassTracking();
+        debugPrint('✅ iOS Compass(heading) 추적 시작');
+        return; // iOS는 magnetometer 사용 안 함
       }
       
       _magnetometerSubscription = magnetometerEventStream().listen(
@@ -356,8 +376,8 @@ class CustomUserLocationMarker {
             // 자력계 데이터를 방향으로 변환
             final heading = _calculateHeading(event.x, event.y);
             
-            // 방향이 변경된 경우에만 업데이트 (플랫폼별 민감도 조정)
-            double threshold = Platform.isIOS ? 3.0 : 2.0;
+            // 방향이 변경된 경우에만 업데이트 (플랫폼별 민감도 조정 - 더 민감하게)
+            double threshold = Platform.isIOS ? 0.8 : 0.5;
             if ((heading - _currentHeading).abs() > threshold) {
               _currentHeading = heading;
               _updateDirectionArrowRotation();
@@ -492,7 +512,7 @@ class CustomUserLocationMarker {
   Future<void> hideUserLocation() async {
     debugPrint('👻 사용자 위치 마커 숨기기');
     await _removeAllMarkers();
-    await _stopDirectionTracking();
+    // 방향 추적은 유지하여 사용자가 버튼을 누르지 않아도 heading이 계속 갱신되도록 함
   }
   
   /// 방향 추적 중지
@@ -500,6 +520,8 @@ class CustomUserLocationMarker {
     try {
       _magnetometerSubscription?.cancel();
       _magnetometerSubscription = null;
+      _compassSubscription?.cancel();
+      _compassSubscription = null;
       _isDirectionEnabled = false;
       _magnetometerErrorCount = 0;
       debugPrint('✅ 기기 방향 추적 중지 완료');
