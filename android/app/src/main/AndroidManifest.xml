@@ -11,6 +11,9 @@
     <!-- [권장 추가] 네트워크 기반의 대략적인 위치 권한 -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
+    <!-- [핵심 추가] 백그라운드 위치 정보 접근 권한 (내비게이션 기능용) -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+
     <!-- =========== 🔔 실시간 알림 시스템 권한 추가 =========== -->
     
     <!-- [핵심 추가] 알림 권한 (Android 13+에서 필수) -->
