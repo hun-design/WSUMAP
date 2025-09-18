@@ -935,24 +935,24 @@ class AppLocalizationsKo extends AppLocalizations {
   String get set_end_point => '도착지 설정';
 
   @override
-  String get scheduleDeleteTitle => 'Delete Schedule';
+  String get scheduleDeleteTitle => '시간표 삭제';
 
   @override
-  String get scheduleDeleteSubtitle => 'Please decide carefully';
+  String get scheduleDeleteSubtitle => '신중하게 결정해주세요';
 
   @override
-  String get scheduleDeleteLabel => 'Schedule to Delete';
+  String get scheduleDeleteLabel => '삭제할 시간표';
 
   @override
   String scheduleDeleteDescription(Object title) {
-    return '\"$title\" class will be deleted from schedule.\nDeleted schedule cannot be recovered.';
+    return '\"$title\" 수업이 시간표에서 삭제됩니다.\n삭제된 시간표는 복구할 수 없습니다.';
   }
 
   @override
-  String get cancelButton => 'Cancel';
+  String get cancelButton => '취소';
 
   @override
-  String get deleteButton => 'Delete';
+  String get deleteButton => '삭제';
 
   @override
   String get overlap_message =>

@@ -336,7 +336,9 @@
   "scheduleDeleteDescription": "\"{title}\" class will be deleted from schedule.\nDeleted schedule cannot be recovered.",
   "@scheduleDeleteDescription": {
     "placeholders": {
-      "title": {}
+      "title": {
+        "type": "Object"
+      }
     }
   },
   "cancelButton": "Cancel",

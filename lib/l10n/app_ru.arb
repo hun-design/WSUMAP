@@ -276,7 +276,9 @@
   "scheduleDeleteDescription": "Занятие \"{title}\" будет удалено из расписания.\nУдаленное расписание не может быть восстановлено.",
   "@scheduleDeleteDescription": {
     "placeholders": {
-      "title": {}
+      "title": {
+        "type": "Object"
+      }
     }
   },
   "inquiry_detail": "Детали запроса",

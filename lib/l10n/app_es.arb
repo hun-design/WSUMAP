@@ -269,7 +269,9 @@
   "scheduleDeleteDescription": "La clase \"{title}\" será eliminada del horario.\nEl horario eliminado no se puede recuperar.",
   "@scheduleDeleteDescription": {
     "placeholders": {
-      "title": {}
+      "title": {
+        "type": "Object"
+      }
     }
   },
   "inquiry_detail": "Detalle de consulta",

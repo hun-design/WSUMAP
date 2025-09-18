@@ -276,7 +276,9 @@
   "scheduleDeleteDescription": "「{title}」の授業がスケジュールから削除されます。\n削除されたスケジュールは復元できません。",
   "@scheduleDeleteDescription": {
     "placeholders": {
-      "title": {}
+      "title": {
+        "type": "Object"
+      }
     }
   },
   "inquiry_detail": "お問い合わせ詳細",
