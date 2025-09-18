@@ -3,7 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'timetable_item.dart';
 import 'package:flutter_application_1/config/api_config.dart';
-import 'package:uuid/uuid.dart'; // 👈 추가
+import 'package:uuid/uuid.dart';
+import 'color_mapping_service.dart';
 
 class TimetableApiService {
   static String get timetableBase => ApiConfig.timetableBase;
@@ -56,8 +57,13 @@ class TimetableApiService {
         return ScheduleItem.fromJson(mappedData);
       }).toList();
       
-      debugPrint('✅ 시간표 항목 변환 완료: ${items.length}개');
-      return items;
+      // 수업 이름별로 색상 자동 할당
+      final itemsWithColors = ColorMappingService.assignColorsToScheduleItems(items);
+      
+      debugPrint('✅ 시간표 항목 변환 완료: ${itemsWithColors.length}개');
+      debugPrint('🎨 색상 매핑 상태: ${ColorMappingService.getColorMapping()}');
+      debugPrint('📊 색상 매핑 통계: ${ColorMappingService.getColorMappingStats()}');
+      return itemsWithColors;
     } catch (e) {
       debugPrint('❌ 시간표 조회 중 오류 발생: $e');
       rethrow;

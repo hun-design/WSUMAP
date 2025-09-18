@@ -9,6 +9,7 @@ import '../map/widgets/directions_screen.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'excel_import_service.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
+import 'color_mapping_service.dart';
 
 // 상수 정의
 class TimetableConstants {
@@ -78,6 +79,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   
   /// 시간표 초기화 - 로컬 데이터 먼저 로드
   Future<void> _initializeTimetable() async {
+    // 색상 매핑 초기화
+    ColorMappingService.clearColorMapping();
     
     // 게스트 사용자가 아닌 경우에만 로컬 데이터 로드
     if (!widget.userId.startsWith('guest_')) {
@@ -123,6 +126,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   Future<void> _loadScheduleItems() async {
     final l10n = AppLocalizations.of(context);
+    
+    // 색상 매핑 초기화 (새로운 데이터 로드 시)
+    ColorMappingService.clearColorMapping();
     
     if (Platform.isAndroid) {
       await Future.delayed(const Duration(milliseconds: 100));
@@ -289,9 +295,22 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       // 1. 서버에 추가
       await _apiService.addScheduleItem(item, widget.userId);
       
-      // 2. 로컬 저장소에도 추가
+      // 2. 로컬 저장소에도 추가 (색상 매핑 적용)
       final currentItems = List<ScheduleItem>.from(_scheduleItems);
-      currentItems.add(item);
+      final itemWithColor = ScheduleItem(
+        id: item.id,
+        title: item.title,
+        professor: item.professor,
+        buildingName: item.buildingName,
+        floorNumber: item.floorNumber,
+        roomName: item.roomName,
+        dayOfWeek: item.dayOfWeek,
+        startTime: item.startTime,
+        endTime: item.endTime,
+        color: ColorMappingService.getColorForSubject(item.title),
+        memo: item.memo,
+      );
+      currentItems.add(itemWithColor);
       await TimetableStorageService.saveTimetableData(widget.userId, currentItems);
       
       // 3. UI 업데이트
@@ -391,8 +410,21 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       newItem: newItem,
     );
     
-    // 2. 로컬 저장소에도 수정
-    await TimetableStorageService.updateTimetableItem(widget.userId, originItem, newItem);
+    // 2. 로컬 저장소에도 수정 (색상 매핑 적용)
+    final newItemWithColor = ScheduleItem(
+      id: newItem.id,
+      title: newItem.title,
+      professor: newItem.professor,
+      buildingName: newItem.buildingName,
+      floorNumber: newItem.floorNumber,
+      roomName: newItem.roomName,
+      dayOfWeek: newItem.dayOfWeek,
+      startTime: newItem.startTime,
+      endTime: newItem.endTime,
+      color: ColorMappingService.getColorForSubject(newItem.title),
+      memo: newItem.memo,
+    );
+    await TimetableStorageService.updateTimetableItem(widget.userId, originItem, newItemWithColor);
     
     // 3. UI 업데이트
     final currentItems = List<ScheduleItem>.from(_scheduleItems);
@@ -401,7 +433,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           currentItems[i].dayOfWeek == originItem.dayOfWeek &&
           currentItems[i].startTime == originItem.startTime &&
           currentItems[i].endTime == originItem.endTime) {
-        currentItems[i] = newItem;
+        currentItems[i] = newItemWithColor;
         break;
       }
     }
@@ -3072,6 +3104,9 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
               
               // 엑셀 업로드 후 로컬 저장소에 최신 데이터 저장
               try {
+                // 색상 매핑 초기화 (새로운 엑셀 데이터에 대해 색상 재할당)
+                ColorMappingService.clearColorMapping();
+                
                 final apiService = TimetableApiService();
                 final latestItems = await apiService.fetchScheduleItems(widget.userId);
                 await TimetableStorageService.saveTimetableData(widget.userId, latestItems);
