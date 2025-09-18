@@ -4,6 +4,7 @@ import 'dart:io';
 import '../generated/app_localizations.dart';
 import 'timetable_item.dart';
 import 'timetable_api_service.dart';
+import 'timetable_storage_service.dart';
 import '../map/widgets/directions_screen.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'excel_import_service.dart';
@@ -26,7 +27,29 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   @override
   void initState() {
     super.initState();
-    _loadScheduleItems();
+    _initializeTimetable();
+  }
+  
+  /// 시간표 초기화 - 로컬 데이터 먼저 로드
+  Future<void> _initializeTimetable() async {
+    debugPrint('🚀 시간표 초기화 시작');
+    
+    // 게스트 사용자가 아닌 경우에만 로컬 데이터 로드
+    if (!widget.userId.startsWith('guest_')) {
+      try {
+        // 로컬 데이터 먼저 로드
+        final localItems = await TimetableStorageService.loadTimetableData(widget.userId);
+        if (localItems.isNotEmpty && mounted) {
+          setState(() => _scheduleItems = localItems);
+          debugPrint('📂 초기화 시 로컬 시간표 데이터 로드 완료: ${localItems.length}개');
+        }
+      } catch (e) {
+        debugPrint('❌ 초기화 시 로컬 데이터 로드 실패: $e');
+      }
+    }
+    
+    // 그 다음 서버 데이터와 동기화
+    await _loadScheduleItems();
   }
 
   @override
@@ -101,17 +124,62 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         return;
       }
 
-      final items = await _apiService.fetchScheduleItems(widget.userId);
-      debugPrint('📅 서버에서 받은 시간표 개수: ${items.length}');
+      // 1. 먼저 로컬 데이터 로드
+      debugPrint('📂 로컬 시간표 데이터 로드 시작');
+      final localItems = await TimetableStorageService.loadTimetableData(widget.userId);
+      debugPrint('📂 로컬에서 로드된 시간표 개수: ${localItems.length}');
       
-      // 안드로이드에서 UI 업데이트 전 추가 지연 처리
-      if (Platform.isAndroid) {
-        await Future.delayed(const Duration(milliseconds: 200));
+      // 2. 로컬 데이터가 있으면 먼저 UI에 표시
+      if (localItems.isNotEmpty && mounted) {
+        setState(() => _scheduleItems = localItems);
+        debugPrint('📂 로컬 시간표 데이터 UI 표시 완료');
       }
       
-      if (mounted) {
-        setState(() => _scheduleItems = items);
-        debugPrint('📅 시간표 UI 업데이트 완료');
+      // 3. 서버에서 최신 데이터 가져오기 시도
+      try {
+        debugPrint('🌐 서버에서 최신 시간표 데이터 가져오기 시도');
+        final serverItems = await _apiService.fetchScheduleItems(widget.userId);
+        debugPrint('🌐 서버에서 받은 시간표 개수: ${serverItems.length}');
+        
+        // 4. 서버 데이터가 로컬 데이터와 다르면 업데이트
+        if (serverItems.isNotEmpty) {
+          // 로컬 저장소에 서버 데이터 저장
+          await TimetableStorageService.saveTimetableData(widget.userId, serverItems);
+          
+          if (mounted) {
+            setState(() => _scheduleItems = serverItems);
+            debugPrint('🌐 서버 시간표 데이터로 UI 업데이트 완료');
+          }
+        }
+      } catch (serverError) {
+        debugPrint('⚠️ 서버에서 시간표 로드 실패, 로컬 데이터 사용: $serverError');
+        
+        // 서버 로드 실패 시 로컬 데이터가 있으면 계속 사용
+        if (localItems.isEmpty && mounted) {
+          // 로컬 데이터도 없으면 오류 메시지 표시
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.warning_outlined, color: Colors.white, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      '시간표를 불러올 수 없습니다. 네트워크를 확인해주세요.',
+                      style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: const Color(0xFFF59E0B),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
       }
     } catch (e) {
       debugPrint('❌ 시간표 로드 오류: $e');
@@ -186,9 +254,21 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
     try {
       debugPrint('📅 시간표 추가 시작');
+      
+      // 1. 서버에 추가
       await _apiService.addScheduleItem(item, widget.userId);
-      debugPrint('📅 시간표 추가 완료');
-      await _loadScheduleItems();
+      debugPrint('📅 서버에 시간표 추가 완료');
+      
+      // 2. 로컬 저장소에도 추가
+      final currentItems = List<ScheduleItem>.from(_scheduleItems);
+      currentItems.add(item);
+      await TimetableStorageService.saveTimetableData(widget.userId, currentItems);
+      debugPrint('📅 로컬 저장소에 시간표 추가 완료');
+      
+      // 3. UI 업데이트
+      if (mounted) {
+        setState(() => _scheduleItems = currentItems);
+      }
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -275,13 +355,34 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       return;
     }
 
+    // 1. 서버에 수정 요청
     await _apiService.updateScheduleItem(
       userId: widget.userId,
       originTitle: originItem.title,
       originDayOfWeek: originItem.dayOfWeekText,
       newItem: newItem,
     );
-    await _loadScheduleItems();
+    debugPrint('📅 서버에 시간표 수정 완료');
+    
+    // 2. 로컬 저장소에도 수정
+    await TimetableStorageService.updateTimetableItem(widget.userId, originItem, newItem);
+    debugPrint('📅 로컬 저장소에 시간표 수정 완료');
+    
+    // 3. UI 업데이트
+    final currentItems = List<ScheduleItem>.from(_scheduleItems);
+    for (int i = 0; i < currentItems.length; i++) {
+      if (currentItems[i].title == originItem.title && 
+          currentItems[i].dayOfWeek == originItem.dayOfWeek &&
+          currentItems[i].startTime == originItem.startTime &&
+          currentItems[i].endTime == originItem.endTime) {
+        currentItems[i] = newItem;
+        break;
+      }
+    }
+    
+    if (mounted) {
+      setState(() => _scheduleItems = currentItems);
+    }
   }
 
   Future<void> _deleteScheduleItem(ScheduleItem item) async {
@@ -313,12 +414,30 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       return;
     }
 
+    // 1. 서버에서 삭제
     await _apiService.deleteScheduleItem(
       userId: widget.userId,
       title: item.title,
       dayOfWeek: item.dayOfWeekText,
     );
-    await _loadScheduleItems();
+    debugPrint('📅 서버에서 시간표 삭제 완료');
+    
+    // 2. 로컬 저장소에서도 삭제
+    await TimetableStorageService.removeTimetableItem(widget.userId, item);
+    debugPrint('📅 로컬 저장소에서 시간표 삭제 완료');
+    
+    // 3. UI 업데이트
+    final currentItems = List<ScheduleItem>.from(_scheduleItems);
+    currentItems.removeWhere((existingItem) => 
+      existingItem.title == item.title && 
+      existingItem.dayOfWeek == item.dayOfWeek &&
+      existingItem.startTime == item.startTime &&
+      existingItem.endTime == item.endTime
+    );
+    
+    if (mounted) {
+      setState(() => _scheduleItems = currentItems);
+    }
   }
 
   bool _isOverlapped(ScheduleItem newItem, {String? ignoreId}) {
@@ -3170,6 +3289,16 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
             try {
               await widget.refreshCallback();
               debugPrint('✅ 시간표 새로고침 완료');
+              
+              // 엑셀 업로드 후 로컬 저장소에 최신 데이터 저장
+              try {
+                final apiService = TimetableApiService();
+                final latestItems = await apiService.fetchScheduleItems(widget.userId);
+                await TimetableStorageService.saveTimetableData(widget.userId, latestItems);
+                debugPrint('📂 엑셀 업로드 후 로컬 저장소 업데이트 완료');
+              } catch (e) {
+                debugPrint('⚠️ 엑셀 업로드 후 로컬 저장소 업데이트 실패: $e');
+              }
               
               // 성공 메시지 표시
               if (mounted) {
