@@ -1,16 +1,28 @@
 import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
-import 'package:flutter_application_1/generated/app_localizations.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_application_1/managers/location_manager.dart';
-import 'package:flutter_application_1/services/map/custom_user_location_marker.dart';
 
+import 'generated/app_localizations.dart';
+import 'managers/location_manager.dart';
+import 'services/map/custom_user_location_marker.dart';
+
+/// 실외 지도 페이지 위젯
 class OutdoorMapPage extends StatefulWidget {
+  /// 경로 좌표 리스트
   final List<NLatLng> path;
+  
+  /// 총 거리 (미터)
   final double distance;
+  
+  /// 마커 표시 여부
   final bool showMarkers;
+  
+  /// 출발지 라벨
   final String? startLabel;
+  
+  /// 도착지 라벨
   final String? endLabel;
 
   const OutdoorMapPage({
@@ -28,8 +40,8 @@ class OutdoorMapPage extends StatefulWidget {
 
 class _OutdoorMapPageState extends State<OutdoorMapPage> {
   NaverMapController? _mapController;
-  List<String> _pathOverlayIds = [];
-  List<String> _markerOverlayIds = [];
+  final List<String> _pathOverlayIds = [];
+  final List<String> _markerOverlayIds = [];
   NLatLng? _currentLocation;
   LocationManager? _locationManager;
   late CustomUserLocationMarker _customUserLocationMarker;
@@ -101,134 +113,133 @@ class _OutdoorMapPageState extends State<OutdoorMapPage> {
   }
 
   @override
-Widget build(BuildContext context) {
-  final l10n = AppLocalizations.of(context)!;
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
 
-  return Scaffold(
-    body: Stack(
-      children: [
-        NaverMap(
-          options: const NaverMapViewOptions(
-            initialCameraPosition: NCameraPosition(
-              target: NLatLng(36.3370, 127.4450),
-              zoom: 15.5,
+    return Scaffold(
+      body: Stack(
+        children: [
+          NaverMap(
+            options: const NaverMapViewOptions(
+              initialCameraPosition: NCameraPosition(
+                target: NLatLng(36.3370, 127.4450),
+                zoom: 15.5,
+              ),
             ),
+            onMapReady: (controller) async {
+              _mapController = controller;
+              _customUserLocationMarker.setMapController(controller);
+              _customUserLocationMarker.setContext(context);
+              await _getCurrentLocation();
+              _drawPath();
+              await _addRouteMarkers();
+              await _showCurrentLocation();
+            },
           ),
-          onMapReady: (controller) async {
-            _mapController = controller;
-            _customUserLocationMarker.setMapController(controller);
-            _customUserLocationMarker.setContext(context);
-            await _getCurrentLocation();
-            _drawPath();
-            await _addRouteMarkers();
-            await _showCurrentLocation();
-          },
-        ),
-        // 하단 정보 패널
-        Positioned(
-          left: 16,
-          right: 16,
-          bottom: 100,
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // 출발/도착 정보 (라벨 제거, 상세 위치명 크게 진하게)
-                Row(
-                  children: [
-                    Expanded(
-                      child: Row(
-                        children: [
-                          const SizedBox(width: 8),
-                          Container(
-                            width: 12,
-                            height: 12,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF3B82F6), // 파란색 출발지
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          // 기존 진한 출발지 텍스트 삭제
-                          Expanded(
-                            child: Text(
-                              widget.startLabel ?? l10n.myLocation,
-                              style: const TextStyle(
-                                fontSize: 18,               // 크기 키움
-                                fontWeight: FontWeight.bold, // 굵게
-                                color: Colors.black87,      // 진한 검정색
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    const Icon(Icons.arrow_forward, color: Colors.grey),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Row(
-                        children: [
-                          const SizedBox(width: 8),
-                          Container(
-                            width: 12,
-                            height: 12,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFEF4444), // 빨간색 도착지
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          // 기존 진한 도착지 텍스트 삭제
-                          Expanded(
-                            child: Text(
-                              widget.endLabel ?? l10n.destination,
-                              style: const TextStyle(
-                                fontSize: 18,               // 크기 키움
-                                fontWeight: FontWeight.bold, // 굵게
-                                color: Colors.black87,      // 진한 검정색
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                // 거리 정보
-                Text(
-                  '${l10n.outdoor_movement_distance}: ${widget.distance.toStringAsFixed(0)}m',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
+          // 하단 정보 패널
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: 100,
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
                   ),
-                ),
-              ],
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // 출발/도착 정보
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Row(
+                          children: [
+                            const SizedBox(width: 8),
+                            Container(
+                              width: 12,
+                              height: 12,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF3B82F6),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                widget.startLabel ?? l10n.myLocation,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      const Icon(Icons.arrow_forward, color: Colors.grey),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Row(
+                          children: [
+                            const SizedBox(width: 8),
+                            Container(
+                              width: 12,
+                              height: 12,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFEF4444),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                widget.endLabel ?? l10n.destination,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black87,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // 거리 정보
+                  Text(
+                    '${l10n.outdoor_movement_distance}: ${widget.distance.toStringAsFixed(0)}m',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
       ],
     ),
   );
 }
 
+  /// 경로 그리기
   void _drawPath() {
     if (_mapController == null || widget.path.isEmpty) return;
 
@@ -240,7 +251,7 @@ Widget build(BuildContext context) {
     }
     _pathOverlayIds.clear();
 
-    // 🔥 동적 경로 두께 계산
+    // 동적 경로 두께 계산
     final dynamicWidth = _calculateDynamicPathWidth(widget.path);
 
     // 새로운 경로 그리기
@@ -256,9 +267,8 @@ Widget build(BuildContext context) {
     }
   }
 
-  /// 🔥 동적 경로 두께 계산
+  /// 동적 경로 두께 계산
   double _calculateDynamicPathWidth(List<NLatLng> pathCoordinates) {
-    // 경로 길이에 따른 동적 두께 계산
     final pathLength = _calculatePathLength(pathCoordinates);
 
     if (pathLength < 100) {
@@ -272,7 +282,7 @@ Widget build(BuildContext context) {
     }
   }
 
-  /// 🔥 경로 길이 계산 (미터 단위)
+  /// 경로 길이 계산 (미터 단위)
   double _calculatePathLength(List<NLatLng> coordinates) {
     if (coordinates.length < 2) return 0.0;
 
@@ -288,7 +298,7 @@ Widget build(BuildContext context) {
     return totalDistance;
   }
 
-  /// 🔥 두 좌표 간 거리 계산 (미터 단위)
+  /// 두 좌표 간 거리 계산 (미터 단위)
   double _calculateDistance(
     double lat1,
     double lon1,
@@ -312,7 +322,7 @@ Widget build(BuildContext context) {
     return earthRadius * c;
   }
 
-  /// 🔥 도를 라디안으로 변환
+  /// 도를 라디안으로 변환
   double _degreesToRadians(double degrees) {
     return degrees * (pi / 180);
   }
@@ -331,7 +341,7 @@ Widget build(BuildContext context) {
       return;
     }
 
-    // 🔥 showMarkers가 false면 마커를 추가하지 않음
+    // showMarkers가 false면 마커를 추가하지 않음
     if (!widget.showMarkers) {
       debugPrint('⚠️ showMarkers가 false로 설정되어 마커를 표시하지 않습니다');
       return;
@@ -343,7 +353,7 @@ Widget build(BuildContext context) {
     try {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
 
-      // 🔥 출발점 마커 (파란색 원형)
+      // 출발점 마커 (파란색 원형)
       if (widget.path.isNotEmpty) {
         final startMarkerId = 'route_start_$timestamp';
         final startMarker = NMarker(
@@ -378,7 +388,7 @@ Widget build(BuildContext context) {
         debugPrint('출발지 마커 ID: $startMarkerId');
       }
 
-      // 🔥 도착점 마커 (빨간색 원형)
+      // 도착점 마커 (빨간색 원형)
       if (widget.path.length > 1) {
         final endMarkerId = 'route_end_$timestamp';
         final endMarker = NMarker(
@@ -415,7 +425,7 @@ Widget build(BuildContext context) {
 
       debugPrint('✅ 경로 마커 추가 완료 - 총 ${_markerOverlayIds.length}개 마커');
 
-      // 🔥 마커가 추가되지 않았으면 다시 시도
+      // 마커가 추가되지 않았으면 다시 시도
       if (_markerOverlayIds.isEmpty) {
         debugPrint('⚠️ 마커가 추가되지 않음. 1초 후 재시도...');
         Future.delayed(const Duration(seconds: 1), () {
@@ -427,7 +437,7 @@ Widget build(BuildContext context) {
     } catch (e) {
       debugPrint('❌ 경로 마커 추가 실패: $e');
 
-      // 🔥 실패 시에도 재시도
+      // 실패 시에도 재시도
       Future.delayed(const Duration(seconds: 2), () {
         if (mounted) {
           debugPrint('🔄 마커 추가 재시도...');

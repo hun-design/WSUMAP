@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/inside/building_map_page.dart';
-import 'package:flutter_application_1/outdoor_map_page.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
-import 'package:flutter_application_1/generated/app_localizations.dart';
-import 'package:flutter_application_1/controllers/location_controllers.dart';
 
+import 'inside/building_map_page.dart';
+import 'outdoor_map_page.dart';
+import 'generated/app_localizations.dart';
+import 'controllers/location_controllers.dart';
+
+/// 경로 데이터를 NLatLng 리스트로 변환
 List<NLatLng> convertToNLatLngList(List<Map<String, dynamic>> path) {
   return path.map((point) {
     final lat = point['x'] ?? point['lat'];
@@ -13,12 +15,24 @@ List<NLatLng> convertToNLatLngList(List<Map<String, dynamic>> path) {
   }).toList();
 }
 
+/// 통합 네비게이션 스테퍼 페이지
 class UnifiedNavigationStepperPage extends StatefulWidget {
+  /// 출발 건물명
   final String departureBuilding;
+  
+  /// 출발 노드 ID 리스트
   final List<String> departureNodeIds;
+  
+  /// 실외 경로 데이터
   final List<Map<String, dynamic>> outdoorPath;
+  
+  /// 실외 거리
   final double outdoorDistance;
+  
+  /// 도착 건물명
   final String arrivalBuilding;
+  
+  /// 도착 노드 ID 리스트
   final List<String> arrivalNodeIds;
 
   const UnifiedNavigationStepperPage({
@@ -39,7 +53,7 @@ class _UnifiedNavigationStepperPageState extends State<UnifiedNavigationStepperP
   final List<_StepData> _steps = [];
   int _currentStepIndex = 0;
   
-  // 위치 컨트롤러 추가
+  /// 위치 컨트롤러
   late LocationController _locationController;
 
   @override
@@ -49,7 +63,7 @@ class _UnifiedNavigationStepperPageState extends State<UnifiedNavigationStepperP
     // 위치 컨트롤러 초기화
     _locationController = LocationController();
 
-    // 출발 실내 경로가 있다면 층별로 분리하여 단계 추가 (서버 순서대로)
+    // 출발 실내 경로가 있다면 층별로 분리하여 단계 추가
     if (widget.departureNodeIds.isNotEmpty) {
       final depFloors = _splitNodeIdsByFloor(widget.departureNodeIds);
       for (final floor in depFloors.keys) {
@@ -71,7 +85,7 @@ class _UnifiedNavigationStepperPageState extends State<UnifiedNavigationStepperP
       ));
     }
 
-    // 도착 실내 경로가 있다면 층별로 분리하여 단계 추가 (서버 순서대로)
+    // 도착 실내 경로가 있다면 층별로 분리하여 단계 추가
     if (widget.arrivalNodeIds.isNotEmpty) {
       final arrFloors = _splitNodeIdsByFloor(widget.arrivalNodeIds);
       for (final floor in arrFloors.keys) {
@@ -85,12 +99,14 @@ class _UnifiedNavigationStepperPageState extends State<UnifiedNavigationStepperP
     }
   }
 
+  /// 이전 단계로 이동
   void _goToPreviousStep() {
     setState(() {
       if (_currentStepIndex > 0) _currentStepIndex--;
     });
   }
 
+  /// 다음 단계로 이동
   void _goToNextStep() {
     setState(() {
       if (_currentStepIndex < _steps.length - 1) {
@@ -99,10 +115,12 @@ class _UnifiedNavigationStepperPageState extends State<UnifiedNavigationStepperP
     });
   } 
 
+  /// 네비게이션 완료
   void _finishNavigation() {
     Navigator.of(context).pop();
   }
 
+  /// 노드 ID를 층별로 분리
   Map<String, List<String>> _splitNodeIdsByFloor(List<String> nodeIds) {
     final Map<String, List<String>> floorMap = {};
     for (final id in nodeIds) {
@@ -116,54 +134,54 @@ class _UnifiedNavigationStepperPageState extends State<UnifiedNavigationStepperP
   }
 
   @override
-Widget build(BuildContext context) {
-  final currentStep = _steps[_currentStepIndex];
-  final isLastStep = _currentStepIndex == _steps.length - 1;
-  final l10n = AppLocalizations.of(context)!;
+  Widget build(BuildContext context) {
+    final currentStep = _steps[_currentStepIndex];
+    final isLastStep = _currentStepIndex == _steps.length - 1;
+    final l10n = AppLocalizations.of(context)!;
 
-  Widget content;
-  if (currentStep.type == StepType.indoor) {
-    content = BuildingMapPage(
-      buildingName: currentStep.building,
-      navigationNodeIds: currentStep.nodeIds,
-      isArrivalNavigation: currentStep.isArrival,
-    );
-  } else {
-    content = OutdoorMapPage(
-      path: convertToNLatLngList(currentStep.outdoorPath!),
-      distance: currentStep.outdoorDistance!,
-      showMarkers: true,
-      startLabel: l10n.departurePoint,  // 언어 변경 적용
-      endLabel: l10n.arrivalPoint,      // 언어 변경 적용
-    );
-  }
+    Widget content;
+    if (currentStep.type == StepType.indoor) {
+      content = BuildingMapPage(
+        buildingName: currentStep.building,
+        navigationNodeIds: currentStep.nodeIds,
+        isArrivalNavigation: currentStep.isArrival,
+      );
+    } else {
+      content = OutdoorMapPage(
+        path: convertToNLatLngList(currentStep.outdoorPath!),
+        distance: currentStep.outdoorDistance!,
+        showMarkers: true,
+        startLabel: l10n.departurePoint,
+        endLabel: l10n.arrivalPoint,
+      );
+    }
 
-  // 나머지 build 내용 유지
-  return Scaffold(
-    appBar: AppBar(
-      title: Text(_getCurrentStepTitle()),
-      backgroundColor: Colors.indigo,
-      elevation: 0,
-      actions: [
-        Center(
-          child: Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Text(
-              '${_currentStepIndex + 1}/${_steps.length}',
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_getCurrentStepTitle()),
+        backgroundColor: Colors.indigo,
+        elevation: 0,
+        actions: [
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.only(right: 16),
+              child: Text(
+                '${_currentStepIndex + 1}/${_steps.length}',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
-        ),
-      ],
-    ),
-    body: content,
-    bottomNavigationBar: _buildSimpleBottomBar(currentStep, isLastStep),
-  );
-}
+        ],
+      ),
+      body: content,
+      bottomNavigationBar: _buildSimpleBottomBar(currentStep, isLastStep),
+    );
+  }
 
+  /// 현재 단계 제목 반환
   String _getCurrentStepTitle() {
     final currentStep = _steps[_currentStepIndex];
     final l10n = AppLocalizations.of(context)!;
@@ -175,11 +193,11 @@ Widget build(BuildContext context) {
         return '${currentStep.building} ${l10n.indoor_departure}';
       }
     } else {
-      return l10n.navigation; // 🔥 실외에서는 단순하게 "길찾기"만 표시
+      return l10n.navigation;
     }
   }
 
-  // 🔥 실외에서는 버튼만, 실내에서는 기존 방식
+  /// 하단 네비게이션 바 빌드
   Widget _buildSimpleBottomBar(_StepData currentStep, bool isLastStep) {
     final l10n = AppLocalizations.of(context)!;
     return Container(
@@ -197,7 +215,7 @@ Widget build(BuildContext context) {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // 🔥 이전 버튼
+          // 이전 버튼
           ElevatedButton(
             onPressed: _currentStepIndex > 0 ? _goToPreviousStep : null,
             style: ElevatedButton.styleFrom(
@@ -207,12 +225,12 @@ Widget build(BuildContext context) {
             child: Text(l10n.previous),
           ),
           
-          // 🔥 다음/완료 버튼
+          // 다음/완료 버튼
           if (!isLastStep)
             ElevatedButton(
               onPressed: _goToNextStep,
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.indigo, // 실내/실외 모두 동일 색상 적용
+                backgroundColor: Colors.indigo,
                 foregroundColor: Colors.white,
               ),
               child: Text(l10n.next),
@@ -239,14 +257,27 @@ Widget build(BuildContext context) {
   }
 }
 
+/// 단계 타입 열거형
 enum StepType { indoor, outdoor }
 
+/// 단계 데이터 클래스
 class _StepData {
+  /// 단계 타입
   final StepType type;
+  
+  /// 건물명
   final String building;
+  
+  /// 노드 ID 리스트
   final List<String> nodeIds;
+  
+  /// 도착 여부
   final bool isArrival;
+  
+  /// 실외 경로 데이터
   final List<Map<String, dynamic>>? outdoorPath;
+  
+  /// 실외 거리
   final double? outdoorDistance;
 
   _StepData({

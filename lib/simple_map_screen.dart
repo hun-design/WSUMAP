@@ -1,9 +1,11 @@
 // lib/simple_map_screen.dart - 간단한 테스트용 지도 화면
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import 'auth/user_auth.dart';
 import 'map/map_screen.dart';
 
+/// 간단한 테스트용 지도 화면
 class SimpleMapScreen extends StatefulWidget {
   const SimpleMapScreen({super.key});
 
@@ -35,9 +37,9 @@ class _SimpleMapScreenState extends State<SimpleMapScreen> {
             children: [
               const Icon(Icons.map, size: 100, color: Color(0xFF1E3A8A)),
               const SizedBox(height: 20),
-              Text(
+              const Text(
                 '로그인 성공!',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF1E3A8A),
@@ -55,7 +57,6 @@ class _SimpleMapScreenState extends State<SimpleMapScreen> {
               const SizedBox(height: 30),
               ElevatedButton(
                 onPressed: () {
-                  // 실제 MapScreen으로 이동
                   Navigator.of(context).pushReplacement(
                     MaterialPageRoute(builder: (_) => const MapScreen()),
                   );
@@ -70,7 +71,6 @@ class _SimpleMapScreenState extends State<SimpleMapScreen> {
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
-                  // 로그아웃
                   userAuth.logout();
                   Navigator.of(context).pushNamedAndRemoveUntil(
                     '/',

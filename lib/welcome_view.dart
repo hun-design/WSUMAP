@@ -1,14 +1,17 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../generated/app_localizations.dart';
-import '../auth/user_auth.dart';
-import 'providers/app_language_provider.dart';
-import '../managers/location_manager.dart';
-import '../selection/auth_selection_view.dart';
 
+import 'generated/app_localizations.dart';
+import 'auth/user_auth.dart';
+import 'managers/location_manager.dart';
+import 'selection/auth_selection_view.dart';
+
+/// 앱 언어 열거형
 enum AppLanguage { korean, english, chinese, spanish, japanese, russian }
 
+/// 언어를 문자열로 변환
 String languageToString(AppLanguage lang) {
   switch (lang) {
     case AppLanguage.korean:
@@ -26,6 +29,7 @@ String languageToString(AppLanguage lang) {
   }
 }
 
+/// Locale을 AppLanguage로 변환
 AppLanguage localeToAppLanguage(Locale locale) {
   switch (locale.languageCode) {
     case 'ko':
@@ -45,6 +49,7 @@ AppLanguage localeToAppLanguage(Locale locale) {
   }
 }
 
+/// AppLanguage를 Locale로 변환
 Locale appLanguageToLocale(AppLanguage lang) {
   switch (lang) {
     case AppLanguage.korean:
@@ -62,6 +67,7 @@ Locale appLanguageToLocale(AppLanguage lang) {
   }
 }
 
+/// 웰컴 화면 위젯
 class WelcomeView extends StatefulWidget {
   const WelcomeView({super.key});
 
@@ -69,7 +75,7 @@ class WelcomeView extends StatefulWidget {
   State<WelcomeView> createState() => _WelcomeViewState();
 }
 
-// 말풍선 꼬리 그리기 클래스
+/// 말풍선 꼬리 그리기 클래스
 class SpeechBubbleTailPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
@@ -95,23 +101,14 @@ class _WelcomeViewState extends State<WelcomeView>
   late AnimationController _fadeController;
   late AnimationController _slideController;
   late AnimationController _floatingController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-  late Animation<double> _floatingAnimation;
-  late AppLanguage _selectedLanguage;
 
-  // 🔥 위치 준비 관련 변수들 추가
+  /// 위치 준비 관련 변수들
   bool _isPreparingLocation = false;
   bool _locationPrepared = false;
 
   @override
   void initState() {
     super.initState();
-    final locale = Provider.of<AppLanguageProvider>(
-      context,
-      listen: false,
-    ).locale;
-    _selectedLanguage = localeToAppLanguage(locale);
 
     _fadeController = AnimationController(
       duration: const Duration(milliseconds: 1500),
@@ -126,26 +123,15 @@ class _WelcomeViewState extends State<WelcomeView>
       vsync: this,
     );
 
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _fadeController, curve: Curves.easeOut));
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0.0, 0.3), end: Offset.zero).animate(
-          CurvedAnimation(parent: _slideController, curve: Curves.easeOutBack),
-        );
-    _floatingAnimation = Tween<double>(begin: -8.0, end: 8.0).animate(
-      CurvedAnimation(parent: _floatingController, curve: Curves.easeInOut),
-    );
 
     _fadeController.forward();
     _slideController.forward();
     _floatingController.repeat(reverse: true);
 
-    // 🔥 Welcome 화면 진입 시 백그라운드에서 위치 미리 준비
+    // Welcome 화면 진입 시 백그라운드에서 위치 미리 준비
     _prepareLocationInBackground();
 
-    // 🔥 2초 후 자동으로 AuthSelectionView로 이동
+    // 2초 후 자동으로 AuthSelectionView로 이동
     Timer(const Duration(seconds: 2), () {
       if (mounted) {
         _navigateToAuthSelection();
@@ -161,7 +147,7 @@ class _WelcomeViewState extends State<WelcomeView>
     super.dispose();
   }
 
-  /// 🔥 백그라운드에서 위치 미리 준비 (초고속 버전)
+  /// 백그라운드에서 위치 미리 준비
   Future<void> _prepareLocationInBackground() async {
     if (_isPreparingLocation || _locationPrepared) return;
 
@@ -169,11 +155,11 @@ class _WelcomeViewState extends State<WelcomeView>
       _isPreparingLocation = true;
       debugPrint('🔄 Welcome 화면에서 위치 미리 준비 시작...');
 
-      // 🔥 대기 시간 더 단축 (0.5초에서 0.2초로)
+      // 대기 시간 단축
       await Future.delayed(const Duration(milliseconds: 200));
       final locationManager = Provider.of<LocationManager>(context, listen: false);
 
-      // LocationManager 초기화 대기 (최대 0.5초로 단축)
+      // LocationManager 초기화 대기
       int retries = 0;
       while (!locationManager.isInitialized && retries < 5) {
         await Future.delayed(const Duration(milliseconds: 100));
@@ -182,10 +168,10 @@ class _WelcomeViewState extends State<WelcomeView>
 
       if (locationManager.isInitialized) {
         debugPrint('🔍 Welcome에서 위치 권한 확인 중...');
-        await Future.delayed(const Duration(milliseconds: 100)); // 200ms에서 100ms로 단축
+        await Future.delayed(const Duration(milliseconds: 100));
         await locationManager.recheckPermissionStatus();
 
-        // 권한 상태 확인 (최대 0.3초 대기로 단축)
+        // 권한 상태 확인
         int permissionRetries = 0;
         while (locationManager.permissionStatus == null && permissionRetries < 3) {
           await Future.delayed(const Duration(milliseconds: 100));
@@ -196,9 +182,9 @@ class _WelcomeViewState extends State<WelcomeView>
         debugPrint('✅ Welcome에서 초고속 위치 요청 시작...');
 
         try {
-          // 🔥 초고속 위치 요청 (0.5초 타임아웃)
+          // 초고속 위치 요청
           await locationManager.requestLocationQuickly().timeout(
-            const Duration(milliseconds: 500), // 1초에서 0.5초로 단축
+            const Duration(milliseconds: 500),
             onTimeout: () {
               debugPrint('⏰ Welcome 위치 요청 타임아웃 (0.5초) - 정상 진행');
               throw TimeoutException('Welcome 위치 타임아웃', const Duration(milliseconds: 500));
@@ -228,325 +214,27 @@ class _WelcomeViewState extends State<WelcomeView>
     }
   }
 
-  /// 🔥 위치 준비 (개선된 버전) - 제거됨
-  // Future<void> _prepareLocation() async {
-  //   if (_isPreparingLocation) return;
-  //   _isPreparingLocation = true;
 
-  //   try {
-  //     debugPrint('📍 Welcome 화면에서 위치 준비 시작...');
-
-  //     final locationManager = Provider.of<LocationManager>(context, listen: false);
-  //     if (locationManager != null) {
-  //       debugPrint('✅ LocationManager 초기화 확인됨');
-
-  //       // 권한 상태 확인 (최대 0.5초 대기)
-  //       int permissionRetries = 0;
-  //       while (locationManager.permissionStatus == null && permissionRetries < 5) {
-  //         await Future.delayed(const Duration(milliseconds: 100));
-  //         permissionRetries++;
-  //       }
-
-  //       debugPrint('🔍 최종 권한 상태: ${locationManager.permissionStatus}');
-  //       debugPrint('✅ Welcome에서 빠른 위치 요청 시작...');
-
-  //       try {
-  //         // 🔥 빠른 위치 요청 (1초 타임아웃)
-  //         await locationManager.requestLocationQuickly().timeout(
-  //           const Duration(seconds: 1), // 1초로 단축
-  //           onTimeout: () {
-  //             debugPrint('⏰ Welcome 위치 요청 타임아웃 (1초) - 정상 진행');
-  //             throw TimeoutException('Welcome 위치 타임아웃', const Duration(seconds: 1));
-  //           },
-  //         );
-
-  //         if (locationManager.hasValidLocation && mounted) {
-  //           debugPrint('✅ Welcome 화면에서 위치 준비 완료!');
-  //           debugPrint('   위도: ${locationManager.currentLocation?.latitude}');
-  //           debugPrint('   경도: ${locationManager.currentLocation?.longitude}');
-  //           setState(() {
-  //             _locationPrepared = true;
-  //           });
-  //         } else {
-  //           debugPrint('⚠️ Welcome 화면에서 위치 준비 실패 - Map에서 재시도');
-  //         }
-  //       } catch (e) {
-  //         debugPrint('⚠️ Welcome 위치 요청 실패: $e - Map에서 재시도');
-  //       }
-  //     } else {
-  //       debugPrint('❌ Welcome 화면에서 LocationManager 초기화 실패');
-  //     }
-  //   } catch (e) {
-  //     debugPrint('⚠️ Welcome 화면 위치 준비 오류: $e');
-  //   } finally {
-  //     _isPreparingLocation = false;
-  //   }
-  // }
-
-  // 기본 텍스트 반환 함수들 (localization이 없을 때 사용)
-  String _getAppTitle() {
-    switch (_selectedLanguage) {
-      case AppLanguage.korean:
-        return '따라우송';
-      case AppLanguage.english:
-        return '따라우송';
-      case AppLanguage.chinese:
-        return '따라우송';
-      case AppLanguage.spanish:
-        return '따라우송';
-      case AppLanguage.japanese:
-        return '따라우송';
-      case AppLanguage.russian:
-        return '따라우송';
-    }
-  }
-
-  String _getSubtitle() {
-    switch (_selectedLanguage) {
-      case AppLanguage.korean:
-        return '우송대학교 캠퍼스를\n쉽고 빠르게 탐색하세요';
-      case AppLanguage.english:
-        return 'Explore Woosong University campus easily and quickly';
-      case AppLanguage.chinese:
-        return '轻松快捷地探索又松大学校园';
-      case AppLanguage.spanish:
-        return 'Explora el campus de la Universidad de Woosong de manera fácil y rápida';
-      case AppLanguage.japanese:
-        return 'ウソン大学のキャンパスを\n簡単かつ迅速に探索しましょう';
-      case AppLanguage.russian:
-        return 'Легко и быстро исследуйте кампус Университета Вусонг';
-    }
-  }
-
-  String _getStartText() {
-    switch (_selectedLanguage) {
-      case AppLanguage.korean:
-        return '시작하기';
-      case AppLanguage.english:
-        return 'Get Started';
-      case AppLanguage.chinese:
-        return '开始';
-      case AppLanguage.spanish:
-        return 'Comenzar';
-      case AppLanguage.japanese:
-        return '始める';
-      case AppLanguage.russian:
-        return 'Начать';
-    }
-  }
-
-  String _getLanguageText() {
-    // AppLocalizations를 사용하여 다국어 지원
-    final l10n = AppLocalizations.of(context);
-    if (l10n != null) {
-      return l10n.select_language;
-    }
-    // 폴백: 현재 선택된 언어에 따라 반환
-    switch (_selectedLanguage) {
-      case AppLanguage.korean:
-        return '언어 선택';
-      case AppLanguage.english:
-        return 'Select Language';
-      case AppLanguage.chinese:
-        return '选择语言';
-      case AppLanguage.spanish:
-        return 'Seleccionar Idioma';
-      case AppLanguage.japanese:
-        return '言語選択';
-      case AppLanguage.russian:
-        return 'Выбрать язык';
-    }
-  }
-
-  String _getWoosongText() {
-    switch (_selectedLanguage) {
-      case AppLanguage.korean:
-        return '따라우송';
-      case AppLanguage.english:
-        return '따라우송';
-      case AppLanguage.chinese:
-        return '따라우송';
-      case AppLanguage.spanish:
-        return '따라우송';
-      case AppLanguage.japanese:
-        return '따라우송';
-      case AppLanguage.russian:
-        return '따라우송';
-    }
-  }
-
-  /// 🔥 AuthSelectionView로 자동 이동
+  /// AuthSelectionView로 자동 이동
   void _navigateToAuthSelection() {
     final userAuth = Provider.of<UserAuth>(context, listen: false);
 
-    // 🔥 게스트 모드에서 WelcomeView로 온 경우 AuthSelectionView로 직접 이동
+    // 게스트 모드에서 WelcomeView로 온 경우 AuthSelectionView로 직접 이동
     if (userAuth.isGuest) {
       debugPrint('🔥 게스트 모드: AuthSelectionView로 직접 이동');
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const AuthSelectionView()),
       );
     } else {
-      // 🔥 일반 사용자: 첫 실행 완료 표시 - Consumer가 자동으로 AuthSelectionView로 전환
+      // 일반 사용자: 첫 실행 완료 표시
       debugPrint('🔥 일반 사용자: completeFirstLaunch 호출');
       userAuth.completeFirstLaunch();
     }
   }
 
-  void _showLanguageDialog() async {
-    final result = await showDialog<AppLanguage>(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) {
-        final screenHeight = MediaQuery.of(context).size.height;
-        final maxHeight = screenHeight * 0.8; // 화면 높이의 80%로 제한
-        
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          child: Container(
-            constraints: BoxConstraints(
-              maxHeight: maxHeight,
-              maxWidth: MediaQuery.of(context).size.width * 0.9,
-            ),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 24,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Stack(
-              children: [
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // 상단 아이콘+타이틀
-                    Padding(
-                      padding: const EdgeInsets.only(top: 24, bottom: 16),
-                      child: Column(
-                        children: [
-                          const Icon(
-                            Icons.language,
-                            color: Color(0xFF1E3A8A),
-                            size: 32,
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            _getLanguageText(),
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF1E3A8A),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // 스크롤 가능한 언어 선택 버튼들
-                    Flexible(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                        child: Column(
-                          children: AppLanguage.values.map((lang) {
-                            final selected = lang == _selectedLanguage;
-                            return GestureDetector(
-                              onTap: () => Navigator.of(context).pop(lang),
-                              child: Container(
-                                margin: const EdgeInsets.symmetric(vertical: 4),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: selected
-                                      ? const Color(0xFF1E3A8A).withOpacity(0.08)
-                                      : Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: selected
-                                        ? const Color(0xFF1E3A8A)
-                                        : Colors.grey[300]!,
-                                    width: selected ? 2 : 1,
-                                  ),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      selected
-                                          ? Icons.radio_button_checked
-                                          : Icons.radio_button_off,
-                                      color: selected
-                                          ? const Color(0xFF1E3A8A)
-                                          : Colors.grey[400],
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Text(
-                                      languageToString(lang),
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 15,
-                                        color: selected
-                                            ? const Color(0xFF1E3A8A)
-                                            : Colors.grey[800],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                ),
-                // 🔥 오른쪽 상단 X 버튼
-                Positioned(
-                  top: 16,
-                  right: 16,
-                  child: GestureDetector(
-                    onTap: () => Navigator.of(context).pop(),
-                    child: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Icon(
-                        Icons.close,
-                        size: 20,
-                        color: Color(0xFF64748B),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-
-    if (result != null && result != _selectedLanguage) {
-      setState(() {
-        _selectedLanguage = result;
-      });
-      Provider.of<AppLanguageProvider>(
-        context,
-        listen: false,
-      ).setLocale(appLanguageToLocale(result));
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
-    // AppLocalizations를 안전하게 가져오기 (null일 수 있음)
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(
@@ -558,9 +246,9 @@ class _WelcomeViewState extends State<WelcomeView>
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Color(0xFF1E3A8A), // 우송 네이비 (진한)
-              Color(0xFF3B82F6), // 우송 네이비 (중간)
-              Color(0xFF60A5FA), // 우송 네이비 (연한)
+              Color(0xFF1E3A8A),
+              Color(0xFF3B82F6),
+              Color(0xFF60A5FA),
             ],
             stops: [0.0, 0.5, 1.0],
           ),
@@ -589,7 +277,7 @@ class _WelcomeViewState extends State<WelcomeView>
                   children: [
                     Text(
                       l10n?.welcome_subtitle_1 ?? '내 손 안의 따라우송,',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
                         color: Color(0xFF1E3A8A),
@@ -598,7 +286,7 @@ class _WelcomeViewState extends State<WelcomeView>
                     const SizedBox(height: 6),
                     Text(
                       l10n?.welcome_subtitle_2 ?? '건물 정보가 다 여기에!',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w700,
                         color: Color(0xFF1E3A8A),
@@ -628,14 +316,14 @@ class _WelcomeViewState extends State<WelcomeView>
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      Color(0xFF1E3A8A), // 우송 네이비
-                      Color(0xFF3B82F6), // 우송 네이비 (밝은)
+                      Color(0xFF1E3A8A),
+                      Color(0xFF3B82F6),
                     ],
                   ),
                   borderRadius: BorderRadius.circular(70),
                   boxShadow: [
                     BoxShadow(
-                      color: Color(0xFF1E3A8A).withValues(alpha: 0.4),
+                      color: const Color(0xFF1E3A8A).withValues(alpha: 0.4),
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     ),
@@ -654,7 +342,7 @@ class _WelcomeViewState extends State<WelcomeView>
                 width: 100,
                 height: 25,
                 decoration: BoxDecoration(
-                  color: Color(0xFF1E3A8A).withValues(alpha: 0.3),
+                  color: const Color(0xFF1E3A8A).withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
