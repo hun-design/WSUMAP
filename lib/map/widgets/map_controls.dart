@@ -252,6 +252,7 @@ class MapControls extends StatelessWidget {
   Widget _buildMyLocationButton(LocationManager locationManager) {
     final bool isLoading = locationManager.isRequestingLocation;
     final bool hasLocation = locationManager.hasValidLocation;
+    final bool hasLocationError = locationManager.hasLocationPermissionError;
 
     return Material(
       color: Colors.transparent,
@@ -274,8 +275,10 @@ class MapControls extends StatelessWidget {
             border: Border.all(
               color: hasLocation
                   ? const Color(0xFF1E3A8A).withOpacity(0.3)
-                  : Colors.grey.shade200,
-              width: hasLocation ? 2 : 1,
+                  : hasLocationError
+                      ? Colors.red.withOpacity(0.3)
+                      : Colors.grey.shade200,
+              width: hasLocation || hasLocationError ? 2 : 1,
             ),
             boxShadow: [
               BoxShadow(
@@ -305,11 +308,17 @@ class MapControls extends StatelessWidget {
                       color: Color(0xFF1E3A8A),
                       size: 24,
                     )
-                  : Icon(
-                      Icons.location_searching,
-                      color: const Color(0xFF1E3A8A),
-                      size: 24,
-                    ),
+                  : hasLocationError
+                      ? const Icon(
+                          Icons.location_off,
+                          color: Colors.red,
+                          size: 24,
+                        )
+                      : const Icon(
+                          Icons.location_searching,
+                          color: Color(0xFF1E3A8A),
+                          size: 24,
+                        ),
         ),
       ),
     );

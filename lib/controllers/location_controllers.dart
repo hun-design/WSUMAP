@@ -19,6 +19,7 @@ class LocationController extends ChangeNotifier {
   bool _isRequesting = false;
   bool _hasValidLocation = false;
   bool _hasLocationPermissionError = false;
+  bool _isLocationSearching = false; // 내 위치 찾기 중 상태
   loc.LocationData? _currentLocation;
 
   // 지도 관련
@@ -41,8 +42,9 @@ class LocationController extends ChangeNotifier {
   bool get isRequesting => _isRequesting;
   bool get hasValidLocation => _hasValidLocation;
   bool get hasLocationPermissionError => _hasLocationPermissionError;
+  bool get isLocationSearching => _isLocationSearching;
   loc.LocationData? get currentLocation => _currentLocation;
-  loc.Location get location => _location; // 🔥 직접 생성된 Location 인스턴스 반환
+  loc.Location get location => _location;
 
   /// 초기화
   Future<void> _initialize() async {
@@ -79,6 +81,7 @@ class LocationController extends ChangeNotifier {
 
     try {
       _isRequesting = true;
+      _isLocationSearching = true;
       _hasLocationPermissionError = false;
       notifyListeners();
 
@@ -105,28 +108,22 @@ class LocationController extends ChangeNotifier {
       if (locationResult.isSuccess && locationResult.hasValidLocation) {
         _currentLocation = locationResult.locationData;
         _hasValidLocation = true;
+        _isLocationSearching = false;
 
-        // 🔥 즉시 지도에 위치 표시
         await _mapLocationService.showMyLocation(
           locationResult.locationData!,
           shouldMoveCamera: true,
         );
       } else {
-        // fallback 위치 사용
-        final fallbackResult = _locationService.getFallbackLocation();
-        if (fallbackResult.isSuccess) {
-          _currentLocation = fallbackResult.locationData;
-          _hasValidLocation = true;
-
-          await _mapLocationService.showMyLocation(
-            fallbackResult.locationData!,
-            shouldMoveCamera: true,
-          );
-        }
+        // 내 위치를 찾지 못한 경우
+        debugPrint('❌ 내 위치를 찾을 수 없습니다');
+        _hasLocationPermissionError = true;
+        _isLocationSearching = false;
       }
     } catch (e) {
       debugPrint('초고속 위치 요청 실패: $e');
       _hasLocationPermissionError = true;
+      _isLocationSearching = false;
     } finally {
       _isRequesting = false;
       notifyListeners();
@@ -139,6 +136,7 @@ class LocationController extends ChangeNotifier {
 
     try {
       _isRequesting = true;
+      _isLocationSearching = true;
       _hasLocationPermissionError = false;
       notifyListeners();
 
@@ -165,28 +163,22 @@ class LocationController extends ChangeNotifier {
       if (locationResult.isSuccess && locationResult.hasValidLocation) {
         _currentLocation = locationResult.locationData;
         _hasValidLocation = true;
+        _isLocationSearching = false;
 
-        // 3. 지도에 위치 표시
         await _mapLocationService.showMyLocation(
           locationResult.locationData!,
           shouldMoveCamera: true,
         );
       } else {
-        // fallback 위치 사용
-        final fallbackResult = _locationService.getFallbackLocation();
-        if (fallbackResult.isSuccess) {
-          _currentLocation = fallbackResult.locationData;
-          _hasValidLocation = true;
-
-          await _mapLocationService.showMyLocation(
-            fallbackResult.locationData!,
-            shouldMoveCamera: true,
-          );
-        }
+        // 내 위치를 찾지 못한 경우
+        debugPrint('❌ 내 위치를 찾을 수 없습니다');
+        _hasLocationPermissionError = true;
+        _isLocationSearching = false;
       }
     } catch (e) {
       debugPrint('위치 요청 실패: $e');
       _hasLocationPermissionError = true;
+      _isLocationSearching = false;
     } finally {
       _isRequesting = false;
       notifyListeners();

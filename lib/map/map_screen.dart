@@ -897,6 +897,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                 controller.endBuilding != null)
               _buildRouteLoadingIndicator(),
             if (controller.hasLocationPermissionError) _buildLocationError(),
+            if (_locationController.isLocationSearching) _buildLocationSearchingIndicator(),
             if (controller.hasActiveRoute &&
                 !_navigationManager.showNavigationStatus)
               Positioned(
@@ -1327,24 +1328,23 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     );
   }
 
-  /// 위치 에러 처리 - 새로운 retryLocationPermission 사용
+  /// 위치 에러 처리 - 개선된 안내 메시지
   Widget _buildLocationError() {
-    final l10n = AppLocalizations.of(context)!;
 
     return Positioned(
       top: MediaQuery.of(context).padding.top + 150,
       left: 16,
       right: 16,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.red.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(12),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -1353,50 +1353,154 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           children: [
             Row(
               children: [
-                const Icon(Icons.location_off, color: Colors.white, size: 24),
-                const SizedBox(width: 12),
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.location_off,
+                    color: Colors.red,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 16),
                 Expanded(
-                  child: Text(
-                    l10n.location_permission_denied,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '내 위치를 찾을 수 없습니다',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[800],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'GPS 신호가 약하거나 위치 권한이 필요합니다',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Row(
               children: [
-                // 설정 열기 버튼
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () async {
                       await AppSettings.openAppSettings();
                     },
-                    icon: const Icon(Icons.settings, size: 16),
-                    label: Text(l10n.open_settings),
+                    icon: const Icon(Icons.settings, size: 18),
+                    label: const Text('설정 열기'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.red,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      backgroundColor: Colors.grey[100],
+                      foregroundColor: Colors.grey[700],
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
-                // 새로운 재시도 버튼 - MapController의 메서드 사용
+                const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton.icon(
                     onPressed: () => _controller.retryLocationPermission(),
-                    icon: const Icon(Icons.refresh, size: 16),
-                    label: Text(l10n.retry),
+                    icon: const Icon(Icons.refresh, size: 18),
+                    label: const Text('다시 시도'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.red,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      backgroundColor: const Color(0xFF3B82F6),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 내 위치 찾기 중 인디케이터
+  Widget _buildLocationSearchingIndicator() {
+    
+    return Positioned(
+      top: MediaQuery.of(context).padding.top + 150,
+      left: 16,
+      right: 16,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF3B82F6).withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        color: Color(0xFF3B82F6),
+                        strokeWidth: 2.5,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '내 위치를 찾는 중...',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[800],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'GPS 신호를 받고 있습니다',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
