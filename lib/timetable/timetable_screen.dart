@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'dart:io';
 import '../generated/app_localizations.dart';
 import 'timetable_item.dart';
 import 'timetable_api_service.dart';
@@ -56,7 +58,16 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   Future<void> _loadScheduleItems() async {
     final l10n = AppLocalizations.of(context);
     debugPrint('📅 시간표 새로고침 시작 - userId: ${widget.userId}');
+    
+    // 안드로이드에서 UI 상태 안정화를 위한 지연 처리
+    if (Platform.isAndroid) {
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+    
+    if (!mounted) return;
+    
     setState(() => _isLoading = true);
+    
     try {
       // 🔥 게스트 사용자 체크
       if (widget.userId.startsWith('guest_')) {
@@ -65,21 +76,21 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           setState(() => _scheduleItems = []);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-                          content: Row(
-              children: [
-                const Icon(Icons.info_outline, color: Colors.white, size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    l10n?.guest_timetable_disabled ?? '게스트 사용자는 시간표 기능을 사용할 수 없습니다.',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w500,
-                      fontSize: 14,
+              content: Row(
+                children: [
+                  const Icon(Icons.info_outline, color: Colors.white, size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      l10n?.guest_timetable_disabled ?? '게스트 사용자는 시간표 기능을 사용할 수 없습니다.',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
               backgroundColor: const Color(0xFF3B82F6),
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
@@ -94,12 +105,24 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
       final items = await _apiService.fetchScheduleItems(widget.userId);
       debugPrint('📅 서버에서 받은 시간표 개수: ${items.length}');
+      
+      // 안드로이드에서 UI 업데이트 전 추가 지연 처리
+      if (Platform.isAndroid) {
+        await Future.delayed(const Duration(milliseconds: 200));
+      }
+      
       if (mounted) {
         setState(() => _scheduleItems = items);
         debugPrint('📅 시간표 UI 업데이트 완료');
       }
     } catch (e) {
       debugPrint('❌ 시간표 로드 오류: $e');
+      
+      // 안드로이드에서 에러 처리 전 지연 처리
+      if (Platform.isAndroid) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -125,6 +148,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         );
       }
     } finally {
+      // 안드로이드에서 로딩 상태 해제 전 지연 처리
+      if (Platform.isAndroid) {
+        await Future.delayed(const Duration(milliseconds: 100));
+      }
+      
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -3100,80 +3128,115 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
   }
   
   Future<void> _uploadExcelFile() async {
+    if (!mounted) return;
+    
     setState(() => _isUploading = true);
     
-    // 업로드 중 화면이 꺼지지 않도록 설정
-    await WakelockPlus.enable();
-    debugPrint('🔓 업로드 중 화면 잠금 해제 활성화');
+    // 안드로이드에서 화면 잠금 해제를 더 안전하게 처리
+    bool wakelockEnabled = false;
+    try {
+      await WakelockPlus.enable();
+      wakelockEnabled = true;
+      debugPrint('🔓 업로드 중 화면 잠금 해제 활성화');
+    } catch (e) {
+      debugPrint('⚠️ Wakelock 활성화 실패: $e');
+    }
     
     try {
       final success = await ExcelImportService.uploadExcelToServer(widget.userId);
       
       if (mounted) {
         if (success) {
-          // 업로드 성공 상태 표시
-          setState(() {
-            _isUploading = false;
-            _uploadSuccess = true;
-          });
-          
           debugPrint('📤 엑셀 업로드 성공 후 리프레시 콜백 호출');
           
-          // 백그라운드에서 새로고침 실행
-          widget.refreshCallback().then((_) {
-            // 새로고침 완료 후 다이얼로그 부드럽게 닫기
-            if (mounted) {
-              Navigator.pop(context);
+          // 업로드 중 상태 해제
+          if (mounted) {
+            setState(() => _isUploading = false);
+          }
+          
+          // 다이얼로그를 먼저 닫고 UI 상태를 안정화
+          if (mounted) {
+            Navigator.pop(context);
+            
+            // 안드로이드에서 시스템 UI 재설정
+            _resetSystemUIForAndroid();
+            
+            // UI 상태 안정화를 위한 지연 처리
+            await Future.delayed(const Duration(milliseconds: 500));
+            
+            // 새로고침 실행
+            try {
+              await widget.refreshCallback();
+              debugPrint('✅ 시간표 새로고침 완료');
               
               // 성공 메시지 표시
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Row(
-                    children: [
-                      const Icon(Icons.check_circle, color: Colors.white, size: 20),
-                      const SizedBox(width: 12),
-                      Text(AppLocalizations.of(context)!.excel_upload_success_message),
-                    ],
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Row(
+                      children: [
+                        const Icon(Icons.check_circle, color: Colors.white, size: 20),
+                        const SizedBox(width: 12),
+                        Text(AppLocalizations.of(context)!.excel_upload_success_message),
+                      ],
+                    ),
+                    backgroundColor: Colors.green,
+                    behavior: SnackBarBehavior.floating,
+                    duration: const Duration(seconds: 2),
                   ),
-                  backgroundColor: Colors.green,
-                  behavior: SnackBarBehavior.floating,
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-            }
-          }).catchError((error) {
-            // 새로고침 실패 시 처리
-            if (mounted) {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Row(
-                    children: [
-                      const Icon(Icons.warning, color: Colors.white, size: 20),
-                      const SizedBox(width: 12),
-                      Expanded(child: Text(AppLocalizations.of(context)!.excel_upload_refresh_failed(error))),
-                    ],
+                );
+              }
+            } catch (error) {
+              debugPrint('❌ 시간표 새로고침 실패: $error');
+              
+              // 새로고침 실패 시에도 성공 메시지 표시 (업로드는 성공했으므로)
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Row(
+                      children: [
+                        const Icon(Icons.check_circle, color: Colors.white, size: 20),
+                        const SizedBox(width: 12),
+                        Text(AppLocalizations.of(context)!.excel_upload_success_message),
+                      ],
+                    ),
+                    backgroundColor: Colors.green,
+                    behavior: SnackBarBehavior.floating,
+                    duration: const Duration(seconds: 2),
                   ),
-                  backgroundColor: Colors.orange,
-                  behavior: SnackBarBehavior.floating,
-                ),
-              );
+                );
+              }
             }
-          }).whenComplete(() async {
-            // 작업 완료 후 wakelock 해제
-            await WakelockPlus.disable();
-            debugPrint('🔒 업로드 완료 후 화면 잠금 해제 비활성화');
-          });
+          }
+          
+          // 작업 완료 후 wakelock 해제
+          if (wakelockEnabled) {
+            try {
+              await WakelockPlus.disable();
+              debugPrint('🔒 업로드 완료 후 화면 잠금 해제 비활성화');
+            } catch (e) {
+              debugPrint('⚠️ Wakelock 비활성화 실패: $e');
+            }
+          }
         } else {
           // 파일 선택 취소
           setState(() => _isUploading = false);
           Navigator.pop(context);
           
-          // wakelock 해제
-          await WakelockPlus.disable();
-          debugPrint('🔒 파일 선택 취소 후 화면 잠금 해제 비활성화');
+          // 안드로이드에서 시스템 UI 재설정
+          _resetSystemUIForAndroid();
           
-                    ScaffoldMessenger.of(context).showSnackBar(
+          // wakelock 해제
+          if (wakelockEnabled) {
+            try {
+              await WakelockPlus.disable();
+              debugPrint('🔒 파일 선택 취소 후 화면 잠금 해제 비활성화');
+            } catch (e) {
+              debugPrint('⚠️ Wakelock 비활성화 실패: $e');
+            }
+          }
+          
+          ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Row(
                 children: [
@@ -3193,9 +3256,18 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
         setState(() => _isUploading = false);
         Navigator.pop(context);
         
+        // 안드로이드에서 시스템 UI 재설정
+        _resetSystemUIForAndroid();
+        
         // 에러 시에도 wakelock 해제
-        await WakelockPlus.disable();
-        debugPrint('🔒 업로드 에러 후 화면 잠금 해제 비활성화');
+        if (wakelockEnabled) {
+          try {
+            await WakelockPlus.disable();
+            debugPrint('🔒 업로드 에러 후 화면 잠금 해제 비활성화');
+          } catch (e) {
+            debugPrint('⚠️ Wakelock 비활성화 실패: $e');
+          }
+        }
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -3203,13 +3275,29 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
               children: [
                 const Icon(Icons.error_outline, color: Colors.white, size: 20),
                 const SizedBox(width: 12),
-                                      Expanded(child: Text(AppLocalizations.of(context)!.excel_upload_failed(e.toString()))),
+                Expanded(child: Text(AppLocalizations.of(context)!.excel_upload_failed(e.toString()))),
               ],
             ),
             backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
           ),
         );
+      }
+    }
+  }
+  
+  /// 안드로이드에서 시스템 UI 재설정 함수
+  void _resetSystemUIForAndroid() {
+    if (Platform.isAndroid) {
+      try {
+        // 안드로이드에서 immersiveSticky 모드로 재설정
+        SystemChrome.setEnabledSystemUIMode(
+          SystemUiMode.immersiveSticky,
+          overlays: [SystemUiOverlay.top],
+        );
+        debugPrint('🔧 안드로이드 시스템 UI 재설정 완료');
+      } catch (e) {
+        debugPrint('⚠️ 안드로이드 시스템 UI 재설정 실패: $e');
       }
     }
   }

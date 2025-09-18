@@ -60,28 +60,32 @@ void _initializeNaverMapInBackground() async {
       clientId: 'a7hukqhx2a',
       onAuthFailed: (ex) => debugPrint('NaverMap 인증 실패: $ex'),
     );
-    debugPrint('✅ 네이버 지도 초기화 성공');
+    debugPrint('네이버 지도 초기화 성공');
   } catch (e) {
-    debugPrint('❌ 네이버 지도 초기화 오류: $e');
+    debugPrint('네이버 지도 초기화 오류: $e');
   }
 }
 
 // 👈 시스템 UI 모드 설정 함수
 Future<void> _setSystemUIMode() async {
-  if (Platform.isAndroid) {
-    // Android에서 immersiveSticky 모드 사용 - 자동으로 2-3초 후 숨김
-    await SystemChrome.setEnabledSystemUIMode(
-      SystemUiMode.immersiveSticky,
-      overlays: [SystemUiOverlay.top],
-    );
-    debugPrint('🔽 Android - immersiveSticky 모드 설정');
-  } else {
-    // iOS에서는 기존 설정 유지
-    await SystemChrome.setEnabledSystemUIMode(
-      SystemUiMode.manual,
-      overlays: [SystemUiOverlay.top],
-    );
-    debugPrint('📱 iOS - manual 모드 설정');
+  try {
+    if (Platform.isAndroid) {
+      // Android에서 immersiveSticky 모드 사용 - 자동으로 2-3초 후 숨김
+      await SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.immersiveSticky,
+        overlays: [SystemUiOverlay.top],
+      );
+      debugPrint('Android - immersiveSticky 모드 설정');
+    } else {
+      // iOS에서는 기존 설정 유지
+      await SystemChrome.setEnabledSystemUIMode(
+        SystemUiMode.manual,
+        overlays: [SystemUiOverlay.top],
+      );
+      debugPrint('iOS - manual 모드 설정');
+    }
+  } catch (e) {
+    debugPrint('시스템 UI 모드 설정 실패: $e');
   }
 }
 
@@ -175,8 +179,12 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
   void _resetSystemUIModeIfNeeded() {
     if (Platform.isAndroid) {
       _systemUIResetTimer?.cancel();
-      _systemUIResetTimer = Timer(const Duration(milliseconds: 100), () {
-        _setSystemUIMode();
+      _systemUIResetTimer = Timer(const Duration(milliseconds: 200), () {
+        try {
+          _setSystemUIMode();
+        } catch (e) {
+          debugPrint('⚠️ 시스템 UI 재설정 실패: $e');
+        }
       });
     }
   }
@@ -218,7 +226,11 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
   Future<void> _handleAppResumed() async {
     // 👈 Android에서 시스템 UI 재설정
     if (Platform.isAndroid) {
-      await _setSystemUIMode();
+      try {
+        await _setSystemUIMode();
+      } catch (e) {
+        debugPrint('⚠️ 포그라운드 복귀 시 시스템 UI 재설정 실패: $e');
+      }
     }
 
     // 🔥 게스트 사용자는 위치 전송 및 웹소켓 연결 제외

@@ -10,6 +10,9 @@ class ExcelImportService {
     try {
       print('[DEBUG] 엑셀 파일 선택 시작');
 
+      // 안드로이드에서 파일 선택 전에 잠시 대기하여 UI 상태 안정화
+      await Future.delayed(const Duration(milliseconds: 100));
+
       // 파일 선택 (xlsx만 허용)
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -50,6 +53,10 @@ class ExcelImportService {
 
       if (response.statusCode == 200) {
         print('[DEBUG] 파일 업로드 성공');
+        
+        // 안드로이드에서 업로드 완료 후 UI 상태 안정화를 위한 대기
+        await Future.delayed(const Duration(milliseconds: 200));
+        
         return true;
       } else {
         print('[DEBUG] 파일 업로드 실패, 상태 코드: ${response.statusCode}');
