@@ -4,7 +4,7 @@ import 'dart:io';
 import '../generated/app_localizations.dart';
 import 'timetable_item.dart';
 import 'timetable_api_service.dart';
-import '../map/widgets/directions_screen.dart'; // 폴더 구조에 맞게 경로 수정!
+import '../map/widgets/directions_screen.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'excel_import_service.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
@@ -59,7 +59,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final l10n = AppLocalizations.of(context);
     debugPrint('📅 시간표 새로고침 시작 - userId: ${widget.userId}');
     
-    // 안드로이드에서 UI 상태 안정화를 위한 지연 처리
     if (Platform.isAndroid) {
       await Future.delayed(const Duration(milliseconds: 100));
     }
@@ -69,7 +68,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     setState(() => _isLoading = true);
     
     try {
-      // 🔥 게스트 사용자 체크
       if (widget.userId.startsWith('guest_')) {
         debugPrint('🚫 게스트 사용자는 시간표를 사용할 수 없습니다: ${widget.userId}');
         if (mounted) {
@@ -666,7 +664,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
     if (startHour < 9 || startHour > 18) return null;
 
-    const timeColumnWidth = 60.0;
+    // 실제 시간 컬럼 너비와 일치하도록 동적 계산
+    final timeColumnWidth = constraints.maxWidth < 400 ? 50.0 : 60.0;
     const containerPadding = 8.0;
 
     final availableWidth =
@@ -684,8 +683,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
     return Positioned(
       top: top,
-      left: timeColumnWidth + (dayIndex * dayColumnWidth),
-      width: dayColumnWidth,
+      left: timeColumnWidth + (dayIndex * dayColumnWidth) + 1, // 미세 조정
+      width: dayColumnWidth - 2, // 양쪽 여백 고려
       height: cardHeight.clamp(
         rowHeight * 0.5,
         constraints.maxHeight - top,
@@ -693,7 +692,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       child: GestureDetector(
         onTap: () => _showScheduleDetail(item),
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 0.5),
+          margin: const EdgeInsets.symmetric(horizontal: 1, vertical: 0.5),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
@@ -713,10 +712,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             ],
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   item.title,
@@ -727,6 +726,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
                 ),
                 if (cardHeight > rowHeight * 0.6) ...[
                   const SizedBox(height: 1),
@@ -739,6 +739,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
                   ),
                 ],
                 if (cardHeight > rowHeight && item.roomName.isNotEmpty) ...[
@@ -752,6 +753,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
                   ),
                 ],
               ],
@@ -794,7 +796,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     child: Container(
                       alignment: Alignment.center,
                       padding: EdgeInsets.symmetric(
-                        horizontal: isSmallScreen ? 2 : 4,
+                        horizontal: isSmallScreen ? 1 : 2,
                       ),
                       child: Text(
                         day,

@@ -1,4 +1,4 @@
-// lib/controllers/map_controller.dart - 로그아웃 후 재로그인 마커 문제 해결 완전 버전
+// lib/controllers/map_controller.dart
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/controllers/location_controllers.dart';
@@ -19,80 +19,57 @@ import 'package:flutter_application_1/generated/app_localizations.dart';
 class MapScreenController extends ChangeNotifier {
   MapService? _mapService;
 
-  // 🔥 BuildingRepository 사용 - _allBuildings 제거
   final BuildingRepository _buildingRepository = BuildingRepository();
 
-  // 🔥 추가: 현재 Context 저장
   BuildContext? _currentContext;
 
-  // 🔥 마커 초기화 상태 추가
   bool _markersInitialized = false;
 
-  // 🔥 지도 준비 상태 추가
   bool _isMapReady = false;
 
-  // 🔥 친구 위치 마커 서비스 추가
   final FriendLocationMarkerService _friendLocationMarkerService =
       FriendLocationMarkerService();
-
-  // 🏫 우송대학교 중심 좌표
   static const NLatLng _schoolCenter = NLatLng(36.3370, 127.4450);
   static const double _schoolZoomLevel = 15.5;
 
-  // 선택된 건물
   Building? _selectedBuilding;
 
-  // 경로 관련
   Building? _startBuilding;
   Building? _endBuilding;
   bool _isLoading = false;
 
-  // 🔥 내 위치 관련 상태 완전 개선
   LocationController? _locationController;
 
-  // 언어 변경 감지
   Locale? _currentLocale;
-
-  // 🔥 추가된 getter들
   LocationController? get locationController => _locationController;
   NaverMapController? get mapController => _mapService?.getController();
 
-  // 🔥 지도 준비 상태 getter 추가
   bool get isMapReady => _isMapReady;
-
-  // 🔥 사용자 위치 마커 업데이트 메서드 추가
   void updateUserLocationMarker(NLatLng position) {
     _locationController?.updateUserLocationMarker(position);
   }
 
-  // 경로 정보
   String? _routeDistance;
   String? _routeTime;
 
-  // 현재 위치에서 길찾기 관련 속성
   Building? _targetBuilding;
   bool _isNavigatingFromCurrentLocation = false;
 
-  // 오버레이 관리
   final List<NOverlay> _routeOverlays = [];
 
-  // 카테고리 관련 상태
   String? _selectedCategory;
   bool _isCategoryLoading = false;
   String? _categoryError;
 
-  // 실시간 친구 위치 추적용 상태
   String? trackedFriendId;
 
-  /// 실시간으로 친구 위치 마커를 업데이트 (friendsController에서 호출)
+  /// 실시간으로 친구 위치 마커를 업데이트
   Future<void> updateTrackedFriendMarker(Friend friend) async {
     if (trackedFriendId == null || trackedFriendId != friend.userId) return;
-    // 기존 마커가 있으면 위치만 이동, 없으면 새로 추가
     await _friendLocationMarkerService.addFriendLocationMarker(friend);
     notifyListeners();
   }
 
-  // Getters
   Building? get selectedBuilding => _selectedBuilding;
   Building? get startBuilding => _startBuilding;
   Building? get endBuilding => _endBuilding;
@@ -101,8 +78,6 @@ class MapScreenController extends ChangeNotifier {
       _mapService?.buildingMarkersVisible ?? true;
   String? get routeDistance => _routeDistance;
   String? get routeTime => _routeTime;
-
-  // 🔥 내 위치 관련 새로운 Getters
   bool get hasLocationPermissionError =>
       _locationController?.hasLocationPermissionError ?? false;
   bool get hasMyLocationMarker =>
@@ -116,61 +91,51 @@ class MapScreenController extends ChangeNotifier {
       (_startBuilding != null && _endBuilding != null) ||
       _isNavigatingFromCurrentLocation;
 
-  // 카테고리 관련 Getters
   String? get selectedCategory => _selectedCategory;
   bool get isCategoryLoading => _isCategoryLoading;
   String? get categoryError => _categoryError;
 
-  /// 🔥 로그아웃/재로그인 시 완전한 재초기화 - 개선된 버전
+  /// 로그아웃/재로그인 시 완전한 재초기화
   void resetForNewSession() {
-    debugPrint('🔄 MapController 새 세션을 위한 완전 리셋');
+    debugPrint('MapController 새 세션을 위한 완전 리셋');
 
-    // 지도 및 마커 상태 리셋
     _markersInitialized = false;
     _isMapReady = false;
 
-    // 선택된 상태들 클리어
     _selectedBuilding = null;
     _selectedCategory = null;
     _startBuilding = null;
     _endBuilding = null;
     _targetBuilding = null;
 
-    // 로딩 상태들 리셋
     _isLoading = false;
     _isCategoryLoading = false;
     _isNavigatingFromCurrentLocation = false;
 
-    // 에러 상태 클리어
     _categoryError = null;
 
-    // 친구 위치 마커 정리
     clearFriendLocationMarkers();
 
-    debugPrint('✅ MapController 새 세션 리셋 완료');
+    debugPrint('MapController 새 세션 리셋 완료');
     notifyListeners();
   }
 
-  /// 🚀 초기화 - 학교 중심으로 즉시 시작
+  /// 초기화
   Future<void> initialize() async {
     try {
-      debugPrint('🚀 MapController 초기화 시작 (학교 중심 방식)...');
+      debugPrint('MapController 초기화 시작...');
       _isLoading = true;
       notifyListeners();
 
-      // 서비스 초기화
       _mapService = MapService();
 
-      // 🔥 친구 위치 마커 서비스 초기화
       await _friendLocationMarkerService.loadMarkerIcon();
 
-      // 🔥 BuildingRepository 데이터 변경 리스너 등록
       _buildingRepository.addDataChangeListener(_onBuildingDataChanged);
 
-      // 병렬 초기화 - 서버 연결 테스트 제거
       await Future.wait([_mapService!.loadMarkerIcons()], eagerError: false);
 
-      debugPrint('✅ MapController 초기화 완료 (학교 중심)');
+      debugPrint('MapController 초기화 완료');
     } catch (e) {
       debugPrint('❌ MapController 초기화 오류: $e');
     } finally {
@@ -179,15 +144,12 @@ class MapScreenController extends ChangeNotifier {
     }
   }
 
-  /// 🔥 Context 설정 - 친구 위치 마커 서비스에도 Context 설정
+  /// Context 설정
   void setContext(BuildContext context) {
     _currentContext = context;
     _mapService?.setContext(context);
 
-    // 🔥 친구 위치 마커 서비스에도 Context 설정
     _friendLocationMarkerService.setContext(context);
-    
-    // 🔥 LocationController에도 Context 설정
     _locationController?.setContext(context);
 
     debugPrint('✅ MapController에 Context 설정 완료');
@@ -225,12 +187,11 @@ class MapScreenController extends ChangeNotifier {
     }
   }
 
-  /// 🔥 개선된 지도 준비 완료 처리 - 기본 마커 로드 추가
+  /// 지도 준비 완료 처리
   Future<void> onMapReady(NaverMapController mapController) async {
     try {
       debugPrint('🗺️ 지도 준비 완료 - 새 세션 확인');
 
-      // 기존 상태 확인 및 필요시 리셋
       if (_markersInitialized) {
         debugPrint('🔄 기존 마커 상태 감지 - 강제 리셋');
         resetForNewSession();
@@ -239,18 +200,14 @@ class MapScreenController extends ChangeNotifier {
       _mapService?.setController(mapController);
       _locationController?.setMapController(mapController);
 
-      // 🔥 지도 준비 상태 설정
       _isMapReady = true;
 
-      // 🔥 친구 위치 마커 서비스 설정 및 초기화
       _friendLocationMarkerService.setMapController(mapController);
 
-      // 🔥 Context가 설정되어 있으면 친구 위치 마커 서비스에도 설정
       if (_currentContext != null) {
         _friendLocationMarkerService.setContext(_currentContext!);
       }
 
-      // 마커 아이콘이 로딩되지 않았다면 다시 로딩
       try {
         await _friendLocationMarkerService.loadMarkerIcon();
         debugPrint('✅ 친구 위치 마커 아이콘 로딩 완료');
@@ -261,7 +218,6 @@ class MapScreenController extends ChangeNotifier {
       await _moveToSchoolCenterImmediately();
       await _ensureBuildingMarkersAdded();
 
-      // 🔥 지도 준비 완료 후 기본 마커들 로드
       await loadDefaultMarkers();
 
       debugPrint('✅ 지도 서비스 설정 완료');

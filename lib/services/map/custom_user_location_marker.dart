@@ -1,5 +1,4 @@
 // lib/services/map/custom_user_location_marker.dart
-// 커스텀 사용자 위치 마커 서비스 - 앱 디자인에 맞는 이쁜 마커와 방향 화살표
 
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
@@ -14,35 +13,31 @@ class CustomUserLocationMarker {
   NaverMapController? _mapController;
   BuildContext? _context;
   
-  // 마커 관련 오버레이들
   NMarker? _userLocationMarker;
   NCircleOverlay? _accuracyCircle;
   NMarker? _directionArrow;
   
-  // 방향 관련 (기기가 바라보는 방향 추적)
   StreamSubscription<MagnetometerEvent>? _magnetometerSubscription;
-  StreamSubscription<CompassEvent>? _compassSubscription; // iOS용 heading 스트림
+  StreamSubscription<CompassEvent>? _compassSubscription;
   double _currentHeading = 0.0;
-  double _mapRotation = 0.0; // 지도 회전 각도 추적
+  double _mapRotation = 0.0;
   bool _isDirectionEnabled = false;
-  bool _isMagnetometerAvailable = true; // 자력계 센서 사용 가능 여부
-  int _magnetometerErrorCount = 0; // 자력계 오류 카운트
+  bool _isMagnetometerAvailable = true;
+  int _magnetometerErrorCount = 0;
   
-  // 마커 스타일 설정 (파란색 디자인)
-  static const Color _primaryBlue = Color(0xFF3B82F6); // 메인 파란색
+  static const Color _primaryBlue = Color(0xFF3B82F6);
   
   /// 지도 컨트롤러 설정
   void setMapController(NaverMapController controller) {
     _mapController = controller;
     debugPrint('✅ CustomUserLocationMarker 지도 컨트롤러 설정 완료');
-    // 지도 준비 시점부터 방향 추적을 시작해 항상 heading이 갱신되도록 함
     if (_magnetometerSubscription == null) {
       _isDirectionEnabled = true;
       _startDirectionTracking();
     }
   }
   
-  /// iOS용 나침반 추적 시작 - CoreLocation 기반 정확한 방향
+  /// iOS용 나침반 추적 시작
   void _startIOSCompassTracking() {
     _compassSubscription?.cancel();
     _compassSubscription = FlutterCompass.events?.listen((CompassEvent event) {
@@ -50,20 +45,16 @@ class CustomUserLocationMarker {
         final double? heading = event.heading;
         if (heading == null) return;
         
-        // heading은 0~360(북 기준). 지도 회전 보정은 별도 적용됨
         double newHeading = heading;
-        
-        // 더 민감하게: 임계값 0.5도
         if ((newHeading - _currentHeading).abs() > 0.5) {
           _currentHeading = newHeading;
           _updateDirectionArrowRotation();
-          debugPrint('🧭 iOS 나침반 방향 업데이트: ${_currentHeading.toStringAsFixed(1)}도');
         }
       } catch (e) {
-        debugPrint('❌ iOS Compass 처리 오류: $e');
+        // iOS Compass 처리 오류
       }
     }, onError: (error) {
-      debugPrint('❌ iOS Compass 스트림 오류: $error');
+      // iOS Compass 스트림 오류
     });
   }
 
@@ -73,17 +64,16 @@ class CustomUserLocationMarker {
     debugPrint('✅ CustomUserLocationMarker 컨텍스트 설정 완료');
   }
   
-  /// 지도 회전 각도 업데이트 (지도 회전 감지, 실시간 보정)
+  /// 지도 회전 각도 업데이트
   void updateMapRotation(double rotation) {
     _mapRotation = rotation;
-    // 화살표가 있을 때 즉시 회전 보정 적용 (방향 추적 플래그와 무관하게 반영)
     if (_directionArrow != null) {
       _updateDirectionArrowRotation();
     }
   }
   
   
-  /// 사용자 위치 마커 표시 (방향 화살표 포함)
+  /// 사용자 위치 마커 표시
   Future<void> showUserLocation({
     required NLatLng position,
     double? accuracy,
@@ -99,32 +89,20 @@ class CustomUserLocationMarker {
     try {
       debugPrint('📍 커스텀 사용자 위치 마커 표시: ${position.latitude}, ${position.longitude}');
       
-      // 기존 마커들 제거
       await _removeAllMarkers();
-      
-      // 잠시 대기
       await Future.delayed(const Duration(milliseconds: 100));
       
-      // 정확도 원형 마커 제거 (사용자 요청)
-      // if (accuracy != null && accuracy > 0) {
-      //   await _addAccuracyCircle(position, accuracy);
-      // }
-      
-      // 사용자 위치 마커 추가
       await _addUserLocationMarker(position);
       
-      // 방향 화살표 활성화 (기기 방향 추적)
       _isDirectionEnabled = true;
       await _addDirectionArrow(position);
       await _startDirectionTracking();
       
-      // 자력계 센서가 사용 불가능한 경우 경고 메시지
       if (!_isMagnetometerAvailable) {
         debugPrint('⚠️ 자력계 센서를 사용할 수 없습니다. 방향 화살표가 작동하지 않을 수 있습니다.');
         debugPrint('💡 iOS 사용자: 설정 > 개인정보 보호 및 보안 > 위치 서비스 > 시스템 서비스 > 나침반 보정을 활성화해주세요.');
       }
       
-      // 카메라 이동 (옵션)
       if (shouldMoveCamera) {
         await _moveCameraToLocation(position, zoom);
       }
@@ -146,17 +124,14 @@ class CustomUserLocationMarker {
     try {
       debugPrint('🔄 사용자 위치 업데이트: ${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}');
       
-      // 위치 마커 업데이트
       if (_userLocationMarker != null) {
         _userLocationMarker!.setPosition(position);
       }
       
-      // 정확도 원형 업데이트
       if (_accuracyCircle != null) {
         _accuracyCircle!.setCenter(position);
       }
       
-      // 방향 화살표 업데이트 (위치 이동 및 회전)
       if (_directionArrow != null && updateDirection && _isMagnetometerAvailable) {
         _directionArrow!.setPosition(position);
         await _updateDirectionArrowRotation();
@@ -165,7 +140,6 @@ class CustomUserLocationMarker {
       debugPrint('✅ 사용자 위치 업데이트 완료');
     } catch (e) {
       debugPrint('❌ 사용자 위치 업데이트 실패: $e');
-      // 실패 시 전체 마커 재생성
       await showUserLocation(
         position: position,
         accuracy: accuracy,
@@ -175,21 +149,19 @@ class CustomUserLocationMarker {
     }
   }
   
-  // 정확도 원형 마커 메서드 제거 (사용자 요청으로 비활성화)
   
-  /// 사용자 위치 마커 추가 (이쁜 디자인)
+  /// 사용자 위치 마커 추가
   Future<void> _addUserLocationMarker(NLatLng position) async {
     try {
-      // 커스텀 마커 아이콘 생성 (원형 + 점)
       final markerIcon = await _createCustomMarkerIcon();
       
       _userLocationMarker = NMarker(
         id: 'user_location_marker',
         position: position,
         icon: markerIcon,
-        size: const Size(24, 24), // 적절한 마커 크기
-        anchor: const NPoint(0.5, 0.5), // 중심점 기준
-        angle: 0, // 기본 마커는 회전하지 않음
+        size: const Size(24, 24),
+        anchor: const NPoint(0.5, 0.5),
+        angle: 0,
       );
       
       await _mapController!.addOverlay(_userLocationMarker!);
@@ -200,24 +172,21 @@ class CustomUserLocationMarker {
   }
   
   
-  /// 커스텀 마커 아이콘 생성 (원형 + 중심점) - 앱 디자인에 맞는 이쁜 마커
+  /// 커스텀 마커 아이콘 생성
   Future<NOverlayImage> _createCustomMarkerIcon() async {
     try {
-      // 앱의 메인 컬러를 사용한 커스텀 마커 생성
       return await _createUserLocationMarkerIcon();
     } catch (e) {
       debugPrint('❌ 커스텀 마커 아이콘 생성 실패: $e');
-      // 기본 마커 사용
       return const NOverlayImage.fromAssetImage(
         'lib/asset/building_marker_blue.png',
       );
     }
   }
   
-  /// 사용자 위치 마커 아이콘 생성 (원형 + 중심점) - 커스텀 디자인
+  /// 사용자 위치 마커 아이콘 생성
   Future<NOverlayImage> _createUserLocationMarkerIcon() async {
     try {
-      // 커스텀 마커 위젯 생성
       if (_context == null) {
         throw Exception('Context가 설정되지 않음');
       }
@@ -266,17 +235,15 @@ class CustomUserLocationMarker {
       );
     } catch (e) {
       debugPrint('❌ 커스텀 사용자 위치 마커 아이콘 생성 실패: $e');
-      // 기본 마커 사용
       return const NOverlayImage.fromAssetImage(
         'lib/asset/building_marker_blue.png',
       );
     }
   }
   
-  /// 방향 화살표 아이콘 생성 - 북쪽 고정 화살표 디자인
+  /// 방향 화살표 아이콘 생성
   Future<NOverlayImage> _createDirectionArrowIcon() async {
     try {
-      // 커스텀 화살표 위젯 생성 (항상 북쪽을 가리키는 화살표)
       if (_context == null) {
         throw Exception('Context가 설정되지 않음');
       }
@@ -320,7 +287,6 @@ class CustomUserLocationMarker {
       );
     } catch (e) {
       debugPrint('❌ 커스텀 방향 화살표 아이콘 생성 실패: $e');
-      // 기본 마커 사용
       return const NOverlayImage.fromAssetImage(
         'lib/asset/building_marker_blue.png',
       );
@@ -330,35 +296,33 @@ class CustomUserLocationMarker {
   /// 방향 화살표 추가
   Future<void> _addDirectionArrow(NLatLng position) async {
     try {
-      // 방향 화살표 아이콘 생성
       final arrowIcon = await _createDirectionArrowIcon();
       
       _directionArrow = NMarker(
         id: 'user_direction_arrow',
         position: position,
         icon: arrowIcon,
-        size: const Size(24, 24), // 적절한 크기
+        size: const Size(24, 24),
         anchor: const NPoint(0.5, 0.5),
-        angle: _currentHeading, // 기기가 바라보는 방향
+        angle: _currentHeading,
       );
       
       await _mapController!.addOverlay(_directionArrow!);
-      debugPrint('✅ 방향 화살표 추가 완료');
     } catch (e) {
-      debugPrint('❌ 방향 화살표 추가 실패: $e');
+      // 방향 화살표 추가 실패
     }
   }
   
   /// 방향 추적 시작 (자력계 센서 사용) - 기기 방향 추적
   Future<void> _startDirectionTracking() async {
     try {
-      debugPrint('🧭 기기 방향 추적 시작');
+      // 기기 방향 추적 시작 로그 제거
       
       // iOS에서 자력계 센서 사용 가능 여부 확인
       if (Platform.isIOS) {
         // iOS는 CoreLocation 기반 나침반 스트림 사용 (flutter_compass)
         _startIOSCompassTracking();
-        debugPrint('✅ iOS Compass(heading) 추적 시작');
+        // iOS Compass(heading) 추적 시작 로그 제거
         return; // iOS는 magnetometer 사용 안 함
       }
       
@@ -369,7 +333,7 @@ class CustomUserLocationMarker {
             if (!_isValidMagnetometerData(event.x, event.y)) {
               _magnetometerErrorCount++;
               if (_magnetometerErrorCount > 10) {
-                debugPrint('⚠️ 자력계 데이터 오류가 너무 많음. 센서 비활성화');
+                // 자력계 데이터 오류가 너무 많음 로그 제거
                 _isMagnetometerAvailable = false;
                 _stopDirectionTracking();
                 return;
@@ -388,26 +352,26 @@ class CustomUserLocationMarker {
               _magnetometerErrorCount = 0; // 성공 시 오류 카운트 리셋
             }
           } catch (e) {
-            debugPrint('❌ 자력계 데이터 처리 오류: $e');
+            // 자력계 데이터 처리 오류 로그 제거
             _magnetometerErrorCount++;
           }
         },
         onError: (error) {
-          debugPrint('❌ 자력계 스트림 오류: $error');
+          // 자력계 스트림 오류 로그 제거
           _magnetometerErrorCount++;
           
           // iOS에서 권한 오류인 경우
           if (Platform.isIOS && error.toString().contains('permission')) {
-            debugPrint('⚠️ iOS 자력계 센서 권한이 필요합니다. 설정에서 허용해주세요.');
+            // iOS 자력계 센서 권한 필요 로그 제거
             _isMagnetometerAvailable = false;
             _stopDirectionTracking();
           }
         },
       );
       
-      debugPrint('✅ 기기 방향 추적 시작 완료');
+      // 기기 방향 추적 시작 완료 로그 제거
     } catch (e) {
-      debugPrint('❌ 기기 방향 추적 시작 실패: $e');
+      // 기기 방향 추적 시작 실패 로그 제거
       _isMagnetometerAvailable = false;
     }
   }
@@ -465,9 +429,9 @@ class CustomUserLocationMarker {
       // 화살표 마커에 보정된 회전 각도 적용
       _directionArrow!.setAngle(correctedAngle);
       
-      debugPrint('🧭 화살표 방향 업데이트: 기기방향 ${_currentHeading.toStringAsFixed(1)}도, 지도회전 ${_mapRotation.toStringAsFixed(1)}도, 보정각도 ${correctedAngle.toStringAsFixed(1)}도');
+      // 방향 업데이트 로그 제거 (각도 변경 시마다 로그 폭발 방지)
     } catch (e) {
-      debugPrint('❌ 화살표 방향 업데이트 실패: $e');
+      // 화살표 방향 업데이트 실패 로그 제거
     }
   }
   
@@ -528,9 +492,9 @@ class CustomUserLocationMarker {
       _compassSubscription = null;
       _isDirectionEnabled = false;
       _magnetometerErrorCount = 0;
-      debugPrint('✅ 기기 방향 추적 중지 완료');
+      // 기기 방향 추적 중지 완료 로그 제거
     } catch (e) {
-      debugPrint('❌ 기기 방향 추적 중지 실패: $e');
+      // 기기 방향 추적 중지 실패 로그 제거
     }
   }
   
