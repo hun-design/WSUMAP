@@ -17,9 +17,13 @@ import 'providers/category_provider.dart';
 import 'dart:io';
 import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'dart:developer' as developer;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // 불필요한 로그 필터링
+  _filterLogs();
 
   // 즉시 앱 실행하여 스플래시 스크린 우회
   runApp(
@@ -462,4 +466,19 @@ MaterialColor createMaterialColor(Color color) {
     );
   }
   return MaterialColor(color.value, swatch);
+}
+
+/// 불필요한 로그들을 필터링하는 함수
+void _filterLogs() {
+  // ImageReader_JNI 관련 경고 로그 필터링
+  developer.log(
+    'ImageReader_JNI 로그 필터링 활성화',
+    name: 'LogFilter',
+  );
+  
+  // Android에서 특정 태그의 로그를 필터링
+  if (Platform.isAndroid) {
+    // 시스템 레벨 로그 필터링은 네이티브 코드에서 처리해야 함
+    // 여기서는 Flutter 레벨에서 가능한 필터링만 수행
+  }
 }

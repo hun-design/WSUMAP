@@ -10,6 +10,52 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'excel_import_service.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 
+// 상수 정의
+class TimetableConstants {
+  // 색상
+  static const Color primaryColor = Color(0xFF1E3A8A);
+  static const Color backgroundColor = Color(0xFFF8FAFC);
+  static const Color cardBackgroundColor = Colors.white;
+  static const Color borderColor = Color(0xFFE2E8F0);
+  static const Color textColor = Color(0xFF64748B);
+  static const Color successColor = Color(0xFF10B981);
+  static const Color errorColor = Color(0xFFEF4444);
+  static const Color warningColor = Color(0xFFF59E0B);
+  static const Color infoColor = Color(0xFF3B82F6);
+  
+  // 크기
+  static const double borderRadius = 12.0;
+  static const double cardBorderRadius = 16.0;
+  static const double buttonHeight = 48.0;
+  static const double iconSize = 20.0;
+  static const double smallIconSize = 18.0;
+  static const double largeIconSize = 24.0;
+  
+  // 시간표 관련
+  static const int startHour = 9;
+  static const int endHour = 18;
+  static const int timeColumnWidth = 60;
+  static const int smallTimeColumnWidth = 50;
+  
+  // 건물 코드
+  static const List<String> buildingCodes = [
+    'W1', 'W2', 'W2-1', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8', 'W9', 'W10',
+    'W11', 'W12', 'W13', 'W14', 'W15', 'W16', 'W17-동관', 'W17-서관', 'W18', 'W19'
+  ];
+  
+  // 색상 팔레트
+  static const List<Color> colorPalette = [
+    Color(0xFF3B82F6),
+    Color(0xFF10B981),
+    Color(0xFFEF4444),
+    Color(0xFF8B5CF6),
+    Color(0xFFF59E0B),
+    Color(0xFF06B6D4),
+    Color(0xFFEC4899),
+    Color(0xFF84CC16),
+  ];
+}
+
 class ScheduleScreen extends StatefulWidget {
   final String userId;
   const ScheduleScreen({required this.userId, super.key});
@@ -32,7 +78,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   
   /// 시간표 초기화 - 로컬 데이터 먼저 로드
   Future<void> _initializeTimetable() async {
-    debugPrint('🚀 시간표 초기화 시작');
     
     // 게스트 사용자가 아닌 경우에만 로컬 데이터 로드
     if (!widget.userId.startsWith('guest_')) {
@@ -41,10 +86,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         final localItems = await TimetableStorageService.loadTimetableData(widget.userId);
         if (localItems.isNotEmpty && mounted) {
           setState(() => _scheduleItems = localItems);
-          debugPrint('📂 초기화 시 로컬 시간표 데이터 로드 완료: ${localItems.length}개');
         }
       } catch (e) {
-        debugPrint('❌ 초기화 시 로컬 데이터 로드 실패: $e');
       }
     }
     
@@ -80,7 +123,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   Future<void> _loadScheduleItems() async {
     final l10n = AppLocalizations.of(context);
-    debugPrint('📅 시간표 새로고침 시작 - userId: ${widget.userId}');
     
     if (Platform.isAndroid) {
       await Future.delayed(const Duration(milliseconds: 100));
@@ -92,7 +134,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     
     try {
       if (widget.userId.startsWith('guest_')) {
-        debugPrint('🚫 게스트 사용자는 시간표를 사용할 수 없습니다: ${widget.userId}');
         if (mounted) {
           setState(() => _scheduleItems = []);
           ScaffoldMessenger.of(context).showSnackBar(
@@ -112,7 +153,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   ),
                 ],
               ),
-              backgroundColor: const Color(0xFF3B82F6),
+              backgroundColor: TimetableConstants.infoColor,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
@@ -125,21 +166,16 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       }
 
       // 1. 먼저 로컬 데이터 로드
-      debugPrint('📂 로컬 시간표 데이터 로드 시작');
       final localItems = await TimetableStorageService.loadTimetableData(widget.userId);
-      debugPrint('📂 로컬에서 로드된 시간표 개수: ${localItems.length}');
       
       // 2. 로컬 데이터가 있으면 먼저 UI에 표시
       if (localItems.isNotEmpty && mounted) {
         setState(() => _scheduleItems = localItems);
-        debugPrint('📂 로컬 시간표 데이터 UI 표시 완료');
       }
       
       // 3. 서버에서 최신 데이터 가져오기 시도
       try {
-        debugPrint('🌐 서버에서 최신 시간표 데이터 가져오기 시도');
         final serverItems = await _apiService.fetchScheduleItems(widget.userId);
-        debugPrint('🌐 서버에서 받은 시간표 개수: ${serverItems.length}');
         
         // 4. 서버 데이터가 로컬 데이터와 다르면 업데이트
         if (serverItems.isNotEmpty) {
@@ -148,11 +184,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           
           if (mounted) {
             setState(() => _scheduleItems = serverItems);
-            debugPrint('🌐 서버 시간표 데이터로 UI 업데이트 완료');
           }
         }
       } catch (serverError) {
-        debugPrint('⚠️ 서버에서 시간표 로드 실패, 로컬 데이터 사용: $serverError');
         
         // 서버 로드 실패 시 로컬 데이터가 있으면 계속 사용
         if (localItems.isEmpty && mounted) {
@@ -171,7 +205,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   ),
                 ],
               ),
-              backgroundColor: const Color(0xFFF59E0B),
+              backgroundColor: TimetableConstants.warningColor,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
@@ -182,7 +216,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         }
       }
     } catch (e) {
-      debugPrint('❌ 시간표 로드 오류: $e');
       
       // 안드로이드에서 에러 처리 전 지연 처리
       if (Platform.isAndroid) {
@@ -204,7 +237,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 ),
               ],
             ),
-            backgroundColor: const Color(0xFFEF4444),
+            backgroundColor: TimetableConstants.errorColor,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
@@ -225,7 +258,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   Future<void> _addScheduleItem(ScheduleItem item) async {
     final l10n = AppLocalizations.of(context);
-    // 🔥 게스트 사용자 체크
+    // 게스트 사용자 체크
     if (widget.userId.startsWith('guest_')) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -241,7 +274,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               ),
             ],
           ),
-          backgroundColor: const Color(0xFF3B82F6),
+          backgroundColor: TimetableConstants.infoColor,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
@@ -253,17 +286,13 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     }
 
     try {
-      debugPrint('📅 시간표 추가 시작');
-      
       // 1. 서버에 추가
       await _apiService.addScheduleItem(item, widget.userId);
-      debugPrint('📅 서버에 시간표 추가 완료');
       
       // 2. 로컬 저장소에도 추가
       final currentItems = List<ScheduleItem>.from(_scheduleItems);
       currentItems.add(item);
       await TimetableStorageService.saveTimetableData(widget.userId, currentItems);
-      debugPrint('📅 로컬 저장소에 시간표 추가 완료');
       
       // 3. UI 업데이트
       if (mounted) {
@@ -285,7 +314,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 ),
               ],
             ),
-            backgroundColor: const Color(0xFF10B981),
+            backgroundColor: TimetableConstants.successColor,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
@@ -295,7 +324,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         );
       }
     } catch (e) {
-      debugPrint('❌ 시간표 추가 실패: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -311,7 +339,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 ),
               ],
             ),
-            backgroundColor: const Color(0xFFEF4444),
+            backgroundColor: TimetableConstants.errorColor,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
@@ -328,7 +356,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     ScheduleItem newItem,
   ) async {
     final l10n = AppLocalizations.of(context);
-    // 🔥 게스트 사용자 체크
+    // 게스트 사용자 체크
     if (widget.userId.startsWith('guest_')) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -344,7 +372,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               ),
             ],
           ),
-          backgroundColor: const Color(0xFF3B82F6),
+          backgroundColor: TimetableConstants.infoColor,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
@@ -362,11 +390,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       originDayOfWeek: originItem.dayOfWeekText,
       newItem: newItem,
     );
-    debugPrint('📅 서버에 시간표 수정 완료');
     
     // 2. 로컬 저장소에도 수정
     await TimetableStorageService.updateTimetableItem(widget.userId, originItem, newItem);
-    debugPrint('📅 로컬 저장소에 시간표 수정 완료');
     
     // 3. UI 업데이트
     final currentItems = List<ScheduleItem>.from(_scheduleItems);
@@ -387,7 +413,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   Future<void> _deleteScheduleItem(ScheduleItem item) async {
     final l10n = AppLocalizations.of(context);
-    // 🔥 게스트 사용자 체크
+    // 게스트 사용자 체크
     if (widget.userId.startsWith('guest_')) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -403,7 +429,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               ),
             ],
           ),
-          backgroundColor: const Color(0xFF3B82F6),
+          backgroundColor: TimetableConstants.infoColor,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
@@ -420,11 +446,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       title: item.title,
       dayOfWeek: item.dayOfWeekText,
     );
-    debugPrint('📅 서버에서 시간표 삭제 완료');
     
     // 2. 로컬 저장소에서도 삭제
     await TimetableStorageService.removeTimetableItem(widget.userId, item);
-    debugPrint('📅 로컬 저장소에서 시간표 삭제 완료');
     
     // 3. UI 업데이트
     final currentItems = List<ScheduleItem>.from(_scheduleItems);
@@ -469,7 +493,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: TimetableConstants.backgroundColor,
       body: SafeArea(
         child: Column(
           children: [
@@ -511,7 +535,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       style: TextStyle(
                         fontSize: isSmallScreen ? 20 : 24,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E3A8A),
+                        color: TimetableConstants.primaryColor,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -532,7 +556,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                           _getCurrentSemester(),
                           style: TextStyle(
                             fontSize: isSmallScreen ? 12 : 14,
-                            color: const Color(0xFF1E3A8A),
+                            color: TimetableConstants.primaryColor,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
@@ -550,7 +574,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                          color: TimetableConstants.primaryColor.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Column(
@@ -583,7 +607,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                   const SizedBox(width: 12),
                   Container(
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                      color: TimetableConstants.primaryColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: IconButton(
@@ -688,7 +712,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     return Container(
       height: rowHeight, // 동적 높이 적용
       decoration: BoxDecoration(
-        color: isCurrentTime ? const Color(0xFF1E3A8A).withOpacity(0.05) : null,
+        color: isCurrentTime ? TimetableConstants.primaryColor.withOpacity(0.05) : null,
         border: Border(
           bottom: BorderSide(color: Colors.grey.shade200, width: 0.5),
         ),
@@ -696,11 +720,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               child: Row(
           children: [
             Container(
-              width: constraints.maxWidth < 400 ? 50 : 60,
+              width: constraints.maxWidth < 400 ? TimetableConstants.smallTimeColumnWidth.toDouble() : TimetableConstants.timeColumnWidth.toDouble(),
               alignment: Alignment.center,
             decoration: BoxDecoration(
               color: isCurrentTime
-                  ? const Color(0xFF1E3A8A).withOpacity(0.1)
+                  ? TimetableConstants.primaryColor.withOpacity(0.1)
                   : Colors.grey.shade50,
               border: Border(
                 right: BorderSide(color: Colors.grey.shade300, width: 1),
@@ -712,7 +736,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 fontSize: 10 * (rowHeight / 45.0).clamp(0.7, 1.0), // 동적 폰트 크기
                 fontWeight: isCurrentTime ? FontWeight.w700 : FontWeight.w500,
                 color: isCurrentTime
-                    ? const Color(0xFF1E3A8A)
+                    ? TimetableConstants.primaryColor
                     : Colors.grey.shade600,
               ),
             ),
@@ -781,10 +805,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final endHour = int.parse(item.endTime.split(':')[0]);
     final endMinute = int.parse(item.endTime.split(':')[1]);
 
-    if (startHour < 9 || startHour > 18) return null;
+    if (startHour < TimetableConstants.startHour || startHour > TimetableConstants.endHour) return null;
 
     // 실제 시간 컬럼 너비와 일치하도록 동적 계산
-    final timeColumnWidth = constraints.maxWidth < 400 ? 50.0 : 60.0;
+    final timeColumnWidth = constraints.maxWidth < 400 ? TimetableConstants.smallTimeColumnWidth.toDouble() : TimetableConstants.timeColumnWidth.toDouble();
     const containerPadding = 8.0;
 
     final availableWidth =
@@ -792,11 +816,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     final dayColumnWidth = availableWidth / 5;
 
     // 동적 높이에 맞춰 위치 계산
-    final startRowIndex = startHour - 9;
+    final startRowIndex = startHour - TimetableConstants.startHour;
     final startPixelOffset = startMinute / 60.0 * rowHeight;
     final top = (startRowIndex * rowHeight) + startPixelOffset;
 
-    final endRowIndex = endHour - 9;
+    final endRowIndex = endHour - TimetableConstants.startHour;
     final endPixelOffset = endMinute / 60.0 * rowHeight;
     final cardHeight = (endRowIndex * rowHeight + endPixelOffset) - top;
 
@@ -901,7 +925,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         return Container(
           height: isSmallScreen ? 40 : 50,
           decoration: BoxDecoration(
-            color: const Color(0xFFF8FAFC),
+            color: TimetableConstants.backgroundColor,
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(16),
               topRight: Radius.circular(16),
@@ -922,7 +946,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         style: TextStyle(
                           fontSize: isSmallScreen ? 11 : 14,
                           fontWeight: FontWeight.w600,
-                          color: const Color(0xFF1E3A8A),
+                          color: TimetableConstants.primaryColor,
                         ),
                         textAlign: TextAlign.center,
                         overflow: TextOverflow.ellipsis,
@@ -940,7 +964,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   List<String> _generateOptimizedTimeSlots() {
     final slots = <String>[];
-    for (int hour = 9; hour <= 18; hour++) {
+    for (int hour = TimetableConstants.startHour; hour <= TimetableConstants.endHour; hour++) {
       slots.add('${hour.toString().padLeft(2, '0')}:00');
     }
     return slots;
@@ -953,9 +977,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
   List<String> _generateTimeSlots() {
     final slots = <String>[];
-    for (int hour = 9; hour <= 18; hour++) {
+    for (int hour = TimetableConstants.startHour; hour <= TimetableConstants.endHour; hour++) {
       slots.add('${hour.toString().padLeft(2, '0')}:00');
-      if (hour < 18) {
+      if (hour < TimetableConstants.endHour) {
         slots.add('${hour.toString().padLeft(2, '0')}:30');
       }
     }
@@ -1111,7 +1135,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
+                  color: TimetableConstants.backgroundColor,
                   borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(20),
                     bottomRight: Radius.circular(20),
@@ -1213,42 +1237,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     String endTime = initialItem?.endTime.length == 5
         ? initialItem!.endTime
         : '10:30';
-    Color selectedColor = initialItem?.color ?? const Color(0xFF3B82F6);
+    Color selectedColor = initialItem?.color ?? TimetableConstants.infoColor;
 
-    final colors = [
-      const Color(0xFF3B82F6),
-      const Color(0xFF10B981),
-      const Color(0xFFEF4444),
-      const Color(0xFF8B5CF6),
-      const Color(0xFFF59E0B),
-      const Color(0xFF06B6D4),
-      const Color(0xFFEC4899),
-      const Color(0xFF84CC16),
-    ];
+    final colors = TimetableConstants.colorPalette;
 
-    final List<String> buildingCodes = [
-      'W1',
-      'W2',
-      'W2-1',
-      'W3',
-      'W4',
-      'W5',
-      'W6',
-      'W7',
-      'W8',
-      'W9',
-      'W10',
-      'W11',
-      'W12',
-      'W13',
-      'W14',
-      'W15',
-      'W16',
-      'W17-동관',
-      'W17-서관',
-      'W18',
-      'W19',
-    ];
+    final List<String> buildingCodes = TimetableConstants.buildingCodes;
 
     List<String> floorList = [];
     List<String> roomList = [];
@@ -1292,7 +1285,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                        color: TimetableConstants.primaryColor.withOpacity(0.1),
                         borderRadius: const BorderRadius.only(
                           topLeft: Radius.circular(20),
                           topRight: Radius.circular(20),
@@ -1304,7 +1297,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                             width: 50,
                             height: 50,
                             decoration: BoxDecoration(
-                              color: const Color(0xFF1E3A8A).withOpacity(0.2),
+                              color: TimetableConstants.primaryColor.withOpacity(0.2),
                               shape: BoxShape.circle,
                             ),
                             child: const Icon(
@@ -1352,27 +1345,23 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                               labelText: l10n?.building_name ?? 'Building',
                               icon: Icons.business,
                               items: buildingCodes,
-                              onChanged: (value) async {
-                                debugPrint('🏢 건물 입력 변경: "$value"');
-                                selectedBuilding = value;
-                                setState(() {
-                                  selectedFloor = null;
-                                  selectedRoom = null;
-                                  floorFieldController.text = '';
-                                  roomFieldController.text = '';
-                                  floorList = [];
-                                  roomList = [];
-                                });
-                                if (buildingCodes.contains(value)) {
-                                  debugPrint('🏢 건물 확인됨, 층 정보 가져오기: $value');
-                                  final fetchedFloors = await _apiService
-                                      .fetchFloors(value);
+                                onChanged: (value) async {
+                                  selectedBuilding = value;
                                   setState(() {
-                                    floorList = fetchedFloors;
+                                    selectedFloor = null;
+                                    selectedRoom = null;
+                                    floorFieldController.text = '';
+                                    roomFieldController.text = '';
+                                    floorList = [];
+                                    roomList = [];
                                   });
-                                  debugPrint('🏢 층 정보 로드 완료: ${fetchedFloors.length}개');
-                                }
-                              },
+                                  if (buildingCodes.contains(value)) {
+                                    final fetchedFloors = await _apiService.fetchFloors(value);
+                                    setState(() {
+                                      floorList = fetchedFloors;
+                                    });
+                                  }
+                                },
                             ),
                             const SizedBox(height: 16),
                             _buildTypeAheadField(
@@ -1381,7 +1370,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                               icon: Icons.layers,
                               items: floorList,
                               onChanged: (value) async {
-                                debugPrint('🏢 층 입력 변경: "$value"');
                                 selectedFloor = value;
                                 setState(() {
                                   selectedRoom = null;
@@ -1389,13 +1377,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                   roomList = [];
                                 });
                                 if (floorList.contains(value)) {
-                                  debugPrint('🏢 층 확인됨, 강의실 정보 가져오기: $value');
-                                  final fetchedRooms = await _apiService
-                                      .fetchRooms(selectedBuilding!, value);
+                                  final fetchedRooms = await _apiService.fetchRooms(selectedBuilding!, value);
                                   setState(() {
                                     roomList = fetchedRooms;
                                   });
-                                  debugPrint('🏢 강의실 정보 로드 완료: ${fetchedRooms.length}개');
                                 }
                               },
                             ),
@@ -1406,7 +1391,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                               icon: Icons.meeting_room,
                               items: roomList,
                               onChanged: (value) {
-                                debugPrint('🏢 강의실 입력 변경: "$value"');
                                 selectedRoom = value;
                               },
                             ),
@@ -1583,10 +1567,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                               width: double.infinity,
                               padding: const EdgeInsets.all(16),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF8FAFC),
+                                color: TimetableConstants.backgroundColor,
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                  color: const Color(0xFFE2E8F0),
+                                  color: TimetableConstants.borderColor,
                                 ),
                               ),
                               child: Column(
@@ -1632,7 +1616,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                             ),
                                             border: Border.all(
                                               color: selectedColor == color
-                                                  ? const Color(0xFF1E3A8A)
+                                                  ? TimetableConstants.primaryColor
                                                   : Colors.transparent,
                                               width: 3,
                                             ),
@@ -1679,7 +1663,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
+                        color: TimetableConstants.backgroundColor,
                         borderRadius: const BorderRadius.only(
                           bottomLeft: Radius.circular(20),
                           bottomRight: Radius.circular(20),
@@ -1687,7 +1671,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       ),
                       child: Column(
                         children: [
-                          // 🔥 반응형 버튼 레이아웃
+                          // 반응형 버튼 레이아웃
                           LayoutBuilder(
                             builder: (context, constraints) {
                               final isSmallScreen = constraints.maxWidth < 400;
@@ -1877,7 +1861,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                                           '이미 같은 시간에 등록된 수업이 있습니다.',
                                                     ),
                                                     backgroundColor:
-                                                        const Color(0xFFEF4444),
+                                                        TimetableConstants.errorColor,
                                                     behavior: SnackBarBehavior
                                                         .floating,
                                                     shape: RoundedRectangleBorder(
@@ -1959,7 +1943,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: TimetableConstants.borderColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -1976,7 +1960,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         decoration: InputDecoration(
           labelText: labelText,
           labelStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 14),
-          prefixIcon: Icon(icon, color: const Color(0xFF1E3A8A), size: 20),
+          prefixIcon: Icon(icon, color: TimetableConstants.primaryColor, size: 20),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
@@ -2001,7 +1985,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: TimetableConstants.borderColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -2022,10 +2006,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             margin: const EdgeInsets.all(8),
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E3A8A).withOpacity(0.1),
+              color: TimetableConstants.primaryColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(icon, color: const Color(0xFF1E3A8A), size: 20),
+            child: Icon(icon, color: TimetableConstants.primaryColor, size: 20),
           ),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
@@ -2038,7 +2022,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
         icon: Container(
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
-            color: const Color(0xFF1E3A8A).withOpacity(0.1),
+            color: TimetableConstants.primaryColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(6),
           ),
           child: const Icon(
@@ -2063,10 +2047,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: const Color(0xFF1E3A8A).withOpacity(0.1),
+            color: TimetableConstants.primaryColor.withOpacity(0.1),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, color: const Color(0xFF1E3A8A), size: 20),
+          child: Icon(icon, color: TimetableConstants.primaryColor, size: 20),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -2156,10 +2140,10 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               margin: const EdgeInsets.all(8),
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                color: TimetableConstants.primaryColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(icon, color: const Color(0xFF1E3A8A), size: 20),
+              child: Icon(icon, color: TimetableConstants.primaryColor, size: 20),
             ),
             border: InputBorder.none,
             contentPadding: const EdgeInsets.symmetric(
@@ -2194,11 +2178,6 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
   }
 
   void _showBuildingLocation(ScheduleItem item) {
-    debugPrint('🏢 시간표에서 위치 보기 버튼 클릭됨');
-    debugPrint('🏢 건물 이름: ${item.buildingName}');
-    debugPrint('🏢 층수: ${item.floorNumber}');
-    debugPrint('🏢 호실: ${item.roomName}');
-    debugPrint('🏢 전체 아이템 정보: $item');
 
     // 메인 지도 화면으로 이동하면서 건물 정보를 전달
     Navigator.pushNamedAndRemoveUntil(
@@ -2215,49 +2194,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       },
     );
 
-    debugPrint('🏢 네비게이션 완료');
   }
 
-  // 🔥 액션 버튼 빌더 메서드
-  Widget _buildActionButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onPressed,
-    required Color color,
-    bool isIconOnly = false,
-  }) {
-    return SizedBox(
-      height: 48,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          elevation: 0,
-          padding: EdgeInsets.zero,
-        ),
-        child: isIconOnly
-            ? Icon(icon, size: 20)
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(icon, size: 18),
-                  const SizedBox(width: 8),
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-      ),
-    );
-  }
 
   void _showScheduleDetail(ScheduleItem item) {
   final l10n = AppLocalizations.of(context)!;
@@ -2267,24 +2205,29 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     barrierColor: Colors.black.withOpacity(0.5),
     builder: (context) => Dialog(
       backgroundColor: Colors.transparent,
-      child: Container(
-        width: MediaQuery.of(context).size.width * 0.9,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.85,
+          maxWidth: MediaQuery.of(context).size.width * 0.9,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
               decoration: BoxDecoration(
                 color: item.color.withOpacity(0.1),
                 borderRadius: const BorderRadius.only(
@@ -2331,66 +2274,69 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                children: [
-                  _buildStyledDetailRow(
-                    Icons.person,
-                    l10n.professor_name,
-                    item.professor,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildStyledDetailRow(
-                    Icons.business,
-                    l10n.building_name,
-                    item.buildingName,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildStyledDetailRow(
-                    Icons.layers,
-                    l10n.floor_label,
-                    item.floorNumber,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildStyledDetailRow(
-                    Icons.meeting_room,
-                    l10n.room_name,
-                    item.roomName,
-                  ),
-                  const SizedBox(height: 16),
-                  _buildStyledDetailRow(
-                    Icons.calendar_today,
-                    l10n.day_of_week,
-                    _getDayName(item.dayOfWeek),
-                  ),
-                  const SizedBox(height: 16),
-                  _buildStyledDetailRow(
-                    Icons.access_time,
-                    l10n.time,
-                    '${item.startTime} - ${item.endTime}',
-                  ),
-                  if (item.memo.isNotEmpty) ...[
+            Flexible(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                child: Column(
+                  children: [
+                    _buildStyledDetailRow(
+                      Icons.person,
+                      l10n.professor_name,
+                      item.professor,
+                    ),
                     const SizedBox(height: 16),
                     _buildStyledDetailRow(
-                      Icons.note_alt_outlined,
-                      l10n.memo,
-                      item.memo,
+                      Icons.business,
+                      l10n.building_name,
+                      item.buildingName,
                     ),
+                    const SizedBox(height: 16),
+                    _buildStyledDetailRow(
+                      Icons.layers,
+                      l10n.floor_label,
+                      item.floorNumber,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildStyledDetailRow(
+                      Icons.meeting_room,
+                      l10n.room_name,
+                      item.roomName,
+                    ),
+                    const SizedBox(height: 16),
+                    _buildStyledDetailRow(
+                      Icons.calendar_today,
+                      l10n.day_of_week,
+                      _getDayName(item.dayOfWeek),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildStyledDetailRow(
+                      Icons.access_time,
+                      l10n.time,
+                      '${item.startTime} - ${item.endTime}',
+                    ),
+                    if (item.memo.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      _buildStyledDetailRow(
+                        Icons.note_alt_outlined,
+                        l10n.memo,
+                        item.memo,
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
+                color: TimetableConstants.backgroundColor,
                 borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(20),
                   bottomRight: Radius.circular(20),
                 ),
               ),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   LayoutBuilder(
                     builder: (context, constraints) {
@@ -2402,7 +2348,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                           _showRecommendRoute(item);
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1E3A8A),
+                          backgroundColor: TimetableConstants.primaryColor,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -2430,12 +2376,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
 
                       Widget viewLocationButton = ElevatedButton(
                         onPressed: () {
-                          debugPrint('🔘 위치 보기 버튼 클릭됨!');
                           Navigator.pop(context);
                           _showBuildingLocation(item);
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF3B82F6),
+                          backgroundColor: TimetableConstants.infoColor,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -2467,7 +2412,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                           _showEditScheduleDialog(item);
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF64748B),
+                          backgroundColor: TimetableConstants.textColor,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -2493,119 +2438,136 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         ),
                       );
 
-                      Widget deleteButton = ElevatedButton(
-                        onPressed: () async {
-                          Navigator.pop(context);
-                          await _showDeleteConfirmDialog(item);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFEF4444),
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 2,
-                          padding: EdgeInsets.zero, // 패딩 제거로 정확한 중앙 정렬
-                        ),
-                        child: const Center( // Center로 감싸서 정확한 중앙 정렬
-                          child: Icon(Icons.delete, size: 18),
-                        ),
-                      );
 
                       if (isSmallScreen) {
                         // 작은 화면에서는 더 작은 화면인지 추가 확인
                         final isVerySmallScreen = constraints.maxWidth < 300;
                         
                         if (isVerySmallScreen) {
-                          // 매우 작은 화면: 아이콘만 표시
+                          // 매우 작은 화면: 아이콘만 표시, 높이 축소
                           return Column(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Row(
                                 children: [
                                   Expanded(
                                     child: SizedBox(
-                                      height: 48,
+                                      height: 42,
                                       child: ElevatedButton(
                                         onPressed: () {
                                           Navigator.pop(context);
                                           _showRecommendRoute(item);
                                         },
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(0xFF1E3A8A),
+                                          backgroundColor: TimetableConstants.primaryColor,
                                           foregroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                          elevation: 2,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                          elevation: 1,
                                         ),
-                                        child: const Icon(Icons.directions, size: 18),
+                                        child: const Icon(Icons.directions, size: 16),
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
+                                  const SizedBox(width: 6),
                                   Expanded(
                                     child: SizedBox(
-                                      height: 48,
+                                      height: 42,
                                       child: ElevatedButton(
                                         onPressed: () {
-                                          debugPrint('🔘 위치 보기 버튼 클릭됨!');
                                           Navigator.pop(context);
                                           _showBuildingLocation(item);
                                         },
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(0xFF3B82F6),
+                                          backgroundColor: TimetableConstants.infoColor,
                                           foregroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                          elevation: 2,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                          elevation: 1,
                                         ),
-                                        child: const Icon(Icons.location_on, size: 18),
+                                        child: const Icon(Icons.location_on, size: 16),
                                       ),
                                     ),
                                   ),
                                 ],
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 6),
                               Row(
                                 children: [
                                   Expanded(
                                     child: SizedBox(
-                                      height: 48,
+                                      height: 42,
                                       child: ElevatedButton(
                                         onPressed: () {
                                           Navigator.pop(context);
                                           _showEditScheduleDialog(item);
                                         },
                                         style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(0xFF64748B),
+                                          backgroundColor: TimetableConstants.textColor,
                                           foregroundColor: Colors.white,
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                          elevation: 2,
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                          elevation: 1,
                                         ),
-                                        child: const Icon(Icons.edit, size: 18),
+                                        child: const Icon(Icons.edit, size: 16),
                                       ),
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
-                                  SizedBox(width: 48, height: 48, child: deleteButton),
+                                  const SizedBox(width: 6),
+                                  SizedBox(
+                                    width: 42, 
+                                    height: 42, 
+                                    child: ElevatedButton(
+                                      onPressed: () async {
+                                        Navigator.pop(context);
+                                        await _showDeleteConfirmDialog(item);
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: TimetableConstants.errorColor,
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                        elevation: 1,
+                                        padding: EdgeInsets.zero,
+                                      ),
+                                      child: const Icon(Icons.delete, size: 16),
+                                    ),
+                                  ),
                                 ],
                               ),
                             ],
                           );
                         } else {
-                          // 작은 화면: 아이콘 + 텍스트 (오버플로우 방지)
+                          // 작은 화면: 아이콘 + 텍스트 (오버플로우 방지), 높이 축소
                           return Column(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Row(
                                 children: [
-                                  Expanded(child: SizedBox(height: 48, child: recommendRouteButton)),
-                                  const SizedBox(width: 8),
-                                  Expanded(child: SizedBox(height: 48, child: viewLocationButton)),
+                                  Expanded(child: SizedBox(height: 44, child: recommendRouteButton)),
+                                  const SizedBox(width: 6),
+                                  Expanded(child: SizedBox(height: 44, child: viewLocationButton)),
                                 ],
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 6),
                               Row(
                                 children: [
-                                  Expanded(child: SizedBox(height: 48, child: editButton)),
-                                  const SizedBox(width: 8),
-                                  SizedBox(width: 48, height: 48, child: deleteButton),
+                                  Expanded(child: SizedBox(height: 44, child: editButton)),
+                                  const SizedBox(width: 6),
+                                  SizedBox(
+                                    width: 44, 
+                                    height: 44, 
+                                    child: ElevatedButton(
+                                      onPressed: () async {
+                                        Navigator.pop(context);
+                                        await _showDeleteConfirmDialog(item);
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: TimetableConstants.errorColor,
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                        elevation: 1,
+                                        padding: EdgeInsets.zero,
+                                      ),
+                                      child: const Icon(Icons.delete, size: 16),
+                                    ),
+                                  ),
                                 ],
                               ),
                             ],
@@ -2614,26 +2576,43 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       } else {
                         return Row(
                           children: [
-                            Expanded(child: SizedBox(height: 48, child: recommendRouteButton)),
+                            Expanded(child: SizedBox(height: 44, child: recommendRouteButton)),
                             const SizedBox(width: 8),
-                            Expanded(child: SizedBox(height: 48, child: viewLocationButton)),
+                            Expanded(child: SizedBox(height: 44, child: viewLocationButton)),
                             const SizedBox(width: 8),
-                            Expanded(child: SizedBox(height: 48, child: editButton)),
+                            Expanded(child: SizedBox(height: 44, child: editButton)),
                             const SizedBox(width: 8),
-                            SizedBox(width: 48, height: 48, child: deleteButton),
+                            SizedBox(
+                              width: 44, 
+                              height: 44, 
+                              child: ElevatedButton(
+                                onPressed: () async {
+                                  Navigator.pop(context);
+                                  await _showDeleteConfirmDialog(item);
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: TimetableConstants.errorColor,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  elevation: 1,
+                                  padding: EdgeInsets.zero,
+                                ),
+                                child: const Icon(Icons.delete, size: 16),
+                              ),
+                            ),
                           ],
                         );
                       }
                     },
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   SizedBox(
                     width: double.infinity,
-                    height: 44,
+                    height: 40,
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: Color(0xFFE2E8F0)),
+                        side: const BorderSide(color: TimetableConstants.borderColor),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -2641,8 +2620,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       child: Text(
                         l10n.close,
                         style: const TextStyle(
-                          color: Color(0xFF64748B),
+                          color: TimetableConstants.textColor,
                           fontWeight: FontWeight.w600,
+                          fontSize: 14,
                         ),
                       ),
                     ),
@@ -2650,7 +2630,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 ],
               ),
             ),
-          ],
+            ],
+          ),
         ),
       ),
     ),
@@ -2788,10 +2769,9 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
                         child: Row(
                           children: [
                             IconButton(
-                              onPressed: () {
-                                debugPrint('뒤로가기 버튼 클릭');
-                                setState(() => _showTutorial = false);
-                              },
+                onPressed: () {
+                  setState(() => _showTutorial = false);
+                },
                               icon: const Icon(Icons.arrow_back, size: 20),
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
@@ -2840,7 +2820,7 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
                                   height: 8,
                                   decoration: BoxDecoration(
                                     color: index == _tutorialPage 
-                                        ? const Color(0xFF1E3A8A) 
+                                        ? TimetableConstants.primaryColor 
                                         : Colors.grey.shade300,
                                     shape: BoxShape.circle,
                                   ),
@@ -2859,7 +2839,7 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
                                 child: Text(AppLocalizations.of(context)!.excel_tutorial_file_select),
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: Colors.white,
-                                  backgroundColor: const Color(0xFF1E3A8A),
+                                  backgroundColor: TimetableConstants.primaryColor,
                                   side: const BorderSide(color: Color(0xFF1E3A8A)),
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                 ),
@@ -2900,7 +2880,7 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
             icon: const Icon(Icons.folder_open, size: 20),
             label: Text(AppLocalizations.of(context)!.excel_file_select, style: const TextStyle(fontSize: 16)),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E3A8A),
+              backgroundColor: TimetableConstants.primaryColor,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -2920,7 +2900,7 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
             icon: const Icon(Icons.help_outline, size: 18),
             label: Text(AppLocalizations.of(context)!.excel_tutorial_help, style: const TextStyle(fontSize: 14)),
             style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFF1E3A8A),
+              foregroundColor: TimetableConstants.primaryColor,
               side: const BorderSide(color: Color(0xFF1E3A8A)),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -2932,167 +2912,8 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
     );
   }
   
-  Widget _buildTutorialContent() {
-    debugPrint('=== 튜토리얼 콘텐츠 빌드 시작 ===');
-    debugPrint('현재 페이지: $_tutorialPage');
-    
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      color: Colors.red.shade100, // 빨간색 배경으로 테스트
-      child: Column(
-        children: [
-          // 헤더
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            color: Colors.blue.shade100, // 파란색 배경으로 테스트
-            child: Row(
-              children: [
-                IconButton(
-                  onPressed: () {
-                    debugPrint('뒤로가기 버튼 클릭');
-                    setState(() => _showTutorial = false);
-                  },
-                  icon: const Icon(Icons.arrow_back, size: 20),
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    AppLocalizations.of(context)!.excel_tutorial_title,
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          
-          // 테스트 콘텐츠
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              color: Colors.green.shade100, // 초록색 배경으로 테스트
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 100,
-                      height: 100,
-                      color: Colors.yellow.shade400,
-                      child: const Center(
-                        child: Text(
-                          '테스트\n박스',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      '튜토리얼 테스트',
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '현재 페이지: $_tutorialPage',
-                      style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-                    ),
-                    const SizedBox(height: 24),
-                    ElevatedButton(
-                      onPressed: () {
-                        debugPrint('파일 선택 버튼 클릭');
-                        _uploadExcelFile();
-                      },
-                      child: Text(AppLocalizations.of(context)!.excel_tutorial_file_select),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
   
-  List<Widget> _getTutorialPages() {
-    return [
-      // 페이지 0: 안내 텍스트
-      _buildTextPage(),
-      
-      // 페이지 1-5: 이미지들 (테스트용)
-      _buildTestImagePage('assets/timetable/tutorial/1.png'),
-      _buildTestImagePage('assets/timetable/tutorial/2.png'),
-      _buildTestImagePage('assets/timetable/tutorial/3.png'),
-      _buildTestImagePage('assets/timetable/tutorial/4.png'),
-      _buildTestImagePage('assets/timetable/tutorial/5.png'),
-    ];
-  }
   
-  Widget _buildTestImagePage(String assetPath) {
-    debugPrint('=== 이미지 테스트 시작: $assetPath ===');
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            '테스트: $assetPath',
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 20),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Image.asset(
-                assetPath,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  debugPrint('❌ 이미지 로드 실패: $assetPath');
-                  debugPrint('❌ 에러: $error');
-                  return Container(
-                    color: Colors.red.shade100,
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.error, size: 48, color: Colors.red.shade400),
-                          const SizedBox(height: 8),
-                          Text(
-                            '이미지 로드 실패',
-                            style: TextStyle(color: Colors.red.shade600),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            assetPath,
-                            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Error: $error',
-                            style: TextStyle(fontSize: 10, color: Colors.red.shade400),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
   
   Widget _buildTextPage() {
     return Container(
@@ -3112,7 +2933,7 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
             Icon(
               Icons.info_outline,
               size: 48,
-              color: const Color(0xFF1E3A8A),
+              color: TimetableConstants.primaryColor,
             ),
             const SizedBox(height: 16),
             Text(
@@ -3143,7 +2964,6 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
   }
   
   Widget _buildTutorialPage(int page) {
-    debugPrint('튜토리얼 페이지 빌드: $page');
     
     switch (page) {
       case 0:
@@ -3169,7 +2989,6 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
   }
   
   Widget _buildSimpleImagePage(String assetPath) {
-    debugPrint('간단한 이미지 페이지: $assetPath');
     return Container(
       width: double.infinity,
       height: double.infinity,
@@ -3183,8 +3002,10 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
         child: Image.asset(
           assetPath,
           fit: BoxFit.contain,
+          // 이미지 캐싱 최적화
+          cacheWidth: 400,
+          cacheHeight: 600,
           errorBuilder: (context, error, stackTrace) {
-            debugPrint('이미지 로드 실패: $assetPath - $error');
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -3209,44 +3030,6 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
     );
   }
   
-  Widget _buildErrorWidget(String assetPath, String error) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.image_not_supported,
-            size: 48,
-            color: Colors.grey.shade400,
-          ),
-          const SizedBox(height: 8),
-                            Text(
-                    AppLocalizations.of(context)!.excel_tutorial_image_load_error,
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 14,
-                    ),
-                  ),
-          const SizedBox(height: 4),
-          Text(
-            assetPath,
-            style: TextStyle(
-              color: Colors.grey.shade500,
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Error: $error',
-            style: TextStyle(
-              color: Colors.red.shade400,
-              fontSize: 10,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
   
   Future<void> _uploadExcelFile() async {
     if (!mounted) return;
@@ -3258,9 +3041,8 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
     try {
       await WakelockPlus.enable();
       wakelockEnabled = true;
-      debugPrint('🔓 업로드 중 화면 잠금 해제 활성화');
     } catch (e) {
-      debugPrint('⚠️ Wakelock 활성화 실패: $e');
+      // Wakelock 활성화 실패 시 무시
     }
     
     try {
@@ -3268,7 +3050,6 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
       
       if (mounted) {
         if (success) {
-          debugPrint('📤 엑셀 업로드 성공 후 리프레시 콜백 호출');
           
           // 업로드 중 상태 해제
           if (mounted) {
@@ -3288,16 +3069,14 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
             // 새로고침 실행
             try {
               await widget.refreshCallback();
-              debugPrint('✅ 시간표 새로고침 완료');
               
               // 엑셀 업로드 후 로컬 저장소에 최신 데이터 저장
               try {
                 final apiService = TimetableApiService();
                 final latestItems = await apiService.fetchScheduleItems(widget.userId);
                 await TimetableStorageService.saveTimetableData(widget.userId, latestItems);
-                debugPrint('📂 엑셀 업로드 후 로컬 저장소 업데이트 완료');
               } catch (e) {
-                debugPrint('⚠️ 엑셀 업로드 후 로컬 저장소 업데이트 실패: $e');
+                // 로컬 저장소 업데이트 실패 시 무시
               }
               
               // 성공 메시지 표시
@@ -3318,7 +3097,6 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
                 );
               }
             } catch (error) {
-              debugPrint('❌ 시간표 새로고침 실패: $error');
               
               // 새로고침 실패 시에도 성공 메시지 표시 (업로드는 성공했으므로)
               if (mounted) {
@@ -3344,9 +3122,8 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
           if (wakelockEnabled) {
             try {
               await WakelockPlus.disable();
-              debugPrint('🔒 업로드 완료 후 화면 잠금 해제 비활성화');
             } catch (e) {
-              debugPrint('⚠️ Wakelock 비활성화 실패: $e');
+              // Wakelock 비활성화 실패 시 무시
             }
           }
         } else {
@@ -3361,9 +3138,8 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
           if (wakelockEnabled) {
             try {
               await WakelockPlus.disable();
-              debugPrint('🔒 파일 선택 취소 후 화면 잠금 해제 비활성화');
             } catch (e) {
-              debugPrint('⚠️ Wakelock 비활성화 실패: $e');
+              // Wakelock 비활성화 실패 시 무시
             }
           }
           
@@ -3394,9 +3170,8 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
         if (wakelockEnabled) {
           try {
             await WakelockPlus.disable();
-            debugPrint('🔒 업로드 에러 후 화면 잠금 해제 비활성화');
           } catch (e) {
-            debugPrint('⚠️ Wakelock 비활성화 실패: $e');
+            // Wakelock 비활성화 실패 시 무시
           }
         }
         
@@ -3426,9 +3201,8 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
           SystemUiMode.immersiveSticky,
           overlays: [SystemUiOverlay.top],
         );
-        debugPrint('🔧 안드로이드 시스템 UI 재설정 완료');
       } catch (e) {
-        debugPrint('⚠️ 안드로이드 시스템 UI 재설정 실패: $e');
+        // 시스템 UI 재설정 실패 시 무시
       }
     }
   }
