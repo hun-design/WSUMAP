@@ -4,6 +4,7 @@ import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:flutter_application_1/generated/app_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_application_1/managers/location_manager.dart';
+import 'package:flutter_application_1/services/map/custom_user_location_marker.dart';
 
 class OutdoorMapPage extends StatefulWidget {
   final List<NLatLng> path;
@@ -31,10 +32,12 @@ class _OutdoorMapPageState extends State<OutdoorMapPage> {
   List<String> _markerOverlayIds = [];
   NLatLng? _currentLocation;
   LocationManager? _locationManager;
+  late CustomUserLocationMarker _customUserLocationMarker;
 
   @override
   void initState() {
     super.initState();
+    _customUserLocationMarker = CustomUserLocationMarker();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _getCurrentLocation();
       _drawPath();
@@ -83,40 +86,18 @@ class _OutdoorMapPageState extends State<OutdoorMapPage> {
     }
   }
 
-  /// 현재 위치 표시
+  /// 현재 위치 표시 (방향 화살표 포함)
   Future<void> _showCurrentLocation() async {
     if (_mapController == null || _currentLocation == null) return;
 
-    // 기존 현재 위치 마커 제거
-    _mapController!.deleteOverlay(NOverlayInfo(
-      type: NOverlayType.marker,
-      id: 'current_location',
-    ));
-
-    // 현재 위치 마커 추가 (지도와 동일한 파란 원형 스타일)
-    final currentLocationMarker = NMarker(
-      id: 'current_location',
+    // CustomUserLocationMarker를 사용하여 방향 화살표와 함께 현재 위치 표시
+    _customUserLocationMarker.setMapController(_mapController!);
+    _customUserLocationMarker.setContext(context);
+    await _customUserLocationMarker.showUserLocation(
       position: _currentLocation!,
-      icon: await NOverlayImage.fromWidget(
-        context: context,
-        widget: Container(
-          width: 20,
-          height: 20,
-          decoration: BoxDecoration(
-            color: const Color(0xFF1E3A8A).withOpacity(0.3), // 지도와 동일한 파란색 투명
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: const Color(0xFF1E3A8A), // 지도와 동일한 파란색 테두리
-              width: 2,
-            ),
-          ),
-        ),
-        size: const Size(20, 20),
-      ),
-      size: const Size(20, 20),
+      showDirectionArrow: true,
+      shouldMoveCamera: false,
     );
-
-    _mapController!.addOverlay(currentLocationMarker);
   }
 
   @override
@@ -135,6 +116,8 @@ Widget build(BuildContext context) {
           ),
           onMapReady: (controller) async {
             _mapController = controller;
+            _customUserLocationMarker.setMapController(controller);
+            _customUserLocationMarker.setContext(context);
             await _getCurrentLocation();
             _drawPath();
             await _addRouteMarkers();
@@ -473,6 +456,9 @@ Widget build(BuildContext context) {
     // 위치 리스너 제거
     _locationManager?.removeListener(_onLocationChanged);
     
+    // CustomUserLocationMarker 정리
+    _customUserLocationMarker.dispose();
+    
     // 오버레이 정리
     if (_mapController != null) {
       // 경로 오버레이 정리
@@ -488,12 +474,6 @@ Widget build(BuildContext context) {
           NOverlayInfo(type: NOverlayType.marker, id: markerId),
         );
       }
-      
-      // 현재 위치 마커 정리
-      _mapController!.deleteOverlay(NOverlayInfo(
-        type: NOverlayType.marker,
-        id: 'current_location',
-      ));
     }
 
     super.dispose();

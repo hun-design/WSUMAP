@@ -42,18 +42,22 @@ class CustomUserLocationMarker {
     }
   }
   
+  /// iOS용 나침반 추적 시작 - CoreLocation 기반 정확한 방향
   void _startIOSCompassTracking() {
     _compassSubscription?.cancel();
     _compassSubscription = FlutterCompass.events?.listen((CompassEvent event) {
       try {
         final double? heading = event.heading;
         if (heading == null) return;
+        
         // heading은 0~360(북 기준). 지도 회전 보정은 별도 적용됨
         double newHeading = heading;
+        
         // 더 민감하게: 임계값 0.5도
         if ((newHeading - _currentHeading).abs() > 0.5) {
           _currentHeading = newHeading;
           _updateDirectionArrowRotation();
+          debugPrint('🧭 iOS 나침반 방향 업데이트: ${_currentHeading.toStringAsFixed(1)}도');
         }
       } catch (e) {
         debugPrint('❌ iOS Compass 처리 오류: $e');
