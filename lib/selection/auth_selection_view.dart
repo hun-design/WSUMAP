@@ -106,12 +106,19 @@ class _AuthSelectionViewState extends State<AuthSelectionView>
   /// 언어 선택 다이얼로그 표시
   void _showLanguageDialog() {
     final l10n = AppLocalizations.of(context)!;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final maxHeight = screenHeight * 0.8; // 화면 높이의 80%로 제한
+    
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return Dialog(
           backgroundColor: Colors.transparent,
           child: Container(
+            constraints: BoxConstraints(
+              maxHeight: maxHeight,
+              maxWidth: MediaQuery.of(context).size.width * 0.9,
+            ),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(24),
@@ -128,7 +135,7 @@ class _AuthSelectionViewState extends State<AuthSelectionView>
               children: [
                 // 상단 아이콘 + 타이틀
                 Container(
-                  padding: const EdgeInsets.only(top: 32, bottom: 24),
+                  padding: const EdgeInsets.only(top: 24, bottom: 20),
                   decoration: BoxDecoration(
                     color: const Color(0xFF1E3A8A).withValues(alpha: 0.05),
                     borderRadius: const BorderRadius.only(
@@ -139,7 +146,7 @@ class _AuthSelectionViewState extends State<AuthSelectionView>
                   child: Column(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
                           shape: BoxShape.circle,
@@ -147,23 +154,23 @@ class _AuthSelectionViewState extends State<AuthSelectionView>
                         child: const Icon(
                           Icons.language_rounded,
                           color: Color(0xFF1E3A8A),
-                          size: 32,
+                          size: 28,
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                       Text(
                         l10n.language_selection,
                         style: const TextStyle(
-                          fontSize: 24,
+                          fontSize: 20,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF1E3A8A),
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 6),
                       Text(
                         l10n.language_selection_description,
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 13,
                           color: const Color(0xFF1E3A8A).withValues(alpha: 0.7),
                           fontWeight: FontWeight.w500,
                         ),
@@ -172,32 +179,34 @@ class _AuthSelectionViewState extends State<AuthSelectionView>
                   ),
                 ),
                 
-                // 언어 옵션들
-                Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    children: [
-                      _buildLanguageOption('한국어', 'ko'),
-                      const SizedBox(height: 12),
-                      _buildLanguageOption('English', 'en'),
-                      const SizedBox(height: 12),
-                      _buildLanguageOption('中文', 'zh'),
-                      const SizedBox(height: 12),
-                      _buildLanguageOption('Español', 'es'),
-                      const SizedBox(height: 12),
-                      _buildLanguageOption('日本語', 'ja'),
-                      const SizedBox(height: 12),
-                      _buildLanguageOption('Русский', 'ru'),
-                    ],
+                // 스크롤 가능한 언어 옵션들
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    child: Column(
+                      children: [
+                        _buildLanguageOption('한국어', 'ko'),
+                        const SizedBox(height: 10),
+                        _buildLanguageOption('English', 'en'),
+                        const SizedBox(height: 10),
+                        _buildLanguageOption('中文', 'zh'),
+                        const SizedBox(height: 10),
+                        _buildLanguageOption('Español', 'es'),
+                        const SizedBox(height: 10),
+                        _buildLanguageOption('日本語', 'ja'),
+                        const SizedBox(height: 10),
+                        _buildLanguageOption('Русский', 'ru'),
+                      ],
+                    ),
                   ),
                 ),
                 
                 // 하단 버튼
                 Container(
-                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
                   child: SizedBox(
                     width: double.infinity,
-                    height: 48,
+                    height: 44,
                     child: OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
                       style: OutlinedButton.styleFrom(
@@ -211,7 +220,7 @@ class _AuthSelectionViewState extends State<AuthSelectionView>
                         style: TextStyle(
                           color: Color(0xFF64748B),
                           fontWeight: FontWeight.w600,
-                          fontSize: 16,
+                          fontSize: 15,
                         ),
                       ),
                     ),
@@ -255,15 +264,15 @@ class _AuthSelectionViewState extends State<AuthSelectionView>
         }
         Navigator.of(context).pop();
       },
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(12),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         decoration: BoxDecoration(
           color: isSelected 
               ? const Color(0xFF1E3A8A).withValues(alpha: 0.1)
               : const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected 
                 ? const Color(0xFF1E3A8A).withValues(alpha: 0.3)
@@ -274,25 +283,25 @@ class _AuthSelectionViewState extends State<AuthSelectionView>
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
                 color: isSelected 
                     ? const Color(0xFF1E3A8A).withValues(alpha: 0.1)
                     : const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(6),
               ),
               child: Icon(
                 Icons.flag_rounded,
                 color: isSelected ? const Color(0xFF1E3A8A) : const Color(0xFF64748B),
-                size: 20,
+                size: 18,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: Text(
                 text,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 15,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                   color: isSelected ? const Color(0xFF1E3A8A) : const Color(0xFF334155),
                 ),
@@ -300,7 +309,7 @@ class _AuthSelectionViewState extends State<AuthSelectionView>
             ),
             if (isSelected)
               Container(
-                padding: const EdgeInsets.all(4),
+                padding: const EdgeInsets.all(3),
                 decoration: const BoxDecoration(
                   color: Color(0xFF1E3A8A),
                   shape: BoxShape.circle,
@@ -308,7 +317,7 @@ class _AuthSelectionViewState extends State<AuthSelectionView>
                 child: const Icon(
                   Icons.check,
                   color: Colors.white,
-                  size: 16,
+                  size: 14,
                 ),
               ),
           ],

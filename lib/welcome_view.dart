@@ -397,9 +397,16 @@ class _WelcomeViewState extends State<WelcomeView>
       context: context,
       barrierDismissible: true,
       builder: (context) {
+        final screenHeight = MediaQuery.of(context).size.height;
+        final maxHeight = screenHeight * 0.8; // 화면 높이의 80%로 제한
+        
         return Dialog(
           backgroundColor: Colors.transparent,
           child: Container(
+            constraints: BoxConstraints(
+              maxHeight: maxHeight,
+              maxWidth: MediaQuery.of(context).size.width * 0.9,
+            ),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
@@ -418,19 +425,19 @@ class _WelcomeViewState extends State<WelcomeView>
                   children: [
                     // 상단 아이콘+타이틀
                     Padding(
-                      padding: const EdgeInsets.only(top: 32, bottom: 12),
+                      padding: const EdgeInsets.only(top: 24, bottom: 16),
                       child: Column(
                         children: [
                           const Icon(
                             Icons.language,
                             color: Color(0xFF1E3A8A),
-                            size: 36,
+                            size: 32,
                           ),
                           const SizedBox(height: 12),
                           Text(
                             _getLanguageText(),
                             style: const TextStyle(
-                              fontSize: 20,
+                              fontSize: 18,
                               fontWeight: FontWeight.w700,
                               color: Color(0xFF1E3A8A),
                             ),
@@ -438,58 +445,63 @@ class _WelcomeViewState extends State<WelcomeView>
                         ],
                       ),
                     ),
-                    // 언어 선택 버튼들
-                    ...AppLanguage.values.map((lang) {
-                      final selected = lang == _selectedLanguage;
-                      return GestureDetector(
-                        onTap: () => Navigator.of(context).pop(lang),
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 6,
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 16,
-                          ),
-                          decoration: BoxDecoration(
-                            color: selected
-                                ? const Color(0xFF1E3A8A).withOpacity(0.08)
-                                : Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: selected
-                                  ? const Color(0xFF1E3A8A)
-                                  : Colors.grey[300]!,
-                              width: selected ? 2 : 1,
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                selected
-                                    ? Icons.radio_button_checked
-                                    : Icons.radio_button_off,
-                                color: selected
-                                    ? const Color(0xFF1E3A8A)
-                                    : Colors.grey[400],
-                              ),
-                              const SizedBox(width: 16),
-                              Text(
-                                languageToString(lang),
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 16,
+                    // 스크롤 가능한 언어 선택 버튼들
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                        child: Column(
+                          children: AppLanguage.values.map((lang) {
+                            final selected = lang == _selectedLanguage;
+                            return GestureDetector(
+                              onTap: () => Navigator.of(context).pop(lang),
+                              child: Container(
+                                margin: const EdgeInsets.symmetric(vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                decoration: BoxDecoration(
                                   color: selected
-                                      ? const Color(0xFF1E3A8A)
-                                      : Colors.grey[800],
+                                      ? const Color(0xFF1E3A8A).withOpacity(0.08)
+                                      : Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: selected
+                                        ? const Color(0xFF1E3A8A)
+                                        : Colors.grey[300]!,
+                                    width: selected ? 2 : 1,
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      selected
+                                          ? Icons.radio_button_checked
+                                          : Icons.radio_button_off,
+                                      color: selected
+                                          ? const Color(0xFF1E3A8A)
+                                          : Colors.grey[400],
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      languageToString(lang),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 15,
+                                        color: selected
+                                            ? const Color(0xFF1E3A8A)
+                                            : Colors.grey[800],
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                            ],
-                          ),
+                            );
+                          }).toList(),
                         ),
-                      );
-                    }),
+                      ),
+                    ),
                     const SizedBox(height: 16),
                   ],
                 ),

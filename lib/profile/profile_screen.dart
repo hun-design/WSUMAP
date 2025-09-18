@@ -216,11 +216,18 @@ class _ProfileScreenState extends State<ProfileScreen>
   /// 언어 선택 다이얼로그 표시
   void _showLanguageSelectionDialog() {
     final l10n = AppLocalizations.of(context)!;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final maxHeight = screenHeight * 0.8; // 화면 높이의 80%로 제한
+    
     showDialog(
       context: context,
       builder: (context) => Dialog(
         backgroundColor: Colors.transparent,
         child: Container(
+          constraints: BoxConstraints(
+            maxHeight: maxHeight,
+            maxWidth: MediaQuery.of(context).size.width * 0.9,
+          ),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(24),
@@ -237,7 +244,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             children: [
               // 상단 아이콘 + 타이틀
               Container(
-                padding: const EdgeInsets.only(top: 32, bottom: 24),
+                padding: const EdgeInsets.only(top: 24, bottom: 20),
                 decoration: BoxDecoration(
                   color: const Color(0xFF1E3A8A).withValues(alpha: 0.05),
                   borderRadius: const BorderRadius.only(
@@ -248,7 +255,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 child: Column(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
                         shape: BoxShape.circle,
@@ -256,57 +263,59 @@ class _ProfileScreenState extends State<ProfileScreen>
                       child: const Icon(
                         Icons.language_rounded,
                         color: Color(0xFF1E3A8A),
-                        size: 32,
+                        size: 28,
                       ),
                     ),
-                    const SizedBox(height: 16),
-                                         Text(
-                       l10n.language_selection,
-                       style: const TextStyle(
-                         fontSize: 24,
-                         fontWeight: FontWeight.w700,
-                         color: Color(0xFF1E3A8A),
-                       ),
-                     ),
-                     const SizedBox(height: 8),
-                     Text(
-                       l10n.language_selection_description,
-                       style: TextStyle(
-                         fontSize: 14,
-                         color: const Color(0xFF1E3A8A).withValues(alpha: 0.7),
-                         fontWeight: FontWeight.w500,
-                       ),
-                     ),
+                    const SizedBox(height: 12),
+                    Text(
+                      l10n.language_selection,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF1E3A8A),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      l10n.language_selection_description,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: const Color(0xFF1E3A8A).withValues(alpha: 0.7),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ],
                 ),
               ),
               
-              // 언어 옵션들
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    _buildLanguageOption('한국어', 'ko', Icons.flag_rounded),
-                    const SizedBox(height: 12),
-                    _buildLanguageOption('English', 'en', Icons.flag_rounded),
-                    const SizedBox(height: 12),
-                    _buildLanguageOption('中文', 'zh', Icons.flag_rounded),
-                    const SizedBox(height: 12),
-                    _buildLanguageOption('Español', 'es', Icons.flag_rounded),
-                    const SizedBox(height: 12),
-                    _buildLanguageOption('日本語', 'ja', Icons.flag_rounded),
-                    const SizedBox(height: 12),
-                    _buildLanguageOption('Русский', 'ru', Icons.flag_rounded),
-                  ],
+              // 스크롤 가능한 언어 옵션들
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  child: Column(
+                    children: [
+                      _buildLanguageOption('한국어', 'ko', Icons.flag_rounded),
+                      const SizedBox(height: 10),
+                      _buildLanguageOption('English', 'en', Icons.flag_rounded),
+                      const SizedBox(height: 10),
+                      _buildLanguageOption('中文', 'zh', Icons.flag_rounded),
+                      const SizedBox(height: 10),
+                      _buildLanguageOption('Español', 'es', Icons.flag_rounded),
+                      const SizedBox(height: 10),
+                      _buildLanguageOption('日本語', 'ja', Icons.flag_rounded),
+                      const SizedBox(height: 10),
+                      _buildLanguageOption('Русский', 'ru', Icons.flag_rounded),
+                    ],
+                  ),
                 ),
               ),
               
               // 하단 버튼
               Container(
-                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
                 child: SizedBox(
                   width: double.infinity,
-                  height: 48,
+                  height: 44,
                   child: OutlinedButton(
                     onPressed: () => Navigator.pop(context),
                     style: OutlinedButton.styleFrom(
@@ -320,7 +329,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                       style: TextStyle(
                         color: Color(0xFF64748B),
                         fontWeight: FontWeight.w600,
-                        fontSize: 16,
+                        fontSize: 15,
                       ),
                     ),
                   ),
@@ -337,23 +346,20 @@ class _ProfileScreenState extends State<ProfileScreen>
   Widget _buildLanguageOption(String name, String languageCode, IconData icon) {
     final currentLocale = Localizations.localeOf(context);
     final isSelected = currentLocale.languageCode == languageCode;
-    
-    // 디버그 로그 추가
-    debugPrint('🔤 언어 옵션 빌드: $name ($languageCode) - 현재: ${currentLocale.languageCode}');
 
     return InkWell(
       onTap: () {
         _changeLanguage(languageCode);
         Navigator.pop(context);
       },
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
         decoration: BoxDecoration(
           color: isSelected 
               ? const Color(0xFF1E3A8A).withValues(alpha: 0.1)
               : const Color(0xFFF8FAFC),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected 
                 ? const Color(0xFF1E3A8A).withValues(alpha: 0.3)
@@ -364,25 +370,25 @@ class _ProfileScreenState extends State<ProfileScreen>
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(8),
+              padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
                 color: isSelected 
                     ? const Color(0xFF1E3A8A).withValues(alpha: 0.1)
                     : const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(6),
               ),
               child: Icon(
                 icon,
                 color: isSelected ? const Color(0xFF1E3A8A) : const Color(0xFF64748B),
-                size: 20,
+                size: 18,
               ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: Text(
                 name,
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 15,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                   color: isSelected ? const Color(0xFF1E3A8A) : const Color(0xFF334155),
                 ),
@@ -390,7 +396,7 @@ class _ProfileScreenState extends State<ProfileScreen>
             ),
             if (isSelected)
               Container(
-                padding: const EdgeInsets.all(4),
+                padding: const EdgeInsets.all(3),
                 decoration: const BoxDecoration(
                   color: Color(0xFF1E3A8A),
                   shape: BoxShape.circle,
@@ -398,7 +404,7 @@ class _ProfileScreenState extends State<ProfileScreen>
                 child: const Icon(
                   Icons.check,
                   color: Colors.white,
-                  size: 16,
+                  size: 14,
                 ),
               ),
           ],
