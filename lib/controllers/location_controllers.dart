@@ -75,7 +75,7 @@ class LocationController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 🔥 초고속 위치 요청 (MapScreen용)
+  /// 🔥 초고속 위치 요청 (MapScreen용) - iOS 최적화
   Future<void> requestCurrentLocationQuickly() async {
     if (_isRequesting) return;
 
@@ -95,20 +95,24 @@ class LocationController extends ChangeNotifier {
         final requestResult = await _permissionManager.requestPermission();
         if (requestResult != PermissionResult.granted) {
           _hasLocationPermissionError = true;
+          _isLocationSearching = false;
+          notifyListeners();
           return;
         }
       }
 
-      // 🔥 초고속 위치 획득 (1초 타임아웃)
+      // 🔥 iOS 최적화: 더 긴 타임아웃과 재시도 로직
       final locationResult = await _locationService.getCurrentLocation(
         forceRefresh: true,
-        timeout: const Duration(seconds: 1),
+        timeout: const Duration(seconds: 3), // iOS에서 더 긴 시간 필요
       );
 
       if (locationResult.isSuccess && locationResult.hasValidLocation) {
         _currentLocation = locationResult.locationData;
         _hasValidLocation = true;
         _isLocationSearching = false;
+        
+        debugPrint('✅ 위치 획득 성공: ${locationResult.locationData!.latitude}, ${locationResult.locationData!.longitude}');
 
         await _mapLocationService.showMyLocation(
           locationResult.locationData!,
@@ -126,6 +130,7 @@ class LocationController extends ChangeNotifier {
       _isLocationSearching = false;
     } finally {
       _isRequesting = false;
+      // 🔥 iOS 최적화: 상태 변경 후 즉시 UI 업데이트
       notifyListeners();
     }
   }
@@ -150,20 +155,24 @@ class LocationController extends ChangeNotifier {
         final requestResult = await _permissionManager.requestPermission();
         if (requestResult != PermissionResult.granted) {
           _hasLocationPermissionError = true;
+          _isLocationSearching = false;
+          notifyListeners();
           return;
         }
       }
 
-      // 2. 위치 획득 (타임아웃 단축)
+      // 2. 위치 획득 (iOS 최적화: 더 긴 타임아웃)
       final locationResult = await _locationService.getCurrentLocation(
         forceRefresh: forceRefresh,
-        timeout: const Duration(seconds: 2), // 3초에서 2초로 단축
+        timeout: const Duration(seconds: 4), // iOS에서 더 긴 시간 필요
       );
 
       if (locationResult.isSuccess && locationResult.hasValidLocation) {
         _currentLocation = locationResult.locationData;
         _hasValidLocation = true;
         _isLocationSearching = false;
+        
+        debugPrint('✅ 메인 위치 요청 성공: ${locationResult.locationData!.latitude}, ${locationResult.locationData!.longitude}');
 
         await _mapLocationService.showMyLocation(
           locationResult.locationData!,
@@ -181,6 +190,7 @@ class LocationController extends ChangeNotifier {
       _isLocationSearching = false;
     } finally {
       _isRequesting = false;
+      // 🔥 iOS 최적화: 상태 변경 후 즉시 UI 업데이트
       notifyListeners();
     }
   }

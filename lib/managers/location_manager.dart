@@ -198,11 +198,11 @@ class LocationManager extends ChangeNotifier {
       );
       debugPrint('📋 현재 권한 상태: $permissionStatus');
 
-      // 2. 권한이 없으면 요청 (타임아웃 단축)
+      // 2. 권한이 없으면 요청 (iOS 최적화: 더 긴 타임아웃)
       if (permissionStatus == loc.PermissionStatus.denied) {
         debugPrint('🔐 권한 요청 중...');
         permissionStatus = await _location.requestPermission().timeout(
-          const Duration(seconds: 2), // 2초 타임아웃
+          const Duration(seconds: 5), // iOS에서 더 긴 시간 필요
           onTimeout: () {
             debugPrint('⏰ 권한 요청 타임아웃');
             return loc.PermissionStatus.denied;
@@ -215,9 +215,9 @@ class LocationManager extends ChangeNotifier {
       if (permissionStatus == loc.PermissionStatus.granted) {
         debugPrint('✅ 위치 권한 허용됨');
 
-        // 4. 위치 서비스 활성화 확인 (타임아웃 단축)
+        // 4. 위치 서비스 활성화 확인 (iOS 최적화: 더 긴 타임아웃)
         bool serviceEnabled = await _location.serviceEnabled().timeout(
-          const Duration(seconds: 1), // 1초 타임아웃
+          const Duration(seconds: 3), // iOS에서 더 긴 시간 필요
           onTimeout: () {
             debugPrint('⏰ 서비스 확인 타임아웃');
             return true; // 기본값으로 true 반환
@@ -228,7 +228,7 @@ class LocationManager extends ChangeNotifier {
         if (!serviceEnabled) {
           debugPrint('🔧 위치 서비스 활성화 요청...');
           serviceEnabled = await _location.requestService().timeout(
-            const Duration(seconds: 2), // 2초 타임아웃
+            const Duration(seconds: 5), // iOS에서 더 긴 시간 필요
             onTimeout: () {
               debugPrint('⏰ 서비스 요청 타임아웃');
               return true; // 기본값으로 true 반환
@@ -313,10 +313,10 @@ class LocationManager extends ChangeNotifier {
         }
       }
 
-      // 2. 🔥 초고속 위치 요청 (1초 타임아웃)
+      // 2. 🔥 초고속 위치 요청 (iOS 최적화: 더 긴 타임아웃)
       final locationResult = await _locationService.getCurrentLocation(
         forceRefresh: true,
-        timeout: const Duration(seconds: 1), // 1초로 단축
+        timeout: const Duration(seconds: 3), // iOS에서 더 긴 시간 필요
       );
 
       if (locationResult.isSuccess && locationResult.locationData != null) {
@@ -381,10 +381,10 @@ class LocationManager extends ChangeNotifier {
         }
       }
 
-      // 2. 🔥 LocationService를 통한 위치 요청 (타임아웃 단축)
+      // 2. 🔥 LocationService를 통한 위치 요청 (iOS 최적화: 더 긴 타임아웃)
       final locationResult = await _locationService.getCurrentLocation(
         forceRefresh: true,
-        timeout: const Duration(seconds: 2), // 5초에서 2초로 더 단축
+        timeout: const Duration(seconds: 5), // iOS에서 더 긴 시간 필요
       );
 
       if (locationResult.isSuccess && locationResult.locationData != null) {
@@ -450,12 +450,12 @@ class LocationManager extends ChangeNotifier {
         return null;
       }
 
-      // 실제 위치 요청
+      // 실제 위치 요청 (iOS 최적화: 더 긴 타임아웃)
       final locationData = await _location.getLocation().timeout(
-        const Duration(seconds: 4), // 6초에서 4초로 더 단축
+        const Duration(seconds: 8), // iOS에서 더 긴 시간 필요
         onTimeout: () {
           debugPrint('⏰ 직접 위치 획득 타임아웃');
-          throw TimeoutException('직접 위치 획득 타임아웃', const Duration(seconds: 4));
+          throw TimeoutException('직접 위치 획득 타임아웃', const Duration(seconds: 8));
         },
       );
 

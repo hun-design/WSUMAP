@@ -789,10 +789,18 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                   await _controller.moveToMyLocation();
                 } else {
                   debugPrint('⚡ 지도 준비 완료 - 빠른 위치 요청 후 이동');
-                  // 빠른 위치 요청 후 이동
+                  // 빠른 위치 요청 후 이동 (iOS 최적화)
                   _locationController.requestCurrentLocationQuickly().then((_) {
                     if (_locationController.hasValidLocation) {
                       _controller.moveToMyLocation();
+                    }
+                  }).catchError((error) {
+                    debugPrint('❌ 위치 요청 실패: $error');
+                    // 에러 발생 시에도 검색 상태 리셋
+                    if (mounted) {
+                      setState(() {
+                        // UI 상태 강제 업데이트
+                      });
                     }
                   });
                 }
@@ -897,7 +905,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                 controller.endBuilding != null)
               _buildRouteLoadingIndicator(),
             if (controller.hasLocationPermissionError) _buildLocationError(),
-            if (_locationController.isLocationSearching) _buildLocationSearchingIndicator(),
+            if (_locationController.isLocationSearching && !_locationController.hasValidLocation) _buildLocationSearchingIndicator(),
             if (controller.hasActiveRoute &&
                 !_navigationManager.showNavigationStatus)
               Positioned(

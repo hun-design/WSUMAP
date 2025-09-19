@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
+import '../utils/ios_location_utils.dart';
 
 /// 위치 획득 결과
 class LocationResult {
@@ -285,24 +286,40 @@ class LocationService {
     };
   }
 
-  /// 위치 서비스 초기화 (초고속 버전)
+  /// 위치 서비스 초기화 (iOS 최적화 버전)
   Future<void> initialize() async {
     try {
       debugPrint('🚀 LocationService 초기화...');
 
-      // 플랫폼별 설정 (초고속 설정)
+      // 플랫폼별 설정 (iOS 최적화)
       if (Platform.isIOS) {
-        // iOS는 기본 설정 사용
-        debugPrint('📱 iOS 플랫폼 감지 - 기본 설정 사용');
+        // 🔥 iOS 최적화 설정
+        debugPrint('📱 iOS 플랫폼 감지 - iOS 최적화 설정 적용');
+        try {
+          await _location.changeSettings(
+            accuracy: loc.LocationAccuracy.high,
+            interval: 2000, // iOS는 더 긴 간격 필요
+            distanceFilter: 1,
+          ).timeout(
+            IOSLocationUtils.getIOSPermissionTimeout(),
+            onTimeout: () {
+              debugPrint('⏰ iOS 설정 타임아웃 - 기본값 사용');
+              throw TimeoutException('iOS 설정 타임아웃', IOSLocationUtils.getIOSPermissionTimeout());
+            },
+          );
+          debugPrint('🍎 iOS 최적화 설정 완료');
+        } catch (e) {
+          debugPrint('⚠️ iOS 설정 실패, 기본값 사용: $e');
+        }
       } else {
         // 🔥 Android 초고속 설정
         try {
           await _location.changeSettings(
-            accuracy: loc.LocationAccuracy.high, // balanced에서 high로 변경
-            interval: 1000, // 3000에서 1000으로 더 단축
-            distanceFilter: 1, // 5에서 1로 더 단축
+            accuracy: loc.LocationAccuracy.high,
+            interval: 1000, // Android는 빠른 업데이트
+            distanceFilter: 1,
           ).timeout(
-            const Duration(milliseconds: 500), // 1초에서 0.5초로 단축
+            const Duration(milliseconds: 500),
             onTimeout: () {
               debugPrint('⏰ Android 설정 타임아웃 - 기본값 사용');
               throw TimeoutException('Android 설정 타임아웃', const Duration(milliseconds: 500));
@@ -364,9 +381,8 @@ class LocationService {
       for (int attempt = 1; attempt <= maxRetries; attempt++) {
         debugPrint('🔄 위치 요청 시도 $attempt/$maxRetries');
 
-        // 🔥 초고속 타임아웃: 첫 시도 1초, 재시도 2초
-        final timeoutDuration =
-            timeout ?? Duration(seconds: attempt == 1 ? 1 : 2);
+        // 🔥 iOS 최적화 타임아웃: 플랫폼별 적절한 시간
+        final timeoutDuration = timeout ?? IOSLocationUtils.getIOSLocationTimeout();
 
         try {
           final locationData = await _location.getLocation().timeout(
@@ -378,6 +394,15 @@ class LocationService {
           );
 
           if (_isLocationDataValid(locationData)) {
+            // 🔥 iOS 특화 위치 유효성 검증
+            if (Platform.isIOS && !IOSLocationUtils.isValidIOSLocation(locationData)) {
+              debugPrint('⚠️ iOS 위치 유효성 검증 실패 (시도 $attempt)');
+              if (attempt < maxRetries) {
+                await Future.delayed(IOSLocationUtils.getIOSRetryInterval());
+                continue;
+              }
+            }
+            
             _updateCache(locationData);
             debugPrint(
               '✅ 위치 획득 성공 (시도 $attempt): ${locationData.latitude}, ${locationData.longitude}',
@@ -405,8 +430,8 @@ class LocationService {
           debugPrint('❌ 위치 요청 시도 $attempt 실패: $e');
 
           if (attempt < maxRetries) {
-            // 🔥 재시도 전 대기 시간 단축
-            await Future.delayed(Duration(milliseconds: 500));
+            // 🔥 iOS 최적화 재시도 간격
+            await Future.delayed(IOSLocationUtils.getIOSRetryInterval());
             continue;
           }
 
