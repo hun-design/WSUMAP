@@ -721,10 +721,10 @@ class AppLocalizationsEs extends AppLocalizations {
       '¿Deseas entrar en modo invitado?\n\nEn modo invitado, no puedes usar funciones de amigos ni compartir ubicación.';
 
   @override
-  String get app_name => 'Ttarausong';
+  String get app_name => 'Seguir Woosong';
 
   @override
-  String get welcome_to_ttarausong => 'Bienvenido a Ttarausong';
+  String get welcome_to_ttarausong => 'Bienvenido a Seguir Woosong';
 
   @override
   String get guest_mode_description =>

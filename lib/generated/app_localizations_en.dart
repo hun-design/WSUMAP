@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'Follow Woosong';
+  String get appTitle => 'FolloWoosong';
 
   @override
   String get subtitle => 'Smart Campus Guide';
@@ -711,10 +711,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Would you like to enter guest mode?\n\nIn guest mode, you cannot use friend features and location sharing.';
 
   @override
-  String get app_name => 'Ttarausong';
+  String get app_name => 'FolloWoosong';
 
   @override
-  String get welcome_to_ttarausong => 'Welcome to Ttarausong';
+  String get welcome_to_ttarausong => 'Welcome to FolloWoosong';
 
   @override
   String get guest_mode_description =>

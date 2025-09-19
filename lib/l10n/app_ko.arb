@@ -139,6 +139,7 @@
   "cancel": "취소",
   "confirm": "확인",
   "app_name": "따라우송",
+  "welcome_to_ttarausong": "따라우송에 오신 것을 환영합니다",
   "excel_upload_failed": "업로드 실패: {error}",
   "@excel_upload_failed": {
     "placeholders": {

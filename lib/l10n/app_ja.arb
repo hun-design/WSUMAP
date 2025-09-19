@@ -126,8 +126,8 @@
   "guest_mode_confirm": "ゲストモードで入場しますか？\n\nゲストモードでは、友達機能と位置共有機能を使用できません。",
   "cancel": "キャンセル",
   "confirm": "確認",
-  "app_name": "タラウソン",
-  "welcome_to_ttarausong": "タラウソンへようこそ",
+  "app_name": "ウソンに従う",
+  "welcome_to_ttarausong": "ウソンに従うへようこそ",
   "excel_upload_failed": "アップロード失敗: {error}",
   "@excel_upload_failed": {
     "placeholders": {

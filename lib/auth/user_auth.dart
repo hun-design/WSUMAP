@@ -66,7 +66,7 @@ extension UserRoleExtension on UserRole {
   bool get hasFullAccess => this == UserRole.admin;
 }
 
-/// 우송대학교 캠퍼스 네비게이터 인증 관리 클래스
+/// 우송대학교 캠퍼스 네비게이터 인증 관리 클래스 (최적화된 버전)
 class UserAuth extends ChangeNotifier {
   // 사용자 정보
   UserRole? _userRole;
@@ -81,6 +81,10 @@ class UserAuth extends ChangeNotifier {
 
   // 첫 실행 상태 관리
   bool _isFirstLaunch = true;
+  
+  // 성능 최적화를 위한 상태 캐싱
+  bool _disposed = false;
+  DateTime? _lastLoginTime;
 
   /// 현재 사용자 역할
   UserRole? get userRole => _userRole;

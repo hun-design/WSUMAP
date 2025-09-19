@@ -722,10 +722,10 @@ class AppLocalizationsRu extends AppLocalizations {
       'Хотите войти в гостевом режиме?\n\nВ гостевом режиме вы не можете использовать функции друзей и делиться местоположением.';
 
   @override
-  String get app_name => 'Ттараусонг';
+  String get app_name => 'Следуй за Усунгом';
 
   @override
-  String get welcome_to_ttarausong => 'Добро пожаловать в Ттараусонг';
+  String get welcome_to_ttarausong => 'Добро пожаловать в Следуй за Усунгом';
 
   @override
   String get guest_mode_description =>

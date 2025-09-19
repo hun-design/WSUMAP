@@ -1,4 +1,4 @@
-// lib/main.dart
+// lib/main.dart - Optimized Campus Navigator App
 import 'dart:async';
 import 'dart:io';
 import 'dart:developer' as developer;
@@ -44,22 +44,26 @@ void main() async {
   _initializeAppInBackground();
 }
 
-/// 백그라운드에서 앱 초기화 작업 수행
+/// 백그라운드에서 앱 초기화 작업 수행 (최적화된 버전)
 Future<void> _initializeAppInBackground() async {
   try {
-    // 세로 모드 고정
-    await SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
+    // 병렬로 초기화 작업 수행하여 성능 향상
+    await Future.wait([
+      // 세로 모드 고정
+      SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]),
+      // 시스템 UI 초기 설정
+      _setSystemUIMode(),
+      // 네이버 지도 초기화
+      _initializeNaverMapInBackground(),
     ]);
-
-    // 시스템 UI 초기 설정
-    await _setSystemUIMode();
-
-    // 네이버 지도 초기화
-    await _initializeNaverMapInBackground();
+    
+    debugPrint('✅ 백그라운드 초기화 완료');
   } catch (e) {
     debugPrint('❌ 백그라운드 초기화 오류: $e');
+    // 개별 작업 실패 시에도 앱이 계속 실행되도록 처리
   }
 }
 
@@ -106,7 +110,7 @@ class CampusNavigatorApp extends StatefulWidget {
   State<CampusNavigatorApp> createState() => _CampusNavigatorAppState();
 }
 
-/// 앱 생명주기 모니터링
+/// 앱 생명주기 모니터링 (최적화된 버전)
 class _CampusNavigatorAppState extends State<CampusNavigatorApp>
     with WidgetsBindingObserver {
   bool _disposed = false;
@@ -116,6 +120,9 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
   late final UserAuth _userAuth;
   late final LocationManager _locationManager;
   late final StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
+  
+  // 메모리 효율성을 위한 debouncing
+  Timer? _connectivityDebounceTimer;
 
   @override
   void initState() {
@@ -139,23 +146,15 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
       }
     });
 
-    // 네트워크 상태 변경 감지
+    // 네트워크 상태 변경 감지 (최적화된 버전 - debouncing 적용)
     _connectivitySubscription = Connectivity().onConnectivityChanged.listen((result) {
-      debugPrint('🌐 네트워크 상태 변경: $result');
-      
-      // 게스트가 아닌 로그인 사용자에게만 위치 전송 및 웹소켓 연결
-      if (_userAuth.isLoggedIn &&
-          _userAuth.userId != null &&
-          !_userAuth.userId!.startsWith('guest_') &&
-          _userAuth.userRole != UserRole.external) {
-        
-        final wsService = WebSocketService();
-        if (wsService.isConnected) {
-          debugPrint('✅ 네트워크 변경 감지 - 웹소켓 이미 연결됨');
-        } else {
-          debugPrint('⚠️ 네트워크 변경 감지 - 웹소켓 연결되지 않음');
+      // 빈번한 네트워크 상태 변경을 위한 debouncing
+      _connectivityDebounceTimer?.cancel();
+      _connectivityDebounceTimer = Timer(const Duration(milliseconds: 500), () {
+        if (!_disposed) {
+          _handleConnectivityChange(result);
         }
-      }
+      });
     });
   }
 
@@ -173,10 +172,34 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
       _handleAppDetachedSync();
     }
 
+    // 모든 타이머 정리
     _systemUIResetTimer?.cancel();
+    _connectivityDebounceTimer?.cancel();
+    
     WidgetsBinding.instance.removeObserver(this);
     _connectivitySubscription.cancel();
     super.dispose();
+  }
+  
+  /// 네트워크 상태 변경 처리 (분리된 메서드)
+  void _handleConnectivityChange(List<ConnectivityResult> result) {
+    debugPrint('🌐 네트워크 상태 변경: $result');
+    
+    // 게스트가 아닌 로그인 사용자에게만 위치 전송 및 웹소켓 연결
+    if (_userAuth.isLoggedIn &&
+        _userAuth.userId != null &&
+        !_userAuth.userId!.startsWith('guest_') &&
+        _userAuth.userRole != UserRole.external) {
+      
+      final wsService = WebSocketService();
+      if (wsService.isConnected) {
+        debugPrint('✅ 네트워크 변경 감지 - 웹소켓 이미 연결됨');
+      } else {
+        debugPrint('⚠️ 네트워크 변경 감지 - 웹소켓 연결되지 않음, 재연결 시도');
+        // 네트워크 복구 시 웹소켓 재연결
+        wsService.connect(_userAuth.userId!);
+      }
+    }
   }
 
   /// 시스템 UI 재설정 (필요시에만)
@@ -368,7 +391,7 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
     return Consumer2<AppLanguageProvider, UserAuth>(
       builder: (_, langProvider, auth, __) {
         return MaterialApp(
-          title: '따라우송',
+          title: 'FolloWoosong',
           theme: ThemeData(
             primarySwatch: createMaterialColor(const Color(0xFF1E3A8A)),
             fontFamily: 'Pretendard',

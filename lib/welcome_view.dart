@@ -351,7 +351,7 @@ class _WelcomeViewState extends State<WelcomeView>
 
               // 앱 이름
               Text(
-                '따라우송',
+                l10n?.appTitle ?? '따라우송',
                 style: TextStyle(
                   fontSize: 42,
                   fontWeight: FontWeight.w900,

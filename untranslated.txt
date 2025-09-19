@@ -73,7 +73,6 @@
     "app_version_number",
     "developer_email_address",
     "developer_github_url",
-    "welcome_to_ttarausong",
     "recent_searches",
     "clear_all",
     "searching",

@@ -675,7 +675,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get app_name => '跟随乌松';
 
   @override
-  String get welcome_to_ttarausong => '欢迎使用塔拉乌松';
+  String get welcome_to_ttarausong => '欢迎使用跟随乌松';
 
   @override
   String get guest_mode_description => '访客模式下只能查看基本的校园信息。\n要使用所有功能，请注册后登录。';

@@ -684,10 +684,10 @@ class AppLocalizationsJa extends AppLocalizations {
       'ゲストモードで入場しますか？\n\nゲストモードでは、友達機能と位置共有機能を使用できません。';
 
   @override
-  String get app_name => 'タラウソン';
+  String get app_name => 'ウソンに従う';
 
   @override
-  String get welcome_to_ttarausong => 'タラウソンへようこそ';
+  String get welcome_to_ttarausong => 'ウソンに従うへようこそ';
 
   @override
   String get guest_mode_description =>

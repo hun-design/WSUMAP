@@ -682,7 +682,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get app_name => '따라우송';
 
   @override
-  String get welcome_to_ttarausong => 'Welcome to Ttarausong';
+  String get welcome_to_ttarausong => '따라우송에 오신 것을 환영합니다';
 
   @override
   String get guest_mode_description =>

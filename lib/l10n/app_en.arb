@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "appTitle": "Follow Woosong",
+  "appTitle": "FolloWoosong",
   "subtitle": "Smart Campus Guide",
   "woosong": "Woosong",
   "start": "Start",
@@ -242,8 +242,8 @@
   "guest_mode_confirm": "Would you like to enter guest mode?\n\nIn guest mode, you cannot use friend features and location sharing.",
   "cancel": "Cancel",
   "confirm": "Confirm",
-  "app_name": "Ttarausong",
-  "welcome_to_ttarausong": "Welcome to Ttarausong",
+  "app_name": "FolloWoosong",
+  "welcome_to_ttarausong": "Welcome to FolloWoosong",
   "guest_mode_description": "In guest mode, you can only view basic campus information.\nTo use all features, please register and login.",
   "continue_as_guest": "Continue as Guest",
   "moved_to_my_location": "Automatically moved to my location",

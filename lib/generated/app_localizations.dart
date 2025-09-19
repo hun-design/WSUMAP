@@ -109,7 +109,7 @@ abstract class AppLocalizations {
   /// No description provided for @appTitle.
   ///
   /// In en, this message translates to:
-  /// **'Follow Woosong'**
+  /// **'FolloWoosong'**
   String get appTitle;
 
   /// No description provided for @subtitle.
@@ -1405,13 +1405,13 @@ abstract class AppLocalizations {
   /// No description provided for @app_name.
   ///
   /// In en, this message translates to:
-  /// **'Ttarausong'**
+  /// **'FolloWoosong'**
   String get app_name;
 
   /// No description provided for @welcome_to_ttarausong.
   ///
   /// In en, this message translates to:
-  /// **'Welcome to Ttarausong'**
+  /// **'Welcome to FolloWoosong'**
   String get welcome_to_ttarausong;
 
   /// No description provided for @guest_mode_description.

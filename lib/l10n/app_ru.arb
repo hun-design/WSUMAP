@@ -126,8 +126,8 @@
   "guest_mode_confirm": "Хотите войти в гостевом режиме?\n\nВ гостевом режиме вы не можете использовать функции друзей и делиться местоположением.",
   "cancel": "Отмена",
   "confirm": "Подтвердить",
-  "app_name": "Ттараусонг",
-  "welcome_to_ttarausong": "Добро пожаловать в Ттараусонг",
+  "app_name": "Следуй за Усунгом",
+  "welcome_to_ttarausong": "Добро пожаловать в Следуй за Усунгом",
   "excel_upload_failed": "Ошибка загрузки: {error}",
   "@excel_upload_failed": {
     "placeholders": {
