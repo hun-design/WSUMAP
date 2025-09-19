@@ -128,8 +128,10 @@ class _WelcomeViewState extends State<WelcomeView>
     _slideController.forward();
     _floatingController.repeat(reverse: true);
 
-    // Welcome 화면 진입 시 백그라운드에서 위치 미리 준비
-    _prepareLocationInBackground();
+    // 🔥 Welcome 화면 진입 즉시 위치 미리 준비 시작 (더 빠르게)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _prepareLocationInBackground();
+    });
 
     // 2초 후 자동으로 AuthSelectionView로 이동
     Timer(const Duration(seconds: 2), () {
@@ -155,14 +157,14 @@ class _WelcomeViewState extends State<WelcomeView>
       _isPreparingLocation = true;
       debugPrint('🔄 Welcome 화면에서 위치 미리 준비 시작...');
 
-      // 대기 시간 단축
-      await Future.delayed(const Duration(milliseconds: 200));
+      // 🔥 대기 시간 더욱 단축
+      await Future.delayed(const Duration(milliseconds: 100));
       final locationManager = Provider.of<LocationManager>(context, listen: false);
 
-      // LocationManager 초기화 대기
+      // 🔥 LocationManager 초기화 대기 시간 단축
       int retries = 0;
-      while (!locationManager.isInitialized && retries < 5) {
-        await Future.delayed(const Duration(milliseconds: 100));
+      while (!locationManager.isInitialized && retries < 10) {
+        await Future.delayed(const Duration(milliseconds: 50)); // 100ms에서 50ms로 단축
         retries++;
       }
 
@@ -182,12 +184,12 @@ class _WelcomeViewState extends State<WelcomeView>
         debugPrint('✅ Welcome에서 초고속 위치 요청 시작...');
 
         try {
-          // 초고속 위치 요청
+          // 🔥 더 적극적인 위치 요청 (타임아웃 증가)
           await locationManager.requestLocationQuickly().timeout(
-            const Duration(milliseconds: 500),
+            const Duration(seconds: 3), // 0.5초에서 3초로 증가
             onTimeout: () {
-              debugPrint('⏰ Welcome 위치 요청 타임아웃 (0.5초) - 정상 진행');
-              throw TimeoutException('Welcome 위치 타임아웃', const Duration(milliseconds: 500));
+              debugPrint('⏰ Welcome 위치 요청 타임아웃 (3초) - 정상 진행');
+              throw TimeoutException('Welcome 위치 타임아웃', const Duration(seconds: 3));
             },
           );
 

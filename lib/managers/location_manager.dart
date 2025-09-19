@@ -299,7 +299,7 @@ class LocationManager extends ChangeNotifier {
     return LocationService.isActualGPSLocation(locationData);
   }
 
-  /// 🔥 초고속 위치 요청 (Welcome 화면용)
+  /// 🔥 초고속 위치 요청 (Welcome 화면용) - 더 적극적으로 수정
   Future<loc.LocationData?> requestLocationQuickly() async {
     debugPrint('⚡ 초고속 위치 요청 시작...');
 
@@ -313,10 +313,21 @@ class LocationManager extends ChangeNotifier {
         }
       }
 
-      // 2. 🔥 초고속 위치 요청 (iOS 최적화: 더 긴 타임아웃)
+      // 2. 🔥 권한 재확인 및 요청 (더 적극적으로)
+      debugPrint('🔐 권한 상태 재확인 중...');
+      await recheckPermissionStatus();
+      
+      if (permissionStatus != loc.PermissionStatus.granted) {
+        debugPrint('🔐 권한 요청 중...');
+        await requestLocation();
+        // 권한 요청 후 잠시 대기
+        await Future.delayed(const Duration(milliseconds: 500));
+      }
+
+      // 3. 🔥 초고속 위치 요청 (iOS 최적화: 더 긴 타임아웃)
       final locationResult = await _locationService.getCurrentLocation(
         forceRefresh: true,
-        timeout: const Duration(seconds: 3), // iOS에서 더 긴 시간 필요
+        timeout: const Duration(seconds: 5), // 3초에서 5초로 증가
       );
 
       if (locationResult.isSuccess && locationResult.locationData != null) {
@@ -343,6 +354,13 @@ class LocationManager extends ChangeNotifier {
 
           return locationData;
         }
+      }
+
+      // 4. 🔥 LocationService 실패 시 직접 위치 요청 시도
+      debugPrint('⚠️ LocationService 실패, 직접 위치 요청 시도');
+      final directResult = await _directLocationRequest();
+      if (directResult != null) {
+        return directResult;
       }
 
       debugPrint('❌ 초고속 위치 획득 실패');
