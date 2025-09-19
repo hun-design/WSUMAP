@@ -802,6 +802,14 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                         // UI 상태 강제 업데이트
                       });
                     }
+                    // 에러 타입별 처리
+                    if (error.toString().contains('permission')) {
+                      debugPrint('❌ 위치 권한 오류');
+                    } else if (error.toString().contains('timeout')) {
+                      debugPrint('❌ 위치 요청 타임아웃');
+                    } else {
+                      debugPrint('❌ 기타 위치 오류: $error');
+                    }
                   });
                 }
               },

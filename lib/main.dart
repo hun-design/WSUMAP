@@ -487,5 +487,10 @@ void _filterLogs() {
   
   if (Platform.isAndroid) {
     // 시스템 레벨 로그 필터링은 네이티브 코드에서 처리
+    // Android에서 불필요한 네이티브 로그들을 필터링
+    developer.log(
+      'Android 네이티브 로그 필터링 활성화',
+      name: 'AndroidLogFilter',
+    );
   }
 }

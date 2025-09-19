@@ -532,6 +532,10 @@ class LocationService {
       return LocationError.networkError;
     }
 
+    if (errorString.contains('server') || errorString.contains('500')) {
+      return LocationError.serverError;
+    }
+
     return LocationError.unknown;
   }
 

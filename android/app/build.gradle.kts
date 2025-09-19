@@ -10,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.flutter_application_1"
-        minSdk = flutter.minSdkVersion
+        minSdk = 23  // flutter_naver_map 플러그인 요구사항에 맞춰 23으로 변경
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
