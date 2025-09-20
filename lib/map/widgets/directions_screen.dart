@@ -1871,259 +1871,283 @@ void _setMyLocationAsStart(BuildContext context) {
 
   Widget _buildDirectionsView() {
     final l10n = AppLocalizations.of(context)!;
-    return Stack(
+    return Column(
       children: [
-        Column(
-          children: [
-            const SizedBox(height: 16),
-            // preset 및 호실 알림 메시지
-            if (widget.presetStart != null ||
-                widget.presetEnd != null ||
-                widget.roomData != null) ...[
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.blue.shade200),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: Colors.blue.shade600,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        _getPresetMessage(),
-                        style: TextStyle(
-                          color: Colors.blue.shade700,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-            ],
-
-            // 출발지 입력
-            _buildLocationInput(
-              isStartLocation: true,
-              icon: Icons.location_on,
-              iconColor: const Color(0xFF10B981),
-              hint: l10n.enter_start_location,
-              selectedBuilding: _startBuilding ?? _getDefaultMyLocation(),
-              roomInfo: _startRoomInfo,
-              onTap: _selectStartLocation,
-            ),
-
-            // 교환 버튼 (기존 그대로)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  const SizedBox(width: 56),
+        // 스크롤 가능한 메인 콘텐츠
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.only(bottom: 20),
+            child: Column(
+              children: [
+                const SizedBox(height: 16),
+                // preset 및 호실 알림 메시지
+                if (widget.presetStart != null ||
+                    widget.presetEnd != null ||
+                    widget.roomData != null) ...[
                   Container(
-                    width: 32,
-                    height: 32,
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.grey.shade300),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.blue.shade200),
                     ),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(16),
-                        onTap: _swapLocations,
-                        child: Icon(
-                          Icons.swap_vert,
-                          color: Colors.grey.shade600,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // 도착지 입력
-            _buildLocationInput(
-              isStartLocation: false,
-              icon: Icons.location_on,
-              iconColor: const Color(0xFFEF4444),
-              hint: l10n.enter_end_location,
-              selectedBuilding: _endBuilding,
-              roomInfo: _endRoomInfo,
-              onTap: _selectEndLocation,
-            ),
-
-            const Spacer(),
-
-            // 통합 API 경로 미리보기 정보
-            if (_previewResponse != null && !_isCalculatingPreview) ...[
-              Container(
-                margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade200),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+                    child: Row(
                       children: [
                         Icon(
-                          Icons.route,
+                          Icons.info_outline,
                           color: Colors.blue.shade600,
                           size: 20,
                         ),
                         const SizedBox(width: 8),
-                        Text(
-                          l10n.route_preview,
-                          style: TextStyle(
-                            color: Colors.blue.shade700,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
+                        Expanded(
+                          child: Text(
+                            _getPresetMessage(),
+                            style: TextStyle(
+                              color: Colors.blue.shade700,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    _buildRoutePreview(),
-                  ],
-                ),
-              ),
-            ],
+                  ),
+                  const SizedBox(height: 16),
+                ],
 
-            // 로딩 중이거나 기본 안내 메시지
-            if (_isCalculatingPreview) ...[
-              Container(
-                margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade200),
+                // 출발지 입력
+                _buildLocationInput(
+                  isStartLocation: true,
+                  icon: Icons.location_on,
+                  iconColor: const Color(0xFF10B981),
+                  hint: l10n.enter_start_location,
+                  selectedBuilding: _startBuilding ?? _getDefaultMyLocation(),
+                  roomInfo: _startRoomInfo,
+                  onTap: _selectStartLocation,
                 ),
-                child: Row(
-                  children: [
-                    const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.blue,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      l10n.calculating_optimal_route,
-                      style: const TextStyle(fontSize: 14, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              ),
-            ] else if (_previewResponse == null &&
-                _startBuilding == null &&
-                _endBuilding == null) ...[
-              Container(
-                margin: const EdgeInsets.all(16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade200),
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.info_outline,
-                      color: Colors.grey.shade600,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        l10n.set_departure_and_destination,
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 14,
+
+                // 교환 버튼 (기존 그대로)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Row(
+                    children: [
+                      const SizedBox(width: 56),
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.grey.shade300),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(16),
+                            onTap: _swapLocations,
+                            child: Icon(
+                              Icons.swap_vert,
+                              color: Colors.grey.shade600,
+                              size: 20,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
 
-            SizedBox(height: MediaQuery.of(context).padding.bottom + 80),
-          ],
+                // 도착지 입력
+                _buildLocationInput(
+                  isStartLocation: false,
+                  icon: Icons.location_on,
+                  iconColor: const Color(0xFFEF4444),
+                  hint: l10n.enter_end_location,
+                  selectedBuilding: _endBuilding,
+                  roomInfo: _endRoomInfo,
+                  onTap: _selectEndLocation,
+                ),
+
+                const SizedBox(height: 20),
+
+                // 통합 API 경로 미리보기 정보
+                if (_previewResponse != null && !_isCalculatingPreview) ...[
+                  Container(
+                    margin: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.route,
+                              color: Colors.blue.shade600,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              l10n.route_preview,
+                              style: TextStyle(
+                                color: Colors.blue.shade700,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        _buildRoutePreview(),
+                      ],
+                    ),
+                  ),
+                ],
+
+                // 로딩 중이거나 기본 안내 메시지
+                if (_isCalculatingPreview) ...[
+                  Container(
+                    margin: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.blue,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          l10n.calculating_optimal_route,
+                          style: const TextStyle(fontSize: 14, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else if (_previewResponse == null &&
+                    _startBuilding == null &&
+                    _endBuilding == null) ...[
+                  Container(
+                    margin: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: Colors.grey.shade600,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            l10n.set_departure_and_destination,
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
 
         // 하단 고정 버튼
-        Positioned(
-          left: 16,
-          right: 16,
-          bottom: MediaQuery.of(context).padding.bottom + 16,
-          child: ElevatedButton(
-            onPressed: _endBuilding != null ? _startUnifiedNavigation : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E3A8A),
-              disabledBackgroundColor: Colors.grey.shade300,
-              foregroundColor: Colors.white,
-              disabledForegroundColor: Colors.grey.shade500,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+        Container(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            bottom: MediaQuery.of(context).padding.bottom + 16,
+            top: 16,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                spreadRadius: 1,
+                blurRadius: 4,
+                offset: const Offset(0, -2),
               ),
-              elevation: 2,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.navigation,
-                  size: 20,
-                  color: _endBuilding != null
-                      ? Colors.white
-                      : Colors.grey.shade500,
+            ],
+          ),
+          child: SafeArea(
+            child: ElevatedButton(
+              onPressed: _endBuilding != null ? _startUnifiedNavigation : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1E3A8A),
+                disabledBackgroundColor: Colors.grey.shade300,
+                foregroundColor: Colors.white,
+                disabledForegroundColor: Colors.grey.shade500,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  l10n.start_unified_navigation,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                elevation: 2,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.navigation,
+                    size: 20,
                     color: _endBuilding != null
                         ? Colors.white
                         : Colors.grey.shade500,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  Flexible(
+                    child: Text(
+                      l10n.start_unified_navigation,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: _endBuilding != null
+                            ? Colors.white
+                            : Colors.grey.shade500,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
