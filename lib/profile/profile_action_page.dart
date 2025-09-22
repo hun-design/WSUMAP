@@ -113,11 +113,12 @@ class _ProfileActionPageState extends State<ProfileActionPage> {
           await _saveLocationShareStatus(status);
           debugPrint('✅ 서버에서 위치공유 상태 로드 완료: $status');
         } else {
+          // 🔥 서버에서 상태를 가져올 수 없으면 기본값 true로 설정 (실제로 위치가 전송되고 있다면)
           setState(() {
-            _isLocationEnabled = false;
+            _isLocationEnabled = true;
           });
-          await _saveLocationShareStatus(false);
-          debugPrint('⚠️ 서버에서 위치공유 상태 null, 기본값 false 설정');
+          await _saveLocationShareStatus(true);
+          debugPrint('⚠️ 서버에서 위치공유 상태 null, 기본값 true 설정 (위치 전송 중)');
         }
       } else {
         setState(() {
