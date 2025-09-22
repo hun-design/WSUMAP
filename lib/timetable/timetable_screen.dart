@@ -571,28 +571,27 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Wrap(
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        Text(
-                          l10n?.current_year(_getCurrentYear()) ??
-                              '${_getCurrentYear()}',
-                          style: TextStyle(
-                            fontSize: isSmallScreen ? 12 : 14,
-                            color: Colors.grey,
-                            fontWeight: FontWeight.w500,
+                    RichText(
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: '현재 학기 ',
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 12 : 14,
+                              color: TimetableConstants.primaryColor,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          _getCurrentSemester(),
-                          style: TextStyle(
-                            fontSize: isSmallScreen ? 12 : 14,
-                            color: TimetableConstants.primaryColor,
-                            fontWeight: FontWeight.w600,
+                          TextSpan(
+                            text: '${_getCurrentYear()}년 ${_getCurrentSemester()}',
+                            style: TextStyle(
+                              fontSize: isSmallScreen ? 12 : 14,
+                              color: TimetableConstants.primaryColor.withOpacity(0.6),
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),

@@ -1156,7 +1156,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get summer_semester => '여름학기';
 
   @override
-  String get fall_semester => '가을학기';
+  String get fall_semester => '2학기';
 
   @override
   String get monday => '월';
