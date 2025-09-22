@@ -6,11 +6,12 @@ import 'dart:async';
 import 'dart:io';
 import '../services/location_service.dart';
 
-/// 🔥 UI 갱신 콜백 타입들
-typedef LocationUpdateCallback = void Function(loc.LocationData locationData);
-typedef LocationErrorCallback = void Function(String error);
-typedef LocationSentStatusCallback =
-    void Function(bool success, DateTime timestamp);
+  /// 🔥 UI 갱신 콜백 타입들
+  typedef LocationUpdateCallback = void Function(loc.LocationData locationData);
+  typedef LocationErrorCallback = void Function(String error);
+  typedef LocationSentStatusCallback =
+      void Function(bool success, DateTime timestamp);
+  typedef LocationSendingStateCallback = void Function(bool isEnabled, String? userId);
 
 class LocationManager extends ChangeNotifier {
   loc.LocationData? currentLocation;
@@ -27,6 +28,7 @@ class LocationManager extends ChangeNotifier {
   LocationUpdateCallback? onLocationFound;
   LocationErrorCallback? onLocationError;
   LocationSentStatusCallback? onLocationSentStatus;
+  LocationSendingStateCallback? onLocationSendingStateChanged;
 
   // 🔥 타이머 및 스트림 관리 (중복 방지)
   Timer? _requestTimer;
@@ -629,6 +631,8 @@ class LocationManager extends ChangeNotifier {
       },
     );
 
+    // 🔥 위치 전송 상태 변경 콜백 호출
+    onLocationSendingStateChanged?.call(true, userId);
     notifyListeners();
   }
 
@@ -645,6 +649,8 @@ class LocationManager extends ChangeNotifier {
     // 실시간 위치 추적도 중지
     stopLocationTracking();
 
+    // 🔥 위치 전송 상태 변경 콜백 호출
+    onLocationSendingStateChanged?.call(false, null);
     notifyListeners();
   }
 
@@ -664,6 +670,8 @@ class LocationManager extends ChangeNotifier {
     // 실시간 위치 추적도 중지
     stopLocationTracking();
 
+    // 🔥 위치 전송 상태 변경 콜백 호출
+    onLocationSendingStateChanged?.call(false, null);
     debugPrint('✅ 강제 위치 전송 중지 완료');
     notifyListeners();
   }
@@ -984,6 +992,10 @@ class LocationManager extends ChangeNotifier {
 
   void setLocationSentStatusCallback(LocationSentStatusCallback callback) {
     onLocationSentStatus = callback;
+  }
+
+  void setLocationSendingStateCallback(LocationSendingStateCallback callback) {
+    onLocationSendingStateChanged = callback;
   }
 
   /// mounted 상태 확인

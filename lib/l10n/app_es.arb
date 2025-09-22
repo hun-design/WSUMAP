@@ -393,6 +393,7 @@
   "location_share_title": "Compartir ubicación",
   "location_share_enabled": "Compartir ubicación habilitado",
   "location_share_disabled": "Compartir ubicación deshabilitado",
+  "location_share_updating": "Actualizando estado...",
   "profile_edit_title": "Editar perfil",
   "profile_edit_subtitle": "Puede modificar su información personal",
   "schedule": "Horario",

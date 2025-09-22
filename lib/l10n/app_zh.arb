@@ -780,6 +780,7 @@
   "location_share_title": "位置共享",
   "location_share_enabled": "位置共享已启用",
   "location_share_disabled": "位置共享已禁用",
+  "location_share_updating": "状态更新中...",
   "unified_navigation_in_progress": "统一导航进行中",
   "room_route_error": "房间路线计算过程中发生错误。请尝试按建筑单位搜索。",
   "location_check_error": "无法确认当前位置。请重试。",

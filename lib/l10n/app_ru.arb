@@ -893,6 +893,7 @@
   "location_share_title": "Поделиться местоположением",
   "location_share_enabled": "Поделиться местоположением включено",
   "location_share_disabled": "Поделиться местоположением отключено",
+  "location_share_updating": "Обновление состояния...",
   "profile_edit_title": "Редактировать профиль",
   "profile_edit_subtitle": "Вы можете изменить личную информацию",
   "account_delete_title": "Удалить аккаунт",

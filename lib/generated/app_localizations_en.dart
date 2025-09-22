@@ -1182,6 +1182,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inquiry_category_place_error => 'Place Error';
 
   @override
+  String get location_share_updating => 'Updating status...';
+
+  @override
   String get schedule => 'Schedule';
 
   @override

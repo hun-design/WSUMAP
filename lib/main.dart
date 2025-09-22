@@ -273,8 +273,9 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
         await _userAuth.autoLoginToServer();
       }
 
-      // 위치 전송 재시작
-      _locationManager.startPeriodicLocationSending(userId: _userAuth.userId!);
+      // 🔥 위치 전송은 사용자가 활성화한 경우에만 재시작
+      // (ProfileActionPage의 상태를 확인하여 결정)
+      debugPrint('✅ 포그라운드 복귀 - 위치 전송은 사용자 설정에 따라 재시작');
       
       // 웹소켓 연결 상태 확인
       final wsService = WebSocketService();
@@ -360,9 +361,9 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
         
         await _userAuth.autoLoginToServer();
 
-        _locationManager.startPeriodicLocationSending(
-          userId: _userAuth.userId!,
-        );
+        // 🔥 위치 전송은 사용자가 명시적으로 활성화한 경우에만 시작
+        // (ProfileActionPage에서 사용자가 토글을 켜면 자동으로 시작됨)
+        debugPrint('✅ 일반 사용자 로그인 완료 - 위치 전송은 사용자 설정에 따라 시작');
         
         // 웹소켓이 이미 연결되지 않은 경우에만 연결
         final wsService = WebSocketService();
@@ -373,7 +374,7 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
           debugPrint('✅ 웹소켓 이미 연결됨');
         }
         
-        debugPrint('✅ 일반 사용자 위치 전송 및 웹소켓 연결 시작');
+        debugPrint('✅ 일반 사용자 웹소켓 연결 시작');
       } else if (_userAuth.isLoggedIn &&
           _userAuth.userRole == UserRole.external) {
         debugPrint('⚠️ 게스트 사용자 - 위치 전송 및 웹소켓 연결 제외');

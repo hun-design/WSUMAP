@@ -1196,6 +1196,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get inquiry_category_place_error => 'Ошибка местоположения/информации';
 
   @override
+  String get location_share_updating => 'Обновление состояния...';
+
+  @override
   String get schedule => 'Расписание';
 
   @override

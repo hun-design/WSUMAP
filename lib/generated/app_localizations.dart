@@ -2302,6 +2302,12 @@ abstract class AppLocalizations {
   /// **'Place Error'**
   String get inquiry_category_place_error;
 
+  /// No description provided for @location_share_updating.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating status...'**
+  String get location_share_updating;
+
   /// No description provided for @schedule.
   ///
   /// In en, this message translates to:

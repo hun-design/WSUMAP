@@ -1134,6 +1134,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get inquiry_category_place_error => '地点错误';
 
   @override
+  String get location_share_updating => '状态更新中...';
+
+  @override
   String get schedule => '时间表';
 
   @override

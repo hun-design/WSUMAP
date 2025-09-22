@@ -422,10 +422,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get location_share_title => '위치 공유';
 
   @override
-  String get location_share_enabled => '위치 공유 활성화';
+  String get location_share_enabled => '위치 공유 활성화됨';
 
   @override
-  String get location_share_disabled => '위치 공유 비활성화';
+  String get location_share_disabled => '위치 공유 비활성화됨';
 
   @override
   String get excel_tutorial_previous => '이전';
@@ -1142,6 +1142,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get inquiry_category_place_error => '장소/정보 오류';
+
+  @override
+  String get location_share_updating => '상태 업데이트 중...';
 
   @override
   String get schedule => '시간표';

@@ -450,6 +450,7 @@
   "location_share_title": "Location Sharing",
   "location_share_enabled": "Location sharing enabled",
   "location_share_disabled": "Location sharing disabled",
+  "location_share_updating": "Updating status...",
   "profile_edit_title": "Edit Profile",
   "profile_edit_subtitle": "You can modify your personal information",
   "schedule": "Schedule",

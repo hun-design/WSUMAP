@@ -400,6 +400,7 @@
   "location_share_title": "位置情報共有",
   "location_share_enabled": "位置情報共有有効",
   "location_share_disabled": "位置情報共有無効",
+  "location_share_updating": "状態更新中...",
   "profile_edit_title": "プロフィール編集",
   "profile_edit_subtitle": "個人情報を修正できます",
   "schedule": "時間割",

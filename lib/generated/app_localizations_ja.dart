@@ -1148,6 +1148,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get inquiry_category_place_error => '場所・情報エラー';
 
   @override
+  String get location_share_updating => '状態更新中...';
+
+  @override
   String get schedule => '時間割';
 
   @override

@@ -1,6 +1,8 @@
 // lib/services/auth_service.dart - 서버 API와 연동되는 인증 서비스
 
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/config/api_config.dart';
 import 'package:http/http.dart' as http;
@@ -312,7 +314,7 @@ class AuthService {
     }
   }
 
-  /// 🔥 위치 공유 상태 업데이트
+  /// 🔥 위치 공유 상태 업데이트 (개선된 버전 - 타임아웃 및 오류 처리 강화)
   Future<bool> updateShareLocation(String userId, bool isEnabled) async {
     try {
       debugPrint('=== 위치 공유 상태 업데이트 시작 ===');
@@ -323,11 +325,18 @@ class AuthService {
         Uri.parse('${ApiConfig.userBase}/update_share_location'),
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: jsonEncode({
           'id': userId,
           'Is_location_public': isEnabled, // 서버에서 기대하는 필드명으로 변경
         }),
+      ).timeout(
+        const Duration(seconds: 10), // 10초 타임아웃 추가
+        onTimeout: () {
+          debugPrint('⏰ 위치 공유 상태 업데이트 타임아웃');
+          throw TimeoutException('위치 공유 상태 업데이트 타임아웃', const Duration(seconds: 10));
+        },
       );
 
       debugPrint('서버 응답 상태: ${response.statusCode}');
@@ -341,8 +350,20 @@ class AuthService {
         debugPrint('❌ 실패 응답 내용: ${response.body}');
         return false;
       }
+    } on TimeoutException catch (e) {
+      debugPrint('❌ 위치 공유 상태 업데이트 타임아웃: $e');
+      return false;
+    } on SocketException catch (e) {
+      debugPrint('❌ 위치 공유 상태 업데이트 네트워크 오류: $e');
+      return false;
+    } on FormatException catch (e) {
+      debugPrint('❌ 위치 공유 상태 업데이트 데이터 형식 오류: $e');
+      return false;
+    } on HttpException catch (e) {
+      debugPrint('❌ 위치 공유 상태 업데이트 HTTP 오류: $e');
+      return false;
     } catch (e) {
-      debugPrint('❌ 위치 공유 상태 업데이트 오류: $e');
+      debugPrint('❌ 위치 공유 상태 업데이트 알 수 없는 오류: $e');
       return false;
     }
   }
