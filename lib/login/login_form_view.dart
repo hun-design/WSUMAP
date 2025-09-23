@@ -6,7 +6,7 @@ import '../auth/user_auth.dart';
 import '../components/woosong_input_field.dart';
 import '../components/woosong_button.dart';
 import '../generated/app_localizations.dart';
-import '../map/map_screen.dart';
+import '../screens/map_loading_screen.dart';
 
 class LoginFormView extends StatefulWidget {
   const LoginFormView({super.key});
@@ -67,9 +67,14 @@ class _LoginFormViewState extends State<LoginFormView> with TickerProviderStateM
       return;
     }
 
-    final userAuth = Provider.of<UserAuth>(context, listen: false);
+    // 로그인 버튼을 누르는 순간 즉시 로딩 화면으로 이동
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const MapLoadingScreen()),
+      (route) => false,
+    );
 
-    // 서버 API를 통한 로그인 시도
+    // 로딩 화면에서 실제 로그인 처리
+    final userAuth = Provider.of<UserAuth>(context, listen: false);
     final success = await userAuth.loginWithCredentials(
       id: id,
       password: password,
@@ -77,13 +82,12 @@ class _LoginFormViewState extends State<LoginFormView> with TickerProviderStateM
       context: context,
     );
 
-    if (success && mounted) {
-      // 로그인 성공 후 MapScreen으로 이동
+    // 로그인 실패 시 로그인 화면으로 돌아가기
+    if (!success && mounted) {
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const MapScreen()),
+        MaterialPageRoute(builder: (_) => const LoginFormView()),
         (route) => false,
       );
-    } else if (mounted) {
       _showErrorDialog(userAuth.lastError ?? l10n.login_error);
     }
   }
@@ -195,16 +199,15 @@ class _LoginFormViewState extends State<LoginFormView> with TickerProviderStateM
     );
 
     if (confirmed == true && mounted) {
+      // 게스트 로그인 확인 즉시 로딩 화면으로 이동
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const MapLoadingScreen()),
+        (route) => false,
+      );
+
+      // 로딩 화면에서 실제 게스트 로그인 처리
       final userAuth = Provider.of<UserAuth>(context, listen: false);
       await userAuth.loginAsGuest(context: context);
-
-      if (mounted) {
-        // 게스트 로그인 후 MapScreen으로 이동
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const MapScreen()),
-          (route) => false,
-        );
-      }
     }
   }
 

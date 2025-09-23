@@ -8,6 +8,7 @@ import '../auth/user_auth.dart';
 import '../generated/app_localizations.dart';
 import '../providers/app_language_provider.dart';
 import '../providers/category_provider.dart';
+import '../screens/map_loading_screen.dart';
 import '../map/map_screen.dart';
 
 class AuthSelectionView extends StatefulWidget {
@@ -329,6 +330,13 @@ class _AuthSelectionViewState extends State<AuthSelectionView>
 
   /// 게스트 로그인 실제 수행 (다이얼로그 없이)
   Future<void> _performGuestLogin() async {
+    // 게스트 로그인 버튼을 누르는 순간 즉시 로딩 화면으로 이동
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const MapLoadingScreen()),
+      (route) => false,
+    );
+
+    // 로딩 화면에서 실제 게스트 로그인 처리
     final userAuth = Provider.of<UserAuth>(context, listen: false);
     final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
     
@@ -337,14 +345,6 @@ class _AuthSelectionViewState extends State<AuthSelectionView>
       userAuth.loginAsGuest(context: context),
       categoryProvider.loadCategoriesFromServer(),
     ]);
-    
-    if (mounted) {
-      // 게스트 로그인 후 MapScreen으로 이동
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const MapScreen()),
-        (route) => false,
-      );
-    }
   }
 
   @override
@@ -495,7 +495,7 @@ Widget _buildHeader(AppLocalizations l10n) {
           Future.delayed(const Duration(milliseconds: 100), () {
           Navigator.of(context).pushAndRemoveUntil(
             MaterialPageRoute(
-              builder: (context) => const MapScreen(),
+                  builder: (context) => MapScreen(),
             ),
             (route) => false,
           );
