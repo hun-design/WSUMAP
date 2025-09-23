@@ -96,7 +96,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     });
   }
 
-  /// 🔥 맵 스크린 초기화 로직
+  /// 🔥 맵 스크린 초기화 로직 (단계적 초기화로 안정성 향상)
   Future<void> _initializeMapScreen() async {
     try {
       // UserAuth 상태 확인
@@ -105,36 +105,35 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         '🔥 MapScreen 초기화 - 사용자 상태: ${userAuth.isLoggedIn ? '로그인' : '비로그인'}',
       );
 
-      // MapController 초기화
+      // 🔥 1단계: 기본 컨트롤러만 초기화
       _controller = MapScreenController()..addListener(() => setState(() {}));
-
-      // 🔥 새 세션 감지 시 리셋
       _controller.resetForNewSession();
 
-      // LocationController 설정
+      // 🔥 2단계: LocationController 초기화 (500ms 지연)
+      await Future.delayed(const Duration(milliseconds: 500));
       _locationController = LocationController()
         ..addListener(() => setState(() {}));
-
       _controller.setLocationController(_locationController);
 
-      // 🔥 FriendsController 초기화
+      // 🔥 3단계: FriendsController 초기화 (1초 지연)
+      await Future.delayed(const Duration(milliseconds: 500));
       _friendsController = FriendsController(
         FriendRepository(FriendApiService()),
         userAuth.userId ?? '',
       );
-      
-      // 🔥 FriendsController 변경사항 감지하여 친구 위치 마커 관리
       _friendsController.addListener(_onFriendsControllerChanged);
 
-      // 기타 초기화
+      // 🔥 4단계: 기타 서비스 초기화 (1.5초 지연)
+      await Future.delayed(const Duration(milliseconds: 500));
       _navigationManager = NavigationStateManager();
       _buildingMarkerService = BuildingMarkerService();
 
-      // 초기화 및 컨텍스트 설정
+      // 🔥 5단계: 최종 초기화 (2초 지연)
+      await Future.delayed(const Duration(milliseconds: 500));
       await _controller.initialize();
       _controller.setContext(context);
 
-      debugPrint('✅ MapScreen 초기화 완료');
+      debugPrint('✅ MapScreen 단계적 초기화 완료');
     } catch (e) {
       debugPrint('❌ MapScreen 초기화 오류: $e');
     }

@@ -292,9 +292,9 @@ class UserAuth extends ChangeNotifier {
         _isLoggedIn = true;
         _isFirstLaunch = false;
 
-        // 🔥 게스트가 아닌 경우에만 위치 전송 및 웹소켓 연결 시작
+        // 🔥 게스트가 아닌 경우에만 위치 전송 및 웹소켓 연결 시작 (지연)
         if (context != null) {
-          Future.delayed(const Duration(milliseconds: 500), () {
+          Future.delayed(const Duration(seconds: 2), () {
             _startLocationSending(context);
             _startWebSocketConnection();
           });

@@ -27,35 +27,92 @@ class CustomUserLocationMarker {
   
   static const Color _primaryBlue = Color(0xFF3B82F6);
   
-  /// 지도 컨트롤러 설정
+  /// 지도 컨트롤러 설정 (안전한 초기화)
   void setMapController(NaverMapController controller) {
-    _mapController = controller;
-    debugPrint('✅ CustomUserLocationMarker 지도 컨트롤러 설정 완료');
-    if (_magnetometerSubscription == null) {
-      _isDirectionEnabled = true;
-      _startDirectionTracking();
+    try {
+      _mapController = controller;
+      debugPrint('✅ CustomUserLocationMarker 지도 컨트롤러 설정 완료');
+      
+      // 🔥 iOS에서는 지도 컨트롤러 설정 후 충분한 지연을 두고 방향 추적 시작
+      if (_magnetometerSubscription == null && _compassSubscription == null) {
+        _isDirectionEnabled = true;
+        
+        if (Platform.isIOS) {
+          // iOS에서는 3초 지연 후 시작 (flutter_compass 안정성 확보)
+          Future.delayed(const Duration(seconds: 3), () {
+            if (_isDirectionEnabled && _mapController != null) {
+              _startDirectionTracking();
+            }
+          });
+        } else {
+          // Android는 즉시 시작
+          _startDirectionTracking();
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ CustomUserLocationMarker 초기화 오류: $e');
     }
   }
   
-  /// iOS용 나침반 추적 시작
+  /// iOS용 나침반 추적 시작 (안전한 초기화)
   void _startIOSCompassTracking() {
-    _compassSubscription?.cancel();
-    _compassSubscription = FlutterCompass.events?.listen((CompassEvent event) {
-      try {
-        final double? heading = event.heading;
-        if (heading == null) return;
-        
-        double newHeading = heading;
-        if ((newHeading - _currentHeading).abs() > 0.5) {
-          _currentHeading = newHeading;
-          _updateDirectionArrowRotation();
-        }
-      } catch (e) {
-        // iOS Compass 처리 오류
+    try {
+      debugPrint('🧭 iOS 나침반 추적 시작 (안전한 초기화)');
+      
+      // 기존 구독 취소
+      _compassSubscription?.cancel();
+      
+      // FlutterCompass.events가 null인지 확인
+      if (FlutterCompass.events == null) {
+        debugPrint('⚠️ FlutterCompass.events가 null입니다. 2초 후 재시도...');
+        Future.delayed(const Duration(seconds: 2), () {
+          if (_isDirectionEnabled) {
+            _startIOSCompassTracking();
+          }
+        });
+        return;
       }
-    }, onError: (error) {
-      // iOS Compass 스트림 오류
-    });
+      
+      _compassSubscription = FlutterCompass.events!.listen(
+        (CompassEvent event) {
+          try {
+            final double? heading = event.heading;
+            if (heading == null) return;
+            
+            double newHeading = heading;
+            if ((newHeading - _currentHeading).abs() > 0.5) {
+              _currentHeading = newHeading;
+              _updateDirectionArrowRotation();
+              debugPrint('🧭 iOS 나침반 방향 업데이트: ${_currentHeading.toStringAsFixed(1)}도');
+            }
+          } catch (e) {
+            debugPrint('❌ iOS Compass 데이터 처리 오류: $e');
+          }
+        }, 
+        onError: (error) {
+          debugPrint('❌ iOS Compass 스트림 오류: $error');
+          // 오류 발생 시 5초 후 재시도
+          Future.delayed(const Duration(seconds: 5), () {
+            if (_isDirectionEnabled) {
+              debugPrint('🔄 iOS Compass 재시도...');
+              _startIOSCompassTracking();
+            }
+          });
+        },
+        cancelOnError: false, // 오류 발생해도 스트림 유지
+      );
+      
+      debugPrint('✅ iOS 나침반 추적 시작 완료');
+    } catch (e) {
+      debugPrint('❌ iOS 나침반 추적 시작 실패: $e');
+      // 초기화 실패 시 5초 후 재시도
+      Future.delayed(const Duration(seconds: 5), () {
+        if (_isDirectionEnabled) {
+          debugPrint('🔄 iOS Compass 초기화 재시도...');
+          _startIOSCompassTracking();
+        }
+      });
+    }
   }
 
   /// 컨텍스트 설정
