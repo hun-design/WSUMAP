@@ -109,8 +109,9 @@ class FriendLocationMarkerService {
 
   /// 친구 위치 마커 추가
   Future<void> addFriendLocationMarker(Friend friend) async {
+    // 🔥 위치 공유 상태 확인 - 비활성화된 경우 마커 제거 후 종료
     if (!friend.isLocationPublic) {
-      debugPrint('❌ 위치공유 미허용 친구: ${friend.userName}');
+      debugPrint('❌ 위치공유 미허용 친구: ${friend.userName} - 마커 제거');
       await _removeFriendLocationMarker(friend.userId);
       return;
     }
@@ -172,6 +173,12 @@ class FriendLocationMarkerService {
 
   /// 🔥 특정 친구 위치 마커 제거 (외부 호출용)
   Future<void> removeFriendLocationMarker(String userId) async {
+    await _removeFriendLocationMarker(userId);
+  }
+
+  /// 🔥 위치 공유 상태 변경으로 인한 친구 마커 제거
+  Future<void> removeFriendMarkerDueToLocationShareDisabled(String userId) async {
+    debugPrint('🗑️ 위치 공유 비활성화로 인한 친구 마커 제거: $userId');
     await _removeFriendLocationMarker(userId);
   }
 

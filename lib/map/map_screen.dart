@@ -122,6 +122,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         FriendRepository(FriendApiService()),
         userAuth.userId ?? '',
       );
+      
+      // 🔥 FriendsController 변경사항 감지하여 친구 위치 마커 관리
+      _friendsController.addListener(_onFriendsControllerChanged);
 
       // 기타 초기화
       _navigationManager = NavigationStateManager();
@@ -300,12 +303,24 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     }
   }
 
+  /// 🔥 FriendsController 변경사항 감지하여 친구 위치 마커 관리
+  void _onFriendsControllerChanged() {
+    // 위치 공유가 비활성화된 친구들의 마커를 제거
+    for (final friend in _friendsController.friends) {
+      if (!friend.isLocationPublic && _controller.isFriendLocationDisplayed(friend.userId)) {
+        debugPrint('🗑️ 위치 공유 비활성화된 친구 마커 제거: ${friend.userName}');
+        _controller.removeFriendLocationDueToLocationShareDisabled(friend.userId);
+      }
+    }
+  }
+
   @override
   void dispose() {
     _navigationManager.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _controller.dispose();
     _locationController.dispose();
+    _friendsController.removeListener(_onFriendsControllerChanged);
     super.dispose();
   }
 

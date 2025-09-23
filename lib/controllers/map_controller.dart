@@ -345,6 +345,18 @@ class MapScreenController extends ChangeNotifier {
     await _friendLocationMarkerService.moveCameraToAllFriends();
   }
 
+  /// 🔥 위치 공유 상태 변경으로 인한 친구 위치 마커 제거
+  Future<void> removeFriendLocationDueToLocationShareDisabled(String userId) async {
+    try {
+      debugPrint('🗑️ 위치 공유 비활성화로 인한 친구 위치 마커 제거: $userId');
+      await _friendLocationMarkerService.removeFriendMarkerDueToLocationShareDisabled(userId);
+      notifyListeners();
+      debugPrint('✅ 친구 위치 마커 제거 완료: $userId');
+    } catch (e) {
+      debugPrint('❌ 친구 위치 마커 제거 실패: $e');
+    }
+  }
+
   /// 🔥 모든 친구 위치 표시
   Future<void> showAllFriendLocations(
     FriendsController friendsController,

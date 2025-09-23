@@ -110,7 +110,7 @@ class FriendsController extends ChangeNotifier {
     }
 
     // 🔥 메시지 유효성 검사
-    if (message == null || message['type'] == null) {
+    if (message['type'] == null) {
       debugPrint('⚠️ 유효하지 않은 웹소켓 메시지: $message');
       return;
     }
@@ -193,6 +193,11 @@ class FriendsController extends ChangeNotifier {
         case 'heartbeat_response':
           debugPrint('❤️ 친구 컨트롤러에서 하트비트 응답 수신');
           // 특별한 UI 업데이트 필요 없음
+          break;
+
+        // 🔥 위치 공유 상태 변경 처리
+        case 'location_share_status_change':
+          _handleLocationShareStatusChange(message);
           break;
 
         default:
@@ -508,6 +513,54 @@ class FriendsController extends ChangeNotifier {
     // 🔥 즉시 UI 업데이트
     debugPrint('🔄 UI 업데이트 트리거 - 친구 로그인');
     notifyListeners();
+  }
+
+  // 🔥 위치 공유 상태 변경 처리
+  void _handleLocationShareStatusChange(Map<String, dynamic> message) {
+    final userId = message['userId'];
+    final isLocationPublic = message['isLocationPublic'] ?? false;
+    
+    debugPrint('📍 위치 공유 상태 변경: $userId - ${isLocationPublic ? '공유' : '비공유'}');
+    
+    // 친구 목록에서 해당 사용자의 위치 공유 상태 업데이트
+    for (int i = 0; i < friends.length; i++) {
+      if (friends[i].userId == userId) {
+        final oldStatus = friends[i].isLocationPublic;
+        friends[i] = Friend(
+          userId: friends[i].userId,
+          userName: friends[i].userName,
+          profileImage: friends[i].profileImage,
+          phone: friends[i].phone,
+          isLogin: friends[i].isLogin,
+          lastLocation: friends[i].lastLocation,
+          isLocationPublic: isLocationPublic,
+        );
+        
+        debugPrint('✅ ${friends[i].userName} 위치 공유 상태 변경: $oldStatus → $isLocationPublic');
+        
+        // 위치 공유가 비활성화된 경우 지도에서 해당 친구 위치 마커 제거
+        if (!isLocationPublic && oldStatus) {
+          debugPrint('🗑️ ${friends[i].userName} 위치 마커 제거 필요 (위치 공유 비활성화)');
+          // 지도 컨트롤러에 친구 위치 마커 제거 요청
+          _removeFriendLocationFromMap(userId);
+        }
+        
+        break;
+      }
+    }
+    
+    notifyListeners();
+  }
+
+  // 🔥 지도에서 친구 위치 마커 제거
+  void _removeFriendLocationFromMap(String userId) {
+    try {
+      debugPrint('🗑️ 친구 위치 마커 제거 요청: $userId');
+      // 이 메서드는 MapScreen에서 호출될 예정
+      // MapScreenController의 removeFriendLocationDueToLocationShareDisabled 메서드 호출
+    } catch (e) {
+      debugPrint('❌ 친구 위치 마커 제거 중 오류: $e');
+    }
   }
 
   // 🔥 새로 추가: 친구 로그아웃 처리 메서드

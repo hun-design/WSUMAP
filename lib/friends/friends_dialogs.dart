@@ -208,12 +208,13 @@ class FriendsDialogs {
                               child: SizedBox(
                                 height: 48,
                                 child: ElevatedButton.icon(
-                                  onPressed: () async {
+                                  onPressed: (!friend.isLocationPublic || !isOnline) ? null : () async {
                                     HapticFeedback.lightImpact();
                                     Navigator.of(context).pop(); // 항상 모달창 닫기
 
-                                    // 위치 공유 상태 확인
+                                    // 🔥 위치 공유 상태 확인 (더 엄격하게)
                                     if (!friend.isLocationPublic) {
+                                      debugPrint('❌ 위치 공유 미허용 친구: ${friend.userName}');
                                       FriendsUtils.showErrorMessage(
                                         context,
                                         AppLocalizations.of(context)!.friend_location_permission_denied(friend.userName),
@@ -249,23 +250,31 @@ class FriendsDialogs {
                                         ? Icons.location_off
                                         : Icons.location_on,
                                     size: 18,
+                                    color: (!friend.isLocationPublic || !isOnline) 
+                                        ? Colors.grey.shade400
+                                        : Colors.white,
                                   ),
                                   label: Text(
-                                    isLocationDisplayed
-                                        ? AppLocalizations.of(
-                                            context,
-                                          )!.removeLocation
-                                        : AppLocalizations.of(
-                                            context,
-                                          )!.showLocation,
+                                    (!friend.isLocationPublic || !isOnline)
+                                        ? '위치 공유 비활성화'
+                                        : (isLocationDisplayed
+                                            ? AppLocalizations.of(context)!.removeLocation
+                                            : AppLocalizations.of(context)!.showLocation),
+                                    style: TextStyle(
+                                      color: (!friend.isLocationPublic || !isOnline)
+                                          ? Colors.grey.shade400
+                                          : Colors.white,
+                                    ),
                                   ),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: isLocationDisplayed
-                                        ? const Color(0xFFEF4444)
-                                        : friend.isLocationPublic
-                                        ? const Color(0xFF10B981)
-                                        : Colors.grey[400]!,
-                                    foregroundColor: Colors.white,
+                                    backgroundColor: (!friend.isLocationPublic || !isOnline)
+                                        ? Colors.grey.shade300
+                                        : (isLocationDisplayed
+                                            ? const Color(0xFFEF4444)
+                                            : const Color(0xFF10B981)),
+                                    foregroundColor: (!friend.isLocationPublic || !isOnline)
+                                        ? Colors.grey.shade400
+                                        : Colors.white,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
