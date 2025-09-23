@@ -261,6 +261,51 @@ void didChangeDependencies() {
     );
   }
 
+  // 🔥 문의 제출 후 "내 문의" 탭으로 이동하는 메서드
+  void _navigateToMyInquiriesTab() {
+    // 첫 번째 시도 (500ms 후)
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _tryNavigateToTab(1, '첫 번째 시도');
+    });
+    
+    // 두 번째 시도 (1초 후) - 안드로이드 대응
+    Future.delayed(const Duration(milliseconds: 1000), () {
+      _tryNavigateToTab(1, '두 번째 시도');
+    });
+  }
+
+  void _tryNavigateToTab(int tabIndex, String attempt) {
+    if (!mounted) {
+      debugPrint('⚠️ $attempt: 위젯이 마운트되지 않음');
+      return;
+    }
+
+    try {
+      // 키보드 먼저 내리기
+      FocusScope.of(context).unfocus();
+      
+      // 현재 탭이 이미 목표 탭이면 스킵
+      if (widget.tabController.index == tabIndex) {
+        debugPrint('✅ $attempt: 이미 올바른 탭에 있음 (인덱스: $tabIndex)');
+        return;
+      }
+
+      // 탭 이동 시도
+      widget.tabController.animateTo(tabIndex);
+      debugPrint('✅ $attempt: 문의 제출 후 "내 문의" 탭으로 이동 완료');
+    } catch (e) {
+      debugPrint('❌ $attempt: 탭 이동 실패: $e');
+      
+      // 대체 방법: 직접 탭 인덱스 설정
+      try {
+        widget.tabController.index = tabIndex;
+        debugPrint('✅ $attempt: 대체 방법으로 탭 이동 완료');
+      } catch (e2) {
+        debugPrint('❌ $attempt: 대체 탭 이동도 실패: $e2');
+      }
+    }
+  }
+
   Widget _buildInquiryTypeSection() {
     final l10n = AppLocalizations.of(context)!;
     return Column(
@@ -915,14 +960,7 @@ void didChangeDependencies() {
         widget.onInquirySubmitted?.call();
         
         // 🔥 문의 제출 성공 후 "내 문의" 탭으로 자동 이동
-        Future.delayed(const Duration(milliseconds: 500), () {
-          if (mounted) {
-            // 키보드 먼저 내리기
-            FocusScope.of(context).unfocus();
-            // 탭 이동
-            widget.tabController.animateTo(1); // "내 문의" 탭으로 이동
-          }
-        });
+        _navigateToMyInquiriesTab();
               } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -978,6 +1016,115 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
     super.dispose();
   }
 
+  // 🔥 정확한 DateTime 파싱을 위한 헬퍼 메서드
+  DateTime _parseDateTime(String dateTimeString) {
+    debugPrint('🔍 날짜 파싱 시도: "$dateTimeString"');
+    
+    // 공백 제거
+    final cleanString = dateTimeString.trim();
+    
+    try {
+      // ISO 8601 형식 (예: 2024-01-15T14:30:25.123Z)
+      final result = DateTime.parse(cleanString);
+      debugPrint('✅ ISO 8601 파싱 성공: $result');
+      return result;
+    } catch (e) {
+      debugPrint('❌ ISO 8601 파싱 실패: $e');
+    }
+    
+    try {
+      // 공백으로 구분된 형식 (예: 2024-01-15 14:30:25)
+      final normalized = cleanString.replaceAll(' ', 'T');
+      final result = DateTime.parse(normalized);
+      debugPrint('✅ 공백->T 변환 파싱 성공: $result');
+      return result;
+    } catch (e) {
+      debugPrint('❌ 공백->T 변환 파싱 실패: $e');
+    }
+    
+    try {
+      // 점으로 구분된 형식 (예: 2024.01.15 14:30:25)
+      final normalized = cleanString.replaceAll('.', '-').replaceAll(' ', 'T');
+      final result = DateTime.parse(normalized);
+      debugPrint('✅ 점->하이픈 변환 파싱 성공: $result');
+      return result;
+    } catch (e) {
+      debugPrint('❌ 점->하이픈 변환 파싱 실패: $e');
+    }
+    
+    try {
+      // 한국어 형식 (예: 2024년 1월 15일 14:30:25)
+      final koreanPattern = RegExp(r'(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일\s*(\d{1,2}):(\d{1,2}):(\d{1,2})');
+      final match = koreanPattern.firstMatch(cleanString);
+      if (match != null) {
+        final year = int.parse(match.group(1)!);
+        final month = int.parse(match.group(2)!);
+        final day = int.parse(match.group(3)!);
+        final hour = int.parse(match.group(4)!);
+        final minute = int.parse(match.group(5)!);
+        final second = int.parse(match.group(6)!);
+        final result = DateTime(year, month, day, hour, minute, second);
+        debugPrint('✅ 한국어 형식 파싱 성공: $result');
+        return result;
+      }
+    } catch (e) {
+      debugPrint('❌ 한국어 형식 파싱 실패: $e');
+    }
+    
+    try {
+      // 간단한 날짜 형식 (예: 2024-01-15)
+      final simplePattern = RegExp(r'(\d{4})-(\d{1,2})-(\d{1,2})');
+      final match = simplePattern.firstMatch(cleanString);
+      if (match != null) {
+        final year = int.parse(match.group(1)!);
+        final month = int.parse(match.group(2)!);
+        final day = int.parse(match.group(3)!);
+        final result = DateTime(year, month, day);
+        debugPrint('✅ 간단한 날짜 형식 파싱 성공: $result');
+        return result;
+      }
+    } catch (e) {
+      debugPrint('❌ 간단한 날짜 형식 파싱 실패: $e');
+    }
+    
+    debugPrint('❌ 모든 파싱 시도 실패, 현재 시간 반환');
+    return DateTime.now();
+  }
+
+  // 🔥 날짜를 한국어 형식으로 포맷팅하는 메서드
+  String _formatDateTime(String dateTimeString) {
+    try {
+      final dateTime = _parseDateTime(dateTimeString);
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final yesterday = today.subtract(const Duration(days: 1));
+      final inquiryDate = DateTime(dateTime.year, dateTime.month, dateTime.day);
+      
+      debugPrint('📅 포맷팅: $dateTimeString -> $dateTime');
+      debugPrint('   오늘: $today, 어제: $yesterday, 문의날짜: $inquiryDate');
+      
+      if (inquiryDate == today) {
+        // 오늘: "오늘 HH:mm"
+        final result = '오늘 ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+        debugPrint('   결과: $result');
+        return result;
+      } else if (inquiryDate == yesterday) {
+        // 어제: "어제 HH:mm"
+        final result = '어제 ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+        debugPrint('   결과: $result');
+        return result;
+      } else {
+        // 그 외: "MM월 dd일 HH:mm"
+        final result = '${dateTime.month}월 ${dateTime.day}일 ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+        debugPrint('   결과: $result');
+        return result;
+      }
+    } catch (e) {
+      debugPrint('❌ 날짜 포맷팅 실패: $dateTimeString, 오류: $e');
+      return dateTimeString; // 원본 반환
+    }
+  }
+
     Future<void> _loadInquiries() async {
     final l10n = AppLocalizations.of(context)!;
     if (_isDisposed) return;
@@ -999,11 +1146,49 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
     debugPrint(
       '받아온 문의 목록: ${inquiries.map((e) => '${e.title} (${e.status})').toList()}',
     );
+    
+    // 🔥 서버에서 오는 날짜 형식 확인
+    for (int i = 0; i < inquiries.length && i < 3; i++) {
+      final inquiry = inquiries[i];
+      debugPrint('📅 문의 ${i+1}: ${inquiry.title}');
+      debugPrint('   원본 createdAt: "${inquiry.createdAt}"');
+      try {
+        final parsed = _parseDateTime(inquiry.createdAt);
+        debugPrint('   파싱된 DateTime: $parsed');
+        debugPrint('   포맷된 표시: "${_formatDateTime(inquiry.createdAt)}"');
+      } catch (e) {
+        debugPrint('   파싱 실패: $e');
+      }
+    }
 
     if (!_isDisposed) {
       setState(() {
-        // 🔥 최신순으로 정렬 (Created_At 기준 내림차순)
-        inquiries.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        // 🔥 최신순으로 정렬 (Created_At 기준 내림차순, 초단위까지 정확하게)
+        // String을 DateTime으로 변환하여 정확한 시간 비교 (년월일시분초마이크로초)
+        inquiries.sort((a, b) {
+          try {
+            // 더 정확한 DateTime 파싱을 위해 여러 형식 시도
+            DateTime dateA = _parseDateTime(a.createdAt);
+            DateTime dateB = _parseDateTime(b.createdAt);
+            
+            // 마이크로초까지 비교하여 정확한 시간순 정렬
+            final comparison = dateB.compareTo(dateA);
+            debugPrint('🔥 정렬 비교: ${a.title} (${a.createdAt} -> ${dateA.toString()}) vs ${b.title} (${b.createdAt} -> ${dateB.toString()}) = $comparison');
+            
+            // 비교 결과가 0이면 (같은 시간) 제목으로 추가 정렬
+            if (comparison == 0) {
+              return b.title.compareTo(a.title);
+            }
+            
+            return comparison; // 최신순 (내림차순)
+          } catch (e) {
+            debugPrint('❌ 날짜 파싱 오류: $e');
+            // 파싱 실패 시 문자열 비교로 대체 (ISO 8601 형식이므로 문자열 비교도 시간순)
+            final stringComparison = b.createdAt.compareTo(a.createdAt);
+            debugPrint('📝 문자열 비교 결과: $stringComparison');
+            return stringComparison;
+          }
+        });
         _inquiries = inquiries;
       });
       debugPrint('setState 후 _inquiries 길이: ${_inquiries.length}');
@@ -1210,7 +1395,7 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        inquiry.createdAt,
+                        _formatDateTime(inquiry.createdAt),
                         style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                       ),
                       if (inquiry.hasImage) ...[

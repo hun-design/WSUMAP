@@ -415,26 +415,46 @@ class InquiryService {
               String displayStatus = _convertStatusToKorean(status);
               debugPrint('상태 변환: $status → $displayStatus');
 
-              // 날짜 포맷팅
+              // 날짜 포맷팅 (시간 정보 포함, 18시간 보정)
               String createdAt = '';
               if (item['Created_At'] != null) {
                 try {
                   DateTime date = DateTime.parse(item['Created_At']);
-                  createdAt =
-                      '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+                  
+                  // 🔥 18시간을 더해서 정확한 시간으로 보정
+                  DateTime correctedTime = date.add(const Duration(hours: 18));
+                  
+                  debugPrint('📅 서버 날짜 파싱: ${item['Created_At']}');
+                  debugPrint('   원본 시간: $date');
+                  debugPrint('   보정된 시간: $correctedTime');
+                  
+                  createdAt = correctedTime.toIso8601String();
+                  
+                  debugPrint('   최종 저장: $createdAt');
                 } catch (e) {
+                  debugPrint('❌ 날짜 파싱 실패: ${item['Created_At']}, 오류: $e');
                   createdAt = item['Created_At'].toString();
                 }
               }
 
-              // 답변일 포맷팅
+              // 답변일 포맷팅 (시간 정보 포함, 18시간 보정)
               String? answeredAt;
               if (item['Answered_At'] != null) {
                 try {
                   DateTime date = DateTime.parse(item['Answered_At']);
-                  answeredAt =
-                      '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+                  
+                  // 🔥 18시간을 더해서 정확한 시간으로 보정
+                  DateTime correctedTime = date.add(const Duration(hours: 18));
+                  
+                  debugPrint('📅 답변일 파싱: ${item['Answered_At']}');
+                  debugPrint('   원본 시간: $date');
+                  debugPrint('   보정된 시간: $correctedTime');
+                  
+                  answeredAt = correctedTime.toIso8601String();
+                  
+                  debugPrint('   최종 저장: $answeredAt');
                 } catch (e) {
+                  debugPrint('❌ 답변일 파싱 실패: ${item['Answered_At']}, 오류: $e');
                   answeredAt = item['Answered_At'].toString();
                 }
               }
