@@ -83,6 +83,7 @@ class _InquiryPageState extends State<InquiryPage>
           // 문의하기 탭
           CreateInquiryTab(
             userAuth: widget.userAuth,
+            tabController: _tabController,
             onInquirySubmitted: () {
               // 문의 등록 성공 후 "내 문의" 탭 새로고침
               _myInquiriesTabKey.currentState?.refreshInquiries();
@@ -99,10 +100,12 @@ class _InquiryPageState extends State<InquiryPage>
 // 문의하기 탭
 class CreateInquiryTab extends StatefulWidget {
   final UserAuth userAuth;
+  final TabController tabController;
   final VoidCallback? onInquirySubmitted;
 
   const CreateInquiryTab({
     required this.userAuth,
+    required this.tabController,
     this.onInquirySubmitted,
     super.key,
   });
@@ -185,10 +188,15 @@ void didChangeDependencies() {
     final l10n = AppLocalizations.of(context)!;
 
     return SafeArea(
-      child: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+      child: GestureDetector(
+        onTap: () {
+          // 🔥 다른 화면 터치 시 키보드 자동 내려가기
+          FocusScope.of(context).unfocus();
+        },
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -247,6 +255,7 @@ void didChangeDependencies() {
 
             ],
           ),
+        ),
         ),
       ),
     );
@@ -893,15 +902,27 @@ void didChangeDependencies() {
           ),
         );
 
-        // 폼 초기화
+        // 🔥 폼 완전 초기화
         _formKey.currentState!.reset();
+        _titleController.clear(); // 제목 텍스트 필드 초기화
+        _contentController.clear(); // 내용 텍스트 필드 초기화
         setState(() {
-          _selectedInquiryType = null;
-          _selectedImages.clear();
+          _selectedInquiryType = null; // 문의 유형 초기화
+          _selectedImages.clear(); // 첨부 이미지 초기화
         });
 
         // "내 문의" 탭 새로고침
         widget.onInquirySubmitted?.call();
+        
+        // 🔥 문의 제출 성공 후 "내 문의" 탭으로 자동 이동
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (mounted) {
+            // 키보드 먼저 내리기
+            FocusScope.of(context).unfocus();
+            // 탭 이동
+            widget.tabController.animateTo(1); // "내 문의" 탭으로 이동
+          }
+        });
               } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -981,9 +1002,12 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
 
     if (!_isDisposed) {
       setState(() {
+        // 🔥 최신순으로 정렬 (Created_At 기준 내림차순)
+        inquiries.sort((a, b) => b.createdAt.compareTo(a.createdAt));
         _inquiries = inquiries;
       });
       debugPrint('setState 후 _inquiries 길이: ${_inquiries.length}');
+      debugPrint('정렬된 문의 목록: ${_inquiries.map((e) => '${e.title} (${e.createdAt})').toList()}');
     }
   } catch (e, stackTrace) {
     debugPrint('문의 목록 로드 중 오류: $e');
