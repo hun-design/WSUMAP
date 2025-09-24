@@ -12,7 +12,6 @@ class InquiryService {
 
   /// 문의하기 작성
   static Future<bool> createInquiry({
-    required String userId,
     required String category,
     required String title,
     required String content,
@@ -20,7 +19,6 @@ class InquiryService {
   }) async {
     try {
       debugPrint('=== 문의하기 작성 시작 ===');
-      debugPrint('사용자 ID: $userId');
       debugPrint('카테고리: $category');
       debugPrint('제목: $title');
       debugPrint('내용: $content');
@@ -36,10 +34,6 @@ class InquiryService {
       debugPrint('✅ 유효한 카테고리 확인: $category');
 
       // 필드 검증
-      if (userId.isEmpty) {
-        debugPrint('❌ 사용자 ID가 비어있음');
-        return false;
-      }
       if (category.isEmpty) {
         debugPrint('❌ 카테고리가 비어있음');
         return false;
@@ -55,7 +49,6 @@ class InquiryService {
 
       // 먼저 multipart 요청 시도
       bool success = await _tryMultipartRequest(
-        userId,
         category,
         title,
         content,
@@ -64,7 +57,7 @@ class InquiryService {
 
       if (!success) {
         debugPrint('multipart 요청 실패, JSON 요청 시도...');
-        success = await _tryJsonRequest(userId, category, title, content);
+        success = await _tryJsonRequest(category, title, content);
       }
 
       return success;
@@ -76,7 +69,6 @@ class InquiryService {
 
   /// multipart 요청 시도
   static Future<bool> _tryMultipartRequest(
-    String userId,
     String category,
     String title,
     String content,
@@ -85,12 +77,10 @@ class InquiryService {
     try {
       debugPrint('=== multipart 요청 시도 ===');
 
-      // 서버 라우트: router.post('/:id', inquiryController.createInquiry)
+      // 🔥 서버 라우트: router.post('/', authMiddleware, inquiryController.createInquiry)
       final List<String> possibleUrls = [
-        '${ApiConfig.baseHost}:3001/user/inquiry/$userId', // /user/inquiry/:id (서버 라우트에 맞는 경로)
-        '${ApiConfig.baseHost}:3001/inquiry/$userId', // 대안 경로
-        '${ApiConfig.baseHost}:3001/user/inquiry', // /user/inquiry (body에 id 포함)
-        '${ApiConfig.baseHost}:3001/inquiry', // /inquiry (body에 id 포함)
+        '${ApiConfig.baseHost}:3001/inquiry', // 🔥 JWT 토큰에서 사용자 ID 추출
+        '${ApiConfig.baseHost}:3001/user/inquiry', // 대안 경로
       ];
 
       for (int i = 0; i < possibleUrls.length; i++) {
@@ -107,18 +97,12 @@ class InquiryService {
         request.fields['title'] = title;
         request.fields['content'] = content;
 
-        // URL이 /user/inquiry 또는 /inquiry로 끝나는 경우 body에 id 추가
-        if (url.endsWith('/user/inquiry') || url.endsWith('/inquiry')) {
-          request.fields['id'] = userId;
-        }
+        // 🔥 JWT 토큰에서 사용자 ID를 추출하므로 body에 id 추가하지 않음
 
         debugPrint('요청 필드 확인:');
         debugPrint('  category: ${request.fields['category']}');
         debugPrint('  title: ${request.fields['title']}');
         debugPrint('  content: ${request.fields['content']}');
-        if (request.fields.containsKey('id')) {
-          debugPrint('  id: ${request.fields['id']}');
-        }
 
         // 이미지 파일이 있는 경우 추가
         if (imageFile != null) {
@@ -189,7 +173,6 @@ class InquiryService {
 
   /// JSON 요청 시도 (이미지 없이)
   static Future<bool> _tryJsonRequest(
-    String userId,
     String category,
     String title,
     String content,
@@ -197,29 +180,22 @@ class InquiryService {
     try {
       debugPrint('=== JSON 요청 시도 ===');
 
-      // 서버 라우트: router.post('/:id', inquiryController.createInquiry)
+      // 🔥 서버 라우트: router.post('/', authMiddleware, inquiryController.createInquiry)
       final List<String> possibleUrls = [
-        '${ApiConfig.baseHost}:3001/user/inquiry/$userId', // /user/inquiry/:id (서버 라우트에 맞는 경로)
-        '${ApiConfig.baseHost}:3001/inquiry/$userId', // 대안 경로
-        '${ApiConfig.baseHost}:3001/user/inquiry', // /user/inquiry (body에 id 포함)
-        '${ApiConfig.baseHost}:3001/inquiry', // /inquiry (body에 id 포함)
+        '${ApiConfig.baseHost}:3001/inquiry', // 🔥 JWT 토큰에서 사용자 ID 추출
+        '${ApiConfig.baseHost}:3001/user/inquiry', // 대안 경로
       ];
 
       for (int i = 0; i < possibleUrls.length; i++) {
         final url = possibleUrls[i];
         debugPrint('JSON URL 시도 ${i + 1}: $url');
 
-        // 요청 바디 준비
+        // 🔥 요청 바디 준비 (JWT 토큰에서 사용자 ID 추출하므로 id 제외)
         Map<String, dynamic> requestBody = {
           'category': category,
           'title': title,
           'content': content,
         };
-
-        // URL이 /user/inquiry 또는 /inquiry로 끝나는 경우 body에 id 추가
-        if (url.endsWith('/user/inquiry') || url.endsWith('/inquiry')) {
-          requestBody['id'] = userId;
-        }
 
         final response = await ApiHelper.post(url, body: requestBody);
 
@@ -257,12 +233,9 @@ class InquiryService {
   }
 
   /// 문의하기 목록 조회 (필요시 구현)
-  static Future<List<Map<String, dynamic>>> getInquiryList(
-    String userId,
-  ) async {
+  static Future<List<Map<String, dynamic>>> getInquiryList() async {
     try {
       debugPrint('=== 문의하기 목록 조회 시작 ===');
-      debugPrint('사용자 ID: $userId');
 
       // 🔥 서버 라우트: router.get('/', authMiddleware, inquiryController.getInquiry)
       final response = await ApiHelper.get(baseUrl);
@@ -362,17 +335,14 @@ class InquiryService {
   }
 
   /// 문의 목록 조회
-  static Future<List<InquiryItem>> getInquiries(String userId) async {
+  static Future<List<InquiryItem>> getInquiries() async {
     try {
       debugPrint('=== 문의 목록 조회 시작 ===');
-      debugPrint('사용자 ID: $userId');
       debugPrint('API 기본 URL: ${ApiConfig.baseHost}:3001');
 
       final List<String> possibleUrls = [
         '${ApiConfig.baseHost}:3001/inquiry', // 🔥 서버 라우트: router.get('/', authMiddleware, inquiryController.getInquiry)
         '${ApiConfig.baseHost}:3001/user/inquiry', // 대안 경로
-        '${ApiConfig.baseHost}:3001/inquiry/$userId', // 기존 경로 (하위 호환성)
-        '${ApiConfig.baseHost}:3001/user/inquiry/$userId', // 기존 경로 (하위 호환성)
       ];
 
       for (int i = 0; i < possibleUrls.length; i++) {

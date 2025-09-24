@@ -17,6 +17,7 @@ class FriendsTabs {
     bool isAddingFriend,
     VoidCallback onAddFriend,
     VoidCallback onRefreshUserList,
+    FriendsController controller,
   ) {
     return FutureBuilder<List<Map<String, String>>>(
       future: _getCachedUserList(),
@@ -63,19 +64,76 @@ class FriendsTabs {
             SizedBox(
               width: double.infinity,
               child: WoosongButton(
-                onPressed: isAddingFriend ? null : () {
+                onPressed: isAddingFriend ? null : () async {
                   // 백그라운드에서 사용자 목록을 확인하여 유효성 검증
                   final enteredId = addController.text.trim();
                   if (enteredId.isEmpty) {
                     return;
                   }
                   
-                  // 사용자 목록에서 입력된 ID가 존재하는지 확인
-                  final isValidUser = userList.any((user) => user['id'] == enteredId);
-                  if (!isValidUser) {
+                  // 🔥 사용자 목록 새로고침 후 확인
+                  try {
+                    // 사용자 목록 새로고침
+                    onRefreshUserList();
+                    
+                    // 새로고침된 사용자 목록에서 확인
+                    final isValidUser = userList.any((user) => user['id'] == enteredId);
+                    if (!isValidUser) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(AppLocalizations.of(context)!.user_not_found),
+                          backgroundColor: const Color(0xFFEF4444),
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+                    
+                    // 🔥 친구 데이터 새로고침 후 중복 체크
+                    await controller.quickUpdate();
+                    
+                    // 🔥 이미 친구인지 확인
+                    final isAlreadyFriend = controller.friends.any((friend) => friend.userId == enteredId);
+                    if (isAlreadyFriend) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('이미 친구인 사용자입니다'),
+                          backgroundColor: const Color(0xFFEF4444),
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+                    
+                    // 🔥 이미 친구 요청을 보냈는지 확인
+                    final hasSentRequest = controller.sentFriendRequests.any((request) => request.toUserId == enteredId);
+                    if (hasSentRequest) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('이미 친구 요청을 보낸 사용자입니다'),
+                          backgroundColor: const Color(0xFFEF4444),
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+                    
+                    // 모든 검증 통과 시 친구 추가 진행
+                    onAddFriend();
+                  } catch (e) {
+                    debugPrint('❌ 사용자 목록 새로고침 실패: $e');
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text(AppLocalizations.of(context)!.user_not_found),
+                        content: Text('사용자 확인 중 오류가 발생했습니다.'),
                         backgroundColor: const Color(0xFFEF4444),
                         behavior: SnackBarBehavior.floating,
                         shape: RoundedRectangleBorder(
@@ -83,11 +141,7 @@ class FriendsTabs {
                         ),
                       ),
                     );
-                    return;
                   }
-                  
-                  // 유효한 사용자인 경우 친구 추가 진행
-                  onAddFriend();
                 },
                 child: isAddingFriend
                     ? const SizedBox(

@@ -121,7 +121,6 @@ class LocationService {
 
   /// 🔥 서버로 위치 전송 (개선된 버전 - 콜백 포함)
   static Future<bool> sendLocationToServer({
-    required String userId,
     required double latitude,
     required double longitude,
     LocationSentCallback? onComplete,
@@ -131,14 +130,7 @@ class LocationService {
 
     try {
       debugPrint('📤 서버로 위치 전송 시작...');
-      debugPrint('👤 사용자 ID: $userId');
       debugPrint('📍 위치: $latitude, $longitude');
-
-      // 데이터 유효성 검증
-      if (userId.isEmpty) {
-        debugPrint('❌ 사용자 ID가 비어있음');
-        return false;
-      }
 
       if (!_isValidCoordinates(latitude, longitude)) {
         debugPrint('❌ 유효하지 않은 좌표');
@@ -147,9 +139,8 @@ class LocationService {
 
       final url = Uri.parse('${ApiConfig.userBase}/update_location');
 
-      // 🔥 수정된 좌표 매핑: 서버에서 x에 위도, y에 경도를 기대
+      // 🔥 수정된 좌표 매핑: 서버에서 x에 위도, y에 경도를 기대 (JWT 토큰에서 사용자 ID 추출)
       final requestBody = {
-        'id': userId,
         'x': latitude, // 서버에서 x에 위도를 기대
         'y': longitude, // 서버에서 y에 경도를 기대
         'timestamp': timestamp.millisecondsSinceEpoch,
@@ -215,7 +206,6 @@ class LocationService {
       debugPrint('🔄 위치 전송 시도 $attempt/$maxRetries');
 
       final success = await sendLocationToServer(
-        userId: userId,
         latitude: latitude,
         longitude: longitude,
         onComplete: attempt == maxRetries ? onComplete : null, // 마지막 시도에만 콜백

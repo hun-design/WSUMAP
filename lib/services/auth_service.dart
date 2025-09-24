@@ -446,7 +446,7 @@ class AuthService {
       debugPrint('=== 사용자 존재 여부 확인 시작 ===');
       debugPrint('확인할 사용자 ID: $userId');
 
-      // 🔥 JWT 토큰을 포함한 사용자 존재 여부 확인
+      // 🔥 JWT 토큰을 포함한 사용자 존재 여부 확인 (기존 URL 방식 유지)
       final response = await ApiHelper.get('${ApiConfig.userBase}/check_user/$userId');
 
       debugPrint('서버 응답 상태: ${response.statusCode}');
@@ -478,7 +478,7 @@ class AuthService {
       debugPrint('=== 사용자 목록 조회 시작 ===');
       debugPrint('📡 요청 URL: ${ApiConfig.userBase}/friend_request_list');
 
-      // 🔥 JWT 토큰을 포함한 친구 요청 목록 조회
+      // 🔥 JWT 토큰을 포함한 사용자 목록 조회 (기존 엔드포인트 사용)
       final response = await ApiHelper.get('${ApiConfig.userBase}/friend_request_list');
 
       debugPrint('📡 서버 응답 상태: ${response.statusCode}');
@@ -487,7 +487,16 @@ class AuthService {
 
       if (response.statusCode == 200) {
         try {
-          final List<dynamic> data = jsonDecode(response.body);
+          // 🔥 서버 응답 구조에 맞게 파싱: {"success": true, "data": [...]}
+          final Map<String, dynamic> responseData = jsonDecode(response.body);
+          debugPrint('📋 서버 응답 구조: $responseData');
+          
+          if (responseData['success'] != true) {
+            debugPrint('❌ 서버에서 실패 응답: ${responseData['message'] ?? '알 수 없는 오류'}');
+            return [];
+          }
+          
+          final List<dynamic> data = responseData['data'] ?? [];
           debugPrint('📋 파싱된 데이터 타입: ${data.runtimeType}');
           debugPrint('📋 데이터 개수: ${data.length}');
           debugPrint('📋 전체 파싱된 데이터: $data');

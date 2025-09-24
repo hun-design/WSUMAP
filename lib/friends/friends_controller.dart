@@ -277,19 +277,17 @@ class FriendsController extends ChangeNotifier {
       }
 
       // 1. 친구 목록 로드
-      final newFriends = await repository.getMyFriends(myId);
+      final newFriends = await repository.getMyFriends();
       friends = newFriends;
       debugPrint('✅ 친구 목록 로드 완료: ${friends.length}명');
 
       // 2. 친구 요청 목록 로드
-      final newFriendRequests = await repository.getFriendRequests(myId);
+      final newFriendRequests = await repository.getFriendRequests();
       friendRequests = newFriendRequests;
       debugPrint('✅ 친구 요청 목록 로드 완료: ${friendRequests.length}개');
 
       // 3. 보낸 친구 요청 목록 로드
-      final newSentFriendRequests = await repository.getSentFriendRequests(
-        myId,
-      );
+      final newSentFriendRequests = await repository.getSentFriendRequests();
       sentFriendRequests = newSentFriendRequests;
       debugPrint('✅ 보낸 친구 요청 목록 로드 완료: ${sentFriendRequests.length}개');
 
@@ -733,11 +731,9 @@ class FriendsController extends ChangeNotifier {
       final previousRequestsCount = friendRequests.length;
       final previousSentRequestsCount = sentFriendRequests.length;
 
-      final newFriends = await repository.getMyFriends(myId);
-      final newFriendRequests = await repository.getFriendRequests(myId);
-      final newSentFriendRequests = await repository.getSentFriendRequests(
-        myId,
-      );
+      final newFriends = await repository.getMyFriends();
+      final newFriendRequests = await repository.getFriendRequests();
+      final newSentFriendRequests = await repository.getSentFriendRequests();
 
       bool hasChanges = false;
 
@@ -832,9 +828,9 @@ class FriendsController extends ChangeNotifier {
         return;
       }
 
-      friends = await repository.getMyFriends(myId);
-      friendRequests = await repository.getFriendRequests(myId);
-      sentFriendRequests = await repository.getSentFriendRequests(myId);
+      friends = await repository.getMyFriends();
+      friendRequests = await repository.getFriendRequests();
+      sentFriendRequests = await repository.getSentFriendRequests();
       _lastUpdate = DateTime.now();
 
       // 온라인 상태 업데이트
@@ -868,13 +864,13 @@ class FriendsController extends ChangeNotifier {
       notifyListeners();
 
       debugPrint('🔄 repository.requestFriend 시작...');
-      await repository.requestFriend(myId, addId);
+      await repository.requestFriend(addId);
       debugPrint('✅ repository.requestFriend 완료');
 
       // 🔥 친구 요청 성공 후 즉시 보낸 요청 목록 새로고침
       debugPrint('🔄 보낸 요청 목록 새로고침 중...');
       try {
-        sentFriendRequests = await repository.getSentFriendRequests(myId);
+        sentFriendRequests = await repository.getSentFriendRequests();
         debugPrint('✅ 보낸 요청 목록 새로고침 완료: ${sentFriendRequests.length}개');
 
         // 🔥 UI 즉시 업데이트
@@ -895,11 +891,9 @@ class FriendsController extends ChangeNotifier {
 
       // 🔥 실패 시에도 기존 친구 목록을 유지하기 위해 전체 데이터 다시 로드
       try {
-        final newFriends = await repository.getMyFriends(myId);
-        final newFriendRequests = await repository.getFriendRequests(myId);
-        final newSentFriendRequests = await repository.getSentFriendRequests(
-          myId,
-        );
+        final newFriends = await repository.getMyFriends();
+        final newFriendRequests = await repository.getFriendRequests();
+        final newSentFriendRequests = await repository.getSentFriendRequests();
 
         friends = newFriends;
         friendRequests = newFriendRequests;
@@ -921,7 +915,7 @@ class FriendsController extends ChangeNotifier {
   Future<void> acceptRequest(String addId) async {
     try {
       debugPrint('✅ 친구 요청 수락: $addId');
-      await repository.acceptRequest(myId, addId);
+      await repository.acceptRequest(addId);
       await quickUpdate();
       debugPrint('✅ 친구 요청 수락 완료');
     } catch (e) {
@@ -934,7 +928,7 @@ class FriendsController extends ChangeNotifier {
   Future<void> rejectRequest(String addId) async {
     try {
       debugPrint('❌ 친구 요청 거절: $addId');
-      await repository.rejectRequest(myId, addId);
+      await repository.rejectRequest(addId);
       await quickUpdate();
       debugPrint('✅ 친구 요청 거절 완료');
     } catch (e) {
@@ -947,7 +941,7 @@ class FriendsController extends ChangeNotifier {
   Future<void> deleteFriend(String addId) async {
     try {
       debugPrint('🗑️ 친구 삭제: $addId');
-      await repository.deleteFriend(myId, addId);
+      await repository.deleteFriend(addId);
       await quickUpdate();
       debugPrint('✅ 친구 삭제 완료');
     } catch (e) {
@@ -960,7 +954,7 @@ class FriendsController extends ChangeNotifier {
   Future<void> cancelSentRequest(String friendId) async {
     try {
       debugPrint('🚫 친구 요청 취소: $friendId');
-      await repository.cancelSentRequest(myId, friendId);
+      await repository.cancelSentRequest(friendId);
       await quickUpdate();
       debugPrint('✅ 친구 요청 취소 완료');
     } catch (e) {
@@ -1076,7 +1070,7 @@ class FriendsController extends ChangeNotifier {
     debugPrint('🔍 서버 데이터 테스트 시작');
 
     try {
-      final newFriends = await repository.getMyFriends(myId);
+      final newFriends = await repository.getMyFriends();
       debugPrint('🔍 서버에서 받은 친구 목록: ${newFriends.length}명');
 
       for (int i = 0; i < newFriends.length; i++) {

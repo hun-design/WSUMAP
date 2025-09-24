@@ -929,7 +929,6 @@ void didChangeDependencies() {
     debugPrint('========================');
 
     final success = await InquiryService.createInquiry(
-      userId: widget.userAuth.userId!,
       category: category, // 키 값 그대로 전송
       title: _titleController.text.trim(),
       content: _contentController.text.trim(),
@@ -1138,9 +1137,7 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
     debugPrint('현재 사용자 ID: ${widget.userAuth.userId}');
     debugPrint('현재 사용자 정보: ${widget.userAuth.toString()}');
 
-    final inquiries = await InquiryService.getInquiries(
-      widget.userAuth.userId!,
-    );
+    final inquiries = await InquiryService.getInquiries();
 
     debugPrint('받아온 문의 개수: ${inquiries.length}');
     debugPrint(

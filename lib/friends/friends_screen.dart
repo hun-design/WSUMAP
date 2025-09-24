@@ -497,6 +497,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                             _isAddingFriend,
                             () => _handleAddFriend(setModalState),
                             _refreshUserList,
+                            controller,
                           ),
                           FriendsTabs.buildSentRequestsTab(
                             context,

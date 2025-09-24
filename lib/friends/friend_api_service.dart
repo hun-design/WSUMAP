@@ -22,8 +22,8 @@ class FriendApiService {
   }
 
   /// 내 친구 목록 조회
-  Future<List<Friend>> fetchMyFriends(String myId) async {
-    final res = await ApiHelper.get('$baseUrl/myfriend/$myId');
+  Future<List<Friend>> fetchMyFriends() async {
+    final res = await ApiHelper.get('$baseUrl/myfriend');
     print('[친구 목록 응답] ${res.body}');
 
     if (res.body.isEmpty || !res.body.trim().startsWith('[')) {
@@ -64,23 +64,22 @@ class FriendApiService {
   }
 
   /// 친구 추가 요청
-  Future<void> addFriend(String myId, String addId) async {
+  Future<void> addFriend(String addId) async {
     if (addId.isEmpty) {
       print('[ERROR] 친구 추가 add_id가 비어있음! 요청 차단');
       throw Exception('상대방 ID가 올바르지 않습니다.');
     }
 
     print('[DEBUG] ===== 친구 추가 요청 시작 =====');
-    print('[DEBUG] myId: $myId');
     print('[DEBUG] addId: $addId');
 
     // 🔥 서버에 직접 친구 요청 전송 (올바른 경로 사용)
     print('[DEBUG] 📤 서버에 친구 요청 전송 중...');
     print('[DEBUG] 요청 URL: $baseUrl/add');
-    print('[DEBUG] 요청 바디: ${jsonEncode({'my_id': myId, 'add_id': addId})}');
+    print('[DEBUG] 요청 바디: ${jsonEncode({'add_id': addId})}');
     final res = await ApiHelper.post(
       '$baseUrl/add',
-      body: {'my_id': myId, 'add_id': addId},
+      body: {'add_id': addId},
     );
 
     print('[DEBUG] 📥 서버 응답 수신');
@@ -93,11 +92,11 @@ class FriendApiService {
     print('[DEBUG] 🔍 상태 코드 분석: ${res.statusCode}');
     print('[DEBUG] 🔍 응답 내용: "${res.body}"');
     
-    if (res.statusCode == 200) {
-      // 성공 응답
-      print('[DEBUG] ✅ 친구 추가 성공 응답');
+    if (res.statusCode == 200 || res.statusCode == 201) {
+      // 성공 응답 (200: OK, 201: Created)
+      print('[DEBUG] ✅ 친구 추가 성공 응답 (상태 코드: ${res.statusCode})');
       
-      // 응답 내용 확인 - 서버가 200을 반환하지만 에러 메시지를 포함할 수 있음
+      // 응답 내용 확인 - 서버가 성공 상태를 반환하지만 에러 메시지를 포함할 수 있음
       final responseBody = res.body.toLowerCase();
       print('[DEBUG] 🔍 응답 내용 분석: $responseBody');
       
@@ -183,8 +182,8 @@ class FriendApiService {
   }
 
   /// 받은 친구 요청 목록 조회
-  Future<List<FriendRequest>> fetchFriendRequests(String myId) async {
-    final res = await ApiHelper.get('$baseUrl/request_list/$myId');
+  Future<List<FriendRequest>> fetchFriendRequests() async {
+    final res = await ApiHelper.get('$baseUrl/request_list');
     print('[친구 요청 응답] ${res.body}');
 
     if (res.body.isEmpty || !res.body.trim().startsWith('[')) {
@@ -207,87 +206,52 @@ class FriendApiService {
   }
 
   /// 내가 보낸 친구 요청 목록 조회
-  Future<List<SentFriendRequest>> fetchSentFriendRequests(String myId) async {
+  Future<List<SentFriendRequest>> fetchSentFriendRequests() async {
     try {
       print('[DEBUG] ===== 보낸 친구 요청 조회 시작 =====');
-      print('[DEBUG] myId: $myId');
 
-      // 서버에서 실제 사용하는 경로를 찾기 위해 여러 URL 시도
+      // 🔥 서버 로그에 따르면 올바른 경로는 /friend/my_request_list (JWT 토큰에서 사용자 ID 추출)
       final List<String> possibleUrls = [
-        '$baseUrl/my_request_list/$myId',  // 올바른 경로 (우선순위 1)
-        '${ApiConfig.baseHost}:${ApiConfig.userPort}/friend/my_request_list/$myId',  // 대체 경로
-        '${ApiConfig.baseHost}:${ApiConfig.userPort}/my_request_list/$myId',  // 대체 경로
-        '${ApiConfig.baseHost}:${ApiConfig.userPort}/sent_requests/$myId',  // 대체 경로
-        '${ApiConfig.baseHost}:${ApiConfig.userPort}/friend/sent_requests/$myId',  // 대체 경로
-        '${ApiConfig.baseHost}:${ApiConfig.userPort}/my_requests/$myId',  // 대체 경로
-        '${ApiConfig.baseHost}:${ApiConfig.userPort}/friend/my_requests/$myId',  // 대체 경로
+        '$baseUrl/my_request_list',  // 🔥 JWT 토큰에서 사용자 ID 추출
       ];
 
-      for (int i = 0; i < possibleUrls.length; i++) {
-        final url = possibleUrls[i];
-        print('[DEBUG] 보낸 요청 URL 시도 ${i + 1}: $url');
+      // 🔥 서버 로그에서 확인된 올바른 경로만 사용
+      final url = possibleUrls.first;
+      print('[DEBUG] 보낸 친구 요청 조회 URL: $url');
 
-        try {
-          final res = await ApiHelper.get(url);
+      final res = await ApiHelper.get(url);
+      print('[DEBUG] 응답 상태: ${res.statusCode}');
+      print('[DEBUG] 응답 본문: ${res.body}');
 
-          print('[DEBUG] 응답 상태: ${res.statusCode}');
-          print('[DEBUG] 응답 본문: ${res.body}');
-
-          if (res.statusCode == 200) {
-            // 빈 응답 처리
-            if (res.body.isEmpty || res.body.trim() == '[]') {
-              print('[DEBUG] 보낸 친구 요청이 없음 (URL: $url)');
-              return [];
-            }
-
-            // JSON 파싱
-            final dynamic responseData = jsonDecode(res.body);
-
-            if (responseData is List) {
-              print('[DEBUG] 보낸 친구 요청 원시 데이터: $responseData');
-
-              final requests = responseData
-                  .map((e) => SentFriendRequest.fromJson(e as Map<String, dynamic>))
-                  .where((req) => req.toUserId.isNotEmpty)
-                  .toList();
-
-              print('[DEBUG] 파싱된 보낸 친구 요청 수: ${requests.length}');
-
-              // 각 요청의 세부 내용 로그
-              for (int j = 0; j < requests.length; j++) {
-                final req = requests[j];
-                print(
-                  '[DEBUG] 요청 ${j + 1}: ID=${req.toUserId}, 이름=${req.toUserName}',
-                );
-              }
-
-              print('[DEBUG] ✅ 보낸 친구 요청 조회 성공 (URL: $url)');
-              return requests;
-            } else {
-              print('[ERROR] 응답이 배열이 아님: $responseData');
-              if (i < possibleUrls.length - 1) {
-                print('[DEBUG] 다음 URL 시도...');
-                continue;
-              }
-            }
-          } else {
-            print('[ERROR] 보낸 친구 요청 조회 실패: ${res.statusCode} ${res.body}');
-            if (i < possibleUrls.length - 1) {
-              print('[DEBUG] 다음 URL 시도...');
-              continue;
-            }
-          }
-        } catch (e) {
-          print('[ERROR] URL 시도 ${i + 1} 실패: $e');
-          if (i < possibleUrls.length - 1) {
-            print('[DEBUG] 다음 URL 시도...');
-            continue;
-          }
+      if (res.statusCode == 200) {
+        // 빈 응답 처리
+        if (res.body.isEmpty || res.body.trim() == '[]') {
+          print('[DEBUG] 보낸 친구 요청이 없음');
+          return [];
         }
-      }
 
-      print('[ERROR] ❌ 모든 보낸 친구 요청 URL 시도 실패');
-      return [];
+        // JSON 파싱
+        final dynamic responseData = jsonDecode(res.body);
+
+        if (responseData is List) {
+          print('[DEBUG] 보낸 친구 요청 원시 데이터: $responseData');
+
+          final requests = responseData
+              .map((e) => SentFriendRequest.fromJson(e as Map<String, dynamic>))
+              .where((req) => req.toUserId.isNotEmpty)
+              .toList();
+
+          print('[DEBUG] 파싱된 보낸 친구 요청 수: ${requests.length}');
+          print('[DEBUG] ✅ 보낸 친구 요청 조회 성공');
+          return requests;
+        } else {
+          print('[ERROR] 응답이 배열이 아님: $responseData');
+          return [];
+        }
+      } else {
+        print('[ERROR] 보낸 친구 요청 조회 실패: ${res.statusCode} ${res.body}');
+        return [];
+      }
     } catch (e, stack) {
       print('[ERROR] 보낸 친구 요청 조회 중 오류: $e');
       print('[ERROR] 스택 트레이스: $stack');
@@ -296,17 +260,17 @@ class FriendApiService {
   }
 
   /// 친구 요청 수락
-  Future<void> acceptFriendRequest(String myId, String addId) async {
+  Future<void> acceptFriendRequest(String addId) async {
     if (addId.isEmpty) {
       print('[ERROR] 친구 요청 수락 add_id가 비어있음! 요청 차단');
       throw Exception('친구 요청 정보가 올바르지 않습니다.');
     }
 
-    print('[DEBUG] 친구 요청 수락 시도 - myId: $myId, addId: $addId');
+    print('[DEBUG] 친구 요청 수락 시도 - addId: $addId');
 
     final res = await ApiHelper.post(
       '$baseUrl/accept',
-      body: {'my_id': myId, 'add_id': addId},
+      body: {'add_id': addId},
     );
 
     print('[DEBUG] 친구 요청 수락 응답: ${res.statusCode} ${res.body}');
@@ -318,17 +282,17 @@ class FriendApiService {
   }
 
   /// 친구 요청 거절
-  Future<void> rejectFriendRequest(String myId, String addId) async {
+  Future<void> rejectFriendRequest(String addId) async {
     if (addId.isEmpty) {
       print('[ERROR] 친구 요청 거절 add_id가 비어있음! 요청 차단');
       throw Exception('친구 요청 정보가 올바르지 않습니다.');
     }
 
-    print('[DEBUG] 친구 요청 거절 시도 - myId: $myId, addId: $addId');
+    print('[DEBUG] 친구 요청 거절 시도 - addId: $addId');
 
     final res = await ApiHelper.post(
       '$baseUrl/reject',
-      body: {'my_id': myId, 'add_id': addId},
+      body: {'add_id': addId},
     );
 
     print('[DEBUG] 친구 요청 거절 응답: ${res.statusCode} ${res.body}');
@@ -340,7 +304,7 @@ class FriendApiService {
   }
 
   /// 내가 보낸 친구 요청 취소 (서버 명세 완벽 준수)
-  Future<void> cancelSentFriendRequest(String myId, String friendId) async {
+  Future<void> cancelSentFriendRequest(String friendId) async {
     if (friendId.isEmpty) {
       print('[ERROR] 친구 요청 취소 friend_id가 비어있음! 요청 차단');
       throw Exception('친구 요청 정보가 올바르지 않습니다.');
@@ -348,12 +312,12 @@ class FriendApiService {
 
     try {
       print('[DEBUG] ===== 친구 요청 취소 시작 =====');
-      print('[DEBUG] myId: $myId, friendId: $friendId');
-      print('[DEBUG] 요청 URL: $baseUrl/mistake/$myId');
+      print('[DEBUG] friendId: $friendId');
+      print('[DEBUG] 요청 URL: $baseUrl/mistake');
       print('[DEBUG] 요청 Body: {"friend_id": "$friendId"}');
 
       final res = await ApiHelper.post(
-        '$baseUrl/mistake/$myId',
+        '$baseUrl/mistake',
         body: {'friend_id': friendId},
       );
 
@@ -389,17 +353,17 @@ class FriendApiService {
   }
 
   /// 친구 삭제
-  Future<void> deleteFriend(String myId, String addId) async {
+  Future<void> deleteFriend(String addId) async {
     if (addId.isEmpty) {
       print('[ERROR] 친구 삭제 add_id가 비어있음! 요청 차단');
       throw Exception('친구 정보가 올바르지 않습니다.');
     }
 
-    print('[DEBUG] 친구 삭제 시도 - myId: $myId, addId: $addId');
+    print('[DEBUG] 친구 삭제 시도 - addId: $addId');
 
     final res = await ApiHelper.delete(
       '$baseUrl/delete',
-      body: {'my_id': myId, 'add_id': addId},
+      body: {'add_id': addId},
     );
 
     print('[DEBUG] 친구 삭제 응답: ${res.statusCode} ${res.body}');
