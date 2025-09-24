@@ -42,7 +42,7 @@ class _MapLoadingScreenState extends State<MapLoadingScreen>
     
     // 진행률 애니메이션 컨트롤러
     _progressController = AnimationController(
-      duration: const Duration(milliseconds: 2500),
+      duration: const Duration(milliseconds: 3000),
       vsync: this,
     );
     
@@ -86,8 +86,8 @@ class _MapLoadingScreenState extends State<MapLoadingScreen>
   }
 
   void _navigateToMapScreen() {
-    // 2.5초 후 MapScreen으로 이동 (단계적 초기화 시간 고려)
-    Timer(const Duration(milliseconds: 2500), () {
+    // 3초 후 MapScreen으로 이동 (MapScreen 초기화 완료까지 충분한 시간)
+    Timer(const Duration(milliseconds: 3000), () {
       if (mounted) {
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (_) => const MapScreen()),

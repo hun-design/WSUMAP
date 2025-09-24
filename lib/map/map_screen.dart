@@ -45,6 +45,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   late BuildingMarkerService _buildingMarkerService;
   late LocationController _locationController;
   late FriendsController _friendsController; // 🔥 FriendsController 추가
+  
+  bool _isInitialized = false; // 🔥 초기화 완료 상태 추적
 
   final OverlayPortalController _infoWindowController =
       OverlayPortalController();
@@ -132,6 +134,13 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       await Future.delayed(const Duration(milliseconds: 500));
       await _controller.initialize();
       _controller.setContext(context);
+
+      // 🔥 초기화 완료 플래그 설정
+      if (mounted) {
+        setState(() {
+          _isInitialized = true;
+        });
+      }
 
       debugPrint('✅ MapScreen 단계적 초기화 완료');
     } catch (e) {
@@ -724,6 +733,30 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    // 🔥 초기화가 완료되지 않았으면 로딩 화면 표시
+    if (!_isInitialized) {
+      return const Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF3B82F6)),
+              ),
+              SizedBox(height: 16),
+              Text(
+                '지도 준비 중...',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Color(0xFF64748B),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     // 🔥 UserAuth 상태 변화를 감지 (watch 대신 read 사용으로 중복 호출 방지)
     final userAuth = context.read<UserAuth>();
     final userId = userAuth.userId ?? '';
