@@ -1,11 +1,11 @@
 // lib/services/path_api_service.dart - from_location 추가된 버전
 
 import 'package:flutter_application_1/config/api_config.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:flutter_application_1/models/building.dart';
+import 'api_helper.dart';
 
 class PathApiService {
   static final String baseUrl = ApiConfig.pathBase;
@@ -217,8 +217,6 @@ class PathApiService {
     String? toRoom,
   }) async {
     try {
-      final url = Uri.parse('$baseUrl/path');
-      
       // 건물명을 코드로 변환
       final String? fromBuildingCode = fromBuilding != null ? _extractBuildingCode(fromBuilding) : null;
       final toBuildingCode = _extractBuildingCode(toBuilding);
@@ -254,14 +252,10 @@ class PathApiService {
         requestBody['to_room'] = toRoom;
       }
       
-      final response = await http.post(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode(requestBody),
-      ).timeout(const Duration(seconds: 15));
+      final response = await ApiHelper.post(
+        '$baseUrl/path',
+        body: requestBody,
+      );
       
       if (response.statusCode == 200) {
         try {

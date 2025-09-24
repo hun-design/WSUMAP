@@ -1,9 +1,9 @@
 // lib/friends/friend_api_service.dart
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'friend.dart';
 import 'package:flutter_application_1/config/api_config.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
+import 'package:flutter_application_1/services/api_helper.dart';
 
 class FriendApiService {
   static String get baseUrl => ApiConfig.friendBase;
@@ -23,7 +23,7 @@ class FriendApiService {
 
   /// 내 친구 목록 조회
   Future<List<Friend>> fetchMyFriends(String myId) async {
-    final res = await http.get(Uri.parse('$baseUrl/myfriend/$myId'));
+    final res = await ApiHelper.get('$baseUrl/myfriend/$myId');
     print('[친구 목록 응답] ${res.body}');
 
     if (res.body.isEmpty || !res.body.trim().startsWith('[')) {
@@ -44,7 +44,7 @@ class FriendApiService {
 
   /// 친구 상세 정보 조회
   Future<Friend?> fetchFriendInfo(String friendId) async {
-    final res = await http.get(Uri.parse('$baseUrl/info/$friendId'));
+    final res = await ApiHelper.get('$baseUrl/info/$friendId');
     print('[친구 정보 응답] ${res.body}');
 
     if (res.statusCode != 200) {
@@ -78,10 +78,9 @@ class FriendApiService {
     print('[DEBUG] 📤 서버에 친구 요청 전송 중...');
     print('[DEBUG] 요청 URL: $baseUrl/add');
     print('[DEBUG] 요청 바디: ${jsonEncode({'my_id': myId, 'add_id': addId})}');
-    final res = await http.post(
-      Uri.parse('$baseUrl/add'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'my_id': myId, 'add_id': addId}),
+    final res = await ApiHelper.post(
+      '$baseUrl/add',
+      body: {'my_id': myId, 'add_id': addId},
     );
 
     print('[DEBUG] 📥 서버 응답 수신');
@@ -185,7 +184,7 @@ class FriendApiService {
 
   /// 받은 친구 요청 목록 조회
   Future<List<FriendRequest>> fetchFriendRequests(String myId) async {
-    final res = await http.get(Uri.parse('$baseUrl/request_list/$myId'));
+    final res = await ApiHelper.get('$baseUrl/request_list/$myId');
     print('[친구 요청 응답] ${res.body}');
 
     if (res.body.isEmpty || !res.body.trim().startsWith('[')) {
@@ -229,13 +228,7 @@ class FriendApiService {
         print('[DEBUG] 보낸 요청 URL 시도 ${i + 1}: $url');
 
         try {
-          final res = await http.get(
-            Uri.parse(url),
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-          );
+          final res = await ApiHelper.get(url);
 
           print('[DEBUG] 응답 상태: ${res.statusCode}');
           print('[DEBUG] 응답 본문: ${res.body}');
@@ -311,10 +304,9 @@ class FriendApiService {
 
     print('[DEBUG] 친구 요청 수락 시도 - myId: $myId, addId: $addId');
 
-    final res = await http.post(
-      Uri.parse('$baseUrl/accept'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'my_id': myId, 'add_id': addId}),
+    final res = await ApiHelper.post(
+      '$baseUrl/accept',
+      body: {'my_id': myId, 'add_id': addId},
     );
 
     print('[DEBUG] 친구 요청 수락 응답: ${res.statusCode} ${res.body}');
@@ -334,10 +326,9 @@ class FriendApiService {
 
     print('[DEBUG] 친구 요청 거절 시도 - myId: $myId, addId: $addId');
 
-    final res = await http.post(
-      Uri.parse('$baseUrl/reject'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'my_id': myId, 'add_id': addId}),
+    final res = await ApiHelper.post(
+      '$baseUrl/reject',
+      body: {'my_id': myId, 'add_id': addId},
     );
 
     print('[DEBUG] 친구 요청 거절 응답: ${res.statusCode} ${res.body}');
@@ -361,13 +352,9 @@ class FriendApiService {
       print('[DEBUG] 요청 URL: $baseUrl/mistake/$myId');
       print('[DEBUG] 요청 Body: {"friend_id": "$friendId"}');
 
-      final res = await http.post(
-        Uri.parse('$baseUrl/mistake/$myId'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode({'friend_id': friendId}),
+      final res = await ApiHelper.post(
+        '$baseUrl/mistake/$myId',
+        body: {'friend_id': friendId},
       );
 
       print('[DEBUG] 친구 요청 취소 응답 상태: ${res.statusCode}');
@@ -410,10 +397,9 @@ class FriendApiService {
 
     print('[DEBUG] 친구 삭제 시도 - myId: $myId, addId: $addId');
 
-    final res = await http.delete(
-      Uri.parse('$baseUrl/delete'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'my_id': myId, 'add_id': addId}),
+    final res = await ApiHelper.delete(
+      '$baseUrl/delete',
+      body: {'my_id': myId, 'add_id': addId},
     );
 
     print('[DEBUG] 친구 삭제 응답: ${res.statusCode} ${res.body}');

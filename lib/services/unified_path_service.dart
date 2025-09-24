@@ -1,11 +1,11 @@
 // lib/services/unified_path_service.dart - 완전한 버전
 
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 import 'package:flutter_application_1/models/building.dart';
 import 'package:flutter_application_1/config/api_config.dart';
+import 'api_helper.dart';
 
 /// 통합 경로 요청 파라미터
 class PathRequest {
@@ -250,20 +250,13 @@ class UnifiedPathService {
     try {
       debugPrint('🚀 통합 경로 요청: ${request.toJson()}');
 
-      final url = Uri.parse('$baseUrl/path');
-      debugPrint('📡 요청 URL: $url');
+      debugPrint('📡 요청 URL: $baseUrl/path');
       debugPrint('📡 요청 Body: ${jsonEncode(request.toJson())}');
 
-      final response = await http
-          .post(
-            url,
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: jsonEncode(request.toJson()),
-          )
-          .timeout(const Duration(seconds: 30));
+      final response = await ApiHelper.post(
+        '$baseUrl/path',
+        body: request.toJson(),
+      );
 
       debugPrint('📡 응답 상태: ${response.statusCode}');
 

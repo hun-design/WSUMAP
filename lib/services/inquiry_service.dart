@@ -4,10 +4,11 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import '../config/api_config.dart';
+import 'api_helper.dart';
 
 class InquiryService {
-  // 서버 라우터 구조에 맞게 URL 수정
-  static String get baseUrl => '${ApiConfig.baseHost}:3001/user/inquiry';
+  // 🔥 서버 라우터 구조에 맞게 URL 수정: router.get('/', authMiddleware, inquiryController.getInquiry)
+  static String get baseUrl => '${ApiConfig.baseHost}:3001/inquiry';
 
   /// 문의하기 작성
   static Future<bool> createInquiry({
@@ -96,11 +97,9 @@ class InquiryService {
         final url = possibleUrls[i];
         debugPrint('URL 시도 ${i + 1}: $url');
 
-        // multipart 요청 생성
-        final request = http.MultipartRequest('POST', Uri.parse(url));
+        // multipart 요청 생성 (JWT 토큰 포함)
+        final request = await ApiHelper.createMultipartRequest('POST', url);
 
-        // 헤더 추가
-        request.headers['Content-Type'] = 'multipart/form-data';
         // 🔥 Accept-Language 헤더 제거 - 서버에서 언어 인식 문제 방지
 
         // 텍스트 필드 추가
@@ -222,14 +221,7 @@ class InquiryService {
           requestBody['id'] = userId;
         }
 
-        final response = await http.post(
-          Uri.parse(url),
-          headers: {
-            'Content-Type': 'application/json',
-            // 🔥 Accept-Language 헤더 제거 - 서버에서 언어 인식 문제 방지
-          },
-          body: jsonEncode(requestBody),
-        );
+        final response = await ApiHelper.post(url, body: requestBody);
 
         debugPrint('JSON 요청 URL: ${response.request?.url}');
         debugPrint('JSON 요청 헤더: ${response.request?.headers}');
@@ -272,19 +264,23 @@ class InquiryService {
       debugPrint('=== 문의하기 목록 조회 시작 ===');
       debugPrint('사용자 ID: $userId');
 
-      final response = await http.get(
-        Uri.parse('$baseUrl/list/$userId'),
-        headers: {
-          'Content-Type': 'application/json',
-          // 🔥 Accept-Language 헤더 제거 - 서버에서 언어 인식 문제 방지
-        },
-      );
+      // 🔥 서버 라우트: router.get('/', authMiddleware, inquiryController.getInquiry)
+      final response = await ApiHelper.get(baseUrl);
 
       debugPrint('응답 상태: ${response.statusCode}');
       debugPrint('응답 내용: ${response.body}');
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
+        // 🔥 서버 응답 구조에 맞게 파싱: {"success": true, "data": [...]}
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        debugPrint('📊 서버 응답 구조: $responseData');
+        
+        if (responseData['success'] != true) {
+          debugPrint('❌ 서버에서 실패 응답: ${responseData['message'] ?? '알 수 없는 오류'}');
+          return [];
+        }
+        
+        final List<dynamic> data = responseData['data'] ?? [];
         debugPrint('✅ 문의하기 목록 조회 성공: ${data.length}개');
         return data.cast<Map<String, dynamic>>();
       } else {
@@ -305,19 +301,23 @@ class InquiryService {
       debugPrint('=== 문의하기 상세 조회 시작 ===');
       debugPrint('문의 ID: $inquiryId');
 
-      final response = await http.get(
-        Uri.parse('$baseUrl/detail/$inquiryId'),
-        headers: {
-          'Content-Type': 'application/json',
-          // 🔥 Accept-Language 헤더 제거 - 서버에서 언어 인식 문제 방지
-        },
-      );
+      // 🔥 서버 라우트 확인 필요: 상세 조회 라우터 구조에 따라 조정
+      final response = await ApiHelper.get('$baseUrl/detail/$inquiryId');
 
       debugPrint('응답 상태: ${response.statusCode}');
       debugPrint('응답 내용: ${response.body}');
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        // 🔥 서버 응답 구조에 맞게 파싱: {"success": true, "data": {...}}
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        debugPrint('📊 서버 응답 구조: $responseData');
+        
+        if (responseData['success'] != true) {
+          debugPrint('❌ 서버에서 실패 응답: ${responseData['message'] ?? '알 수 없는 오류'}');
+          return null;
+        }
+        
+        final data = responseData['data'];
         debugPrint('✅ 문의하기 상세 조회 성공');
         return data;
       } else {
@@ -346,16 +346,13 @@ class InquiryService {
       debugPrint('테스트 URL ${i + 1}: $url');
 
       try {
-        final response = await http.get(Uri.parse(url));
+        // 🔥 JWT 토큰을 포함한 테스트 요청
+        final response = await ApiHelper.get(url);
         debugPrint('GET $url: ${response.statusCode}');
 
-        final postResponse = await http.post(
-          Uri.parse(url),
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept-Language': 'ko-KR',
-          },
-          body: jsonEncode({'test': 'test'}),
+        final postResponse = await ApiHelper.post(
+          url,
+          body: {'test': 'test'},
         );
         debugPrint('POST $url: ${postResponse.statusCode}');
       } catch (e) {
@@ -372,10 +369,10 @@ class InquiryService {
       debugPrint('API 기본 URL: ${ApiConfig.baseHost}:3001');
 
       final List<String> possibleUrls = [
-        '${ApiConfig.baseHost}:3001/inquiry/$userId', // 서버 라우트: router.get('/:id', inquiryController.getInquiry)
-        '${ApiConfig.baseHost}:3001/user/inquiry/$userId', // 대안 경로
-        '${ApiConfig.baseHost}:3001/user/inquiry?userId=$userId',
-        '${ApiConfig.baseHost}:3001/inquiry?userId=$userId',
+        '${ApiConfig.baseHost}:3001/inquiry', // 🔥 서버 라우트: router.get('/', authMiddleware, inquiryController.getInquiry)
+        '${ApiConfig.baseHost}:3001/user/inquiry', // 대안 경로
+        '${ApiConfig.baseHost}:3001/inquiry/$userId', // 기존 경로 (하위 호환성)
+        '${ApiConfig.baseHost}:3001/user/inquiry/$userId', // 기존 경로 (하위 호환성)
       ];
 
       for (int i = 0; i < possibleUrls.length; i++) {
@@ -383,20 +380,24 @@ class InquiryService {
         debugPrint('URL 시도 ${i + 1}: $url');
 
         try {
-          final response = await http.get(
-            Uri.parse(url),
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept-Language': 'ko-KR',
-            },
-          );
+          final response = await ApiHelper.get(url);
 
           debugPrint('응답 상태: ${response.statusCode}');
           debugPrint('응답 내용: ${response.body}');
 
           if (response.statusCode == 200) {
             debugPrint('✅ 200 응답 받음');
-            final List<dynamic> data = jsonDecode(response.body);
+            
+            // 🔥 서버 응답 구조에 맞게 파싱: {"success": true, "data": [...]}
+            final Map<String, dynamic> responseData = jsonDecode(response.body);
+            debugPrint('📊 서버 응답 구조: $responseData');
+            
+            if (responseData['success'] != true) {
+              debugPrint('❌ 서버에서 실패 응답: ${responseData['message'] ?? '알 수 없는 오류'}');
+              return [];
+            }
+            
+            final List<dynamic> data = responseData['data'] ?? [];
             debugPrint('파싱된 데이터 개수: ${data.length}');
             debugPrint('데이터 내용: $data');
 
@@ -494,8 +495,6 @@ class InquiryService {
       // 모든 URL 시도가 실패한 경우 빈 리스트 반환 (테스트 데이터 비활성화)
       debugPrint('⚠️ 모든 API URL 시도가 실패했습니다. 빈 리스트를 반환합니다.');
       return [];
-
-      return [];
     } catch (e) {
       debugPrint('❌ 문의 목록 조회 오류: $e');
       return [];
@@ -531,14 +530,7 @@ class InquiryService {
         debugPrint('URL 시도 ${i + 1}: $url');
 
         try {
-          final response = await http.delete(
-            Uri.parse(url),
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept-Language': 'ko-KR',
-            },
-            body: jsonEncode({'inquiry_code': inquiryCode}),
-          );
+          final response = await ApiHelper.delete(url, body: {'inquiry_code': inquiryCode});
 
           debugPrint('응답 상태: ${response.statusCode}');
           debugPrint('응답 내용: ${response.body}');

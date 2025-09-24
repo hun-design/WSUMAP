@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/config/api_config.dart';
-import 'package:http/http.dart' as http;
 import 'package:flutter_application_1/data/category_fallback_data.dart';
 import 'package:flutter_application_1/utils/category_name_mapper.dart';
 import '../models/category.dart';
+import 'api_helper.dart';
 
 class CategoryApiService {
   static final String baseUrl = ApiConfig.categoryBase;
@@ -69,10 +69,7 @@ class CategoryApiService {
         return fallback;
       }
 
-      final response = await http.get(
-        Uri.parse(baseUrl),
-        headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 12)); // 타임아웃 증가
+      final response = await ApiHelper.get(baseUrl);
 
       debugPrint('🔍 getCategories 응답: ${response.statusCode}');
 
@@ -145,10 +142,8 @@ class CategoryApiService {
       // ✅ 영어 ID → 한글 변환 (서버 요청용)
       final categoryParam = _getKoreanCategoryIfExists(categoryId);
 
-      final response = await http.get(
-        Uri.parse('$baseUrl/${Uri.encodeComponent(categoryParam)}'),
-        headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 8));
+      // 🔥 JWT 토큰을 포함한 요청
+      final response = await ApiHelper.get('$baseUrl/${Uri.encodeComponent(categoryParam)}');
 
       debugPrint('📡 카테고리 응답: ${response.statusCode}');
 
@@ -212,10 +207,7 @@ class CategoryApiService {
         }
         
         // 서버에 "은행(atm)"으로 요청
-        final response = await http.get(
-          Uri.parse('$baseUrl/${Uri.encodeComponent("은행(atm)")}'),
-          headers: {'Content-Type': 'application/json'},
-        ).timeout(const Duration(seconds: 8));
+        final response = await ApiHelper.get('$baseUrl/${Uri.encodeComponent("은행(atm)")}');
         
         debugPrint('📡 ATM 서버 응답: ${response.statusCode}');
         if (response.statusCode == 200) {
@@ -249,10 +241,7 @@ class CategoryApiService {
       }
       final categoryParam = _getKoreanCategoryIfExists(categoryId);
       // ✅ 경로를 /category/{카테고리명} 으로 수정
-      final response = await http.get(
-        Uri.parse('$baseUrl/${Uri.encodeComponent(categoryParam)}'),
-        headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 8));
+      final response = await ApiHelper.get('$baseUrl/${Uri.encodeComponent(categoryParam)}');
       debugPrint('📡 getCategoryBuildingInfoList 응답: ${response.statusCode}');
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
@@ -327,10 +316,8 @@ class CategoryApiService {
       }
 
       debugPrint('🌐 서버 연결 상태 확인 중...');
-      final response = await http.get(
-        Uri.parse(baseUrl),
-        headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 3));
+      // 🔥 JWT 토큰을 포함한 연결 테스트
+      final response = await ApiHelper.get(baseUrl);
 
       final isConnected = response.statusCode == 200 || response.statusCode == 404;
 
@@ -372,10 +359,7 @@ class CategoryApiService {
     String floor,
   ) async {
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/${Uri.encodeComponent(building)}/${Uri.encodeComponent(floor)}'),
-        headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 8));
+      final response = await ApiHelper.get('$baseUrl/${Uri.encodeComponent(building)}/${Uri.encodeComponent(floor)}');
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
@@ -396,15 +380,14 @@ class CategoryApiService {
     double y,
   ) async {
     try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/${Uri.encodeComponent(building)}/${Uri.encodeComponent(floor)}'),
-        headers: {'Content-Type': 'application/json'},
-        body: json.encode({
+      final response = await ApiHelper.post(
+        '$baseUrl/${Uri.encodeComponent(building)}/${Uri.encodeComponent(floor)}',
+        body: {
           'category': category,
           'x': x,
           'y': y,
-        }),
-      ).timeout(const Duration(seconds: 10));
+        },
+      );
 
       return response.statusCode == 201;
     } catch (e) {
@@ -414,10 +397,7 @@ class CategoryApiService {
 
   static Future<bool> deleteCategory(String building, String floor) async {
     try {
-      final response = await http.delete(
-        Uri.parse('$baseUrl/${Uri.encodeComponent(building)}/${Uri.encodeComponent(floor)}'),
-        headers: {'Content-Type': 'application/json'},
-      ).timeout(const Duration(seconds: 10));
+      final response = await ApiHelper.delete('$baseUrl/${Uri.encodeComponent(building)}/${Uri.encodeComponent(floor)}');
 
       if (response.statusCode == 200) {
         return true;

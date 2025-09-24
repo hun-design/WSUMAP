@@ -1,10 +1,11 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'timetable_item.dart';
 import 'package:flutter_application_1/config/api_config.dart';
 import 'package:uuid/uuid.dart';
 import 'color_mapping_service.dart';
+import 'package:flutter_application_1/services/api_helper.dart';
+import 'package:flutter_application_1/services/jwt_service.dart';
 
 class TimetableApiService {
   static String get timetableBase => ApiConfig.timetableBase;
@@ -19,11 +20,20 @@ class TimetableApiService {
       return [];
     }
 
-    final url = '$timetableBase/$userId';
+    // 🔥 JWT 토큰 상태 확인
+    final hasToken = await JwtService.isTokenValid();
+    debugPrint('🔐 JWT 토큰 유효성: $hasToken');
+    if (!hasToken) {
+      debugPrint('❌ JWT 토큰이 없거나 만료됨');
+      throw Exception('인증이 필요합니다. 다시 로그인해주세요.');
+    }
+
+    // 🔥 서버 라우터: GET / (authMiddleware 적용)
+    final url = timetableBase;
     debugPrint('🔄 시간표 조회 요청 URL: $url');
     
     try {
-      final res = await http.get(Uri.parse(url));
+      final res = await ApiHelper.get(url);
       debugPrint('📡 서버 응답 상태 코드: ${res.statusCode}');
       debugPrint('📡 서버 응답 본문: ${res.body}');
       
@@ -32,7 +42,16 @@ class TimetableApiService {
         throw Exception('시간표 조회 실패 (${res.statusCode})');
       }
       
-      final List data = jsonDecode(res.body);
+      // 🔥 서버 응답 구조에 맞게 파싱: {"success": true, "response": [...]}
+      final Map<String, dynamic> responseData = jsonDecode(res.body);
+      debugPrint('📊 서버 응답 구조: $responseData');
+      
+      if (responseData['success'] != true) {
+        debugPrint('❌ 서버에서 실패 응답: ${responseData['message'] ?? '알 수 없는 오류'}');
+        throw Exception('서버 오류: ${responseData['message'] ?? '알 수 없는 오류'}');
+      }
+      
+      final List data = responseData['response'] ?? [];
       debugPrint('📊 파싱된 데이터 개수: ${data.length}');
 
       // 서버에서 오는 데이터 구조에 맞게 파싱
@@ -66,7 +85,25 @@ class TimetableApiService {
       return itemsWithColors;
     } catch (e) {
       debugPrint('❌ 시간표 조회 중 오류 발생: $e');
-      rethrow;
+      debugPrint('❌ 오류 타입: ${e.runtimeType}');
+      debugPrint('❌ 오류 상세: ${e.toString()}');
+      
+      // 🔥 구체적인 오류 메시지 제공
+      if (e.toString().contains('SocketException')) {
+        throw Exception('네트워크 연결을 확인해주세요.');
+      } else if (e.toString().contains('TimeoutException')) {
+        throw Exception('서버 응답 시간이 초과되었습니다.');
+      } else if (e.toString().contains('401')) {
+        throw Exception('인증이 필요합니다. 다시 로그인해주세요.');
+      } else if (e.toString().contains('403')) {
+        throw Exception('접근 권한이 없습니다.');
+      } else if (e.toString().contains('404')) {
+        throw Exception('시간표 서비스를 찾을 수 없습니다.');
+      } else if (e.toString().contains('500')) {
+        throw Exception('서버 오류가 발생했습니다.');
+      } else {
+        rethrow;
+      }
     }
   }
 
@@ -80,14 +117,14 @@ class TimetableApiService {
 
     try {
       debugPrint('📤 시간표 추가 요청 시작');
-      debugPrint('📤 URL: $timetableBase/$userId');
+      // 🔥 서버 라우터: POST / (authMiddleware 적용)
+      debugPrint('📤 URL: $timetableBase');
       debugPrint('📤 요청 데이터: ${item.toJson()}');
 
-      final res = await http.post(
-        Uri.parse('$timetableBase/$userId'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(item.toJson()),
-      ).timeout(const Duration(seconds: 10));
+      final res = await ApiHelper.post(
+        timetableBase,
+        body: item.toJson(),
+      );
 
       debugPrint('📥 시간표 추가 응답 상태: ${res.statusCode}');
       debugPrint('📥 시간표 추가 응답 내용: ${res.body}');
@@ -120,10 +157,10 @@ class TimetableApiService {
       return;
     }
 
-    final res = await http.put(
-      Uri.parse('$timetableBase/$userId'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    // 🔥 서버 라우터: PUT / (authMiddleware 적용)
+    final res = await ApiHelper.put(
+      timetableBase,
+      body: {
         "origin_title": originTitle,
         "origin_day_of_week": originDayOfWeek,
         "new_title": newItem.title,
@@ -136,7 +173,7 @@ class TimetableApiService {
         "professor": newItem.professor,
         "color": newItem.color.value.toRadixString(16),
         "memo": newItem.memo,
-      }),
+      },
     );
     if (res.statusCode != 200 && res.statusCode != 204) {
       throw Exception('시간표 수정 실패');
@@ -155,10 +192,10 @@ class TimetableApiService {
       return;
     }
 
-    final res = await http.delete(
-      Uri.parse('$timetableBase/$userId'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'title': title, 'day_of_week': dayOfWeek}),
+    // 🔥 서버 라우터: DELETE / (authMiddleware 적용)
+    final res = await ApiHelper.delete(
+      timetableBase,
+      body: {'title': title, 'day_of_week': dayOfWeek},
     );
     if (res.statusCode != 200 && res.statusCode != 204) {
       throw Exception('시간표 삭제 실패');
@@ -167,9 +204,7 @@ class TimetableApiService {
 
   /// 건물에 해당하는 층 조회 - (GET /floor/names/:building) 서버 구조에 100% 맞춤
   Future<List<String>> fetchFloors(String building) async {
-    final res = await http.get(
-      Uri.parse('${ApiConfig.floorBase}/names/$building'),
-    );
+    final res = await ApiHelper.get('${ApiConfig.floorBase}/names/$building');
     debugPrint('층수 응답 status: ${res.statusCode}, body: ${res.body}');
     if (res.statusCode != 200) throw Exception('층수 조회 실패');
     final arr = jsonDecode(res.body) as List;
@@ -179,9 +214,7 @@ class TimetableApiService {
 
   /// 건물+층에 해당하는 강의실 조회 - (GET /room/:building/:floor) 서버 구조에 100% 맞춤
   Future<List<String>> fetchRooms(String building, String floor) async {
-    final res = await http.get(
-      Uri.parse('${ApiConfig.roomBase}/$building/$floor'),
-    );
+    final res = await ApiHelper.get('${ApiConfig.roomBase}/$building/$floor');
     if (res.statusCode != 200) throw Exception('강의실 조회 실패');
     final arr = jsonDecode(res.body) as List;
     return arr.map((e) => e['Room_Name'].toString()).toList();

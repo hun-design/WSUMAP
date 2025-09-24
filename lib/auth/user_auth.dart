@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../generated/app_localizations.dart';
 import '../services/auth_service.dart';
 import '../services/websocket_service.dart';
+import '../services/jwt_service.dart';
 import '../managers/location_manager.dart';
 
 /// 우송대학교 캠퍼스 네비게이터 사용자 역할 정의
@@ -211,8 +212,19 @@ class UserAuth extends ChangeNotifier {
           pw: savedPassword,
         );
 
-        if (result.isSuccess) {
+        if (result.isSuccess && result.userId != null && result.userName != null) {
           debugPrint('✅ 서버 자동 로그인 성공');
+          
+          // 🔥 로그인 상태 설정
+          _userId = result.userId!;
+          _userName = result.userName!;
+          _userRole = UserRole.studentProfessor;
+          _isLoggedIn = true;
+          _isFirstLaunch = false;
+          _isTutorial = result.isTutorial ?? true;
+          
+          debugPrint('🔍 자동 로그인 완료 - 사용자: $_userId, 이름: $_userName');
+          
           return true;
         } else {
           debugPrint('⚠️ 서버 자동 로그인 실패: ${result.message}');
@@ -270,7 +282,7 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 초기화 - 저장된 로그인 정보 복원 (게스트 제외)
+  /// 초기화 - 저장된 로그인 정보 복원 (JWT 토큰 우선 사용)
   Future<void> initialize({BuildContext? context}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -285,27 +297,58 @@ class UserAuth extends ChangeNotifier {
           savedUserId != null &&
           savedUserName != null &&
           !savedUserId.startsWith('guest_')) {
-        // 게스트 ID 체크 추가
-        _userId = savedUserId;
-        _userName = savedUserName;
-        _userRole = UserRole.studentProfessor;
-        _isLoggedIn = true;
-        _isFirstLaunch = false;
-
-        // 🔥 게스트가 아닌 경우에만 위치 전송 및 웹소켓 연결 시작 (지연)
-        if (context != null) {
-          Future.delayed(const Duration(seconds: 2), () {
-            _startLocationSending(context);
-            _startWebSocketConnection();
-          });
+        
+        debugPrint('🔄 저장된 로그인 정보 발견 - JWT 토큰 확인');
+        
+        // 🔥 1단계: JWT 토큰이 유효한지 확인
+        final isTokenValid = await JwtService.isTokenValid();
+        
+        if (isTokenValid) {
+          debugPrint('✅ JWT 토큰이 유효함 - 토큰으로 로그인 상태 복원');
+          
+          // 🔥 토큰이 유효하면 비밀번호 없이 로그인 상태 복원
+          _userId = savedUserId;
+          _userName = savedUserName;
+          _userRole = UserRole.studentProfessor;
+          _isLoggedIn = true;
+          _isFirstLaunch = false;
+          
+          // 🔥 게스트가 아닌 경우에만 위치 전송 및 웹소켓 연결 시작 (지연)
+          if (context != null) {
+            Future.delayed(const Duration(seconds: 2), () {
+              _startLocationSending(context);
+              _startWebSocketConnection();
+            });
+          }
+        } else {
+          debugPrint('❌ JWT 토큰이 만료됨 - 서버 자동 로그인 시도');
+          
+          // 🔥 2단계: 토큰이 만료되었을 때만 비밀번호로 재로그인
+          final autoLoginSuccess = await autoLoginToServer();
+          
+          if (autoLoginSuccess) {
+            debugPrint('✅ 서버 자동 로그인 성공 - 로그인 상태 복원');
+            
+            if (context != null) {
+              Future.delayed(const Duration(seconds: 2), () {
+                _startLocationSending(context);
+                _startWebSocketConnection();
+              });
+            }
+          } else {
+            debugPrint('❌ 서버 자동 로그인 실패 - 로그인 정보 삭제');
+            await _clearLoginInfo();
+          }
         }
-
+        
         notifyListeners();
       } else {
+        debugPrint('ℹ️ 저장된 로그인 정보 없음 또는 기억하기 미체크');
         await _clearLoginInfo();
       }
     } catch (e) {
       debugPrint('초기화 오류: $e');
+      await _clearLoginInfo();
     }
   }
 
@@ -784,7 +827,7 @@ class UserAuth extends ChangeNotifier {
       if (result.isSuccess) {
         _isTutorial = showTutorial;
         notifyListeners();
-        debugPrint('✅ 튜토리얼 설정 업데이트 성공');
+        debugPrint('✅ 튜토리얼 설정 업데이트 성공 - 새로운 값: $_isTutorial');
         return true;
       } else {
         debugPrint('❌ 튜토리얼 설정 업데이트 실패: ${result.message}');
@@ -842,6 +885,10 @@ class UserAuth extends ChangeNotifier {
       await prefs.remove('is_logged_in');
       await prefs.remove('remember_me');
       await prefs.remove('user_password');
+      
+      // 🔥 JWT 토큰 삭제
+      await JwtService.clearToken();
+      debugPrint('🔐 JWT 토큰 삭제 완료');
     } catch (e) {
       debugPrint('로그인 정보 삭제 오류: $e');
     }

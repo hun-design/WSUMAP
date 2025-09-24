@@ -2,11 +2,10 @@
 import 'package:flutter/material.dart';
 import 'package:location/location.dart' as loc;
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
-import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import '../utils/ios_location_utils.dart';
+import 'api_helper.dart';
 
 /// 위치 획득 결과
 class LocationResult {
@@ -160,22 +159,10 @@ class LocationService {
       debugPrint('📋 수정된 요청 데이터: $requestBody');
       debugPrint('📍 좌표 매핑: x(위도)=$latitude, y(경도)=$longitude');
 
-      final response = await http
-          .put(
-            url,
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: jsonEncode(requestBody),
-          )
-          .timeout(
-            const Duration(seconds: 10),
-            onTimeout: () {
-              debugPrint('⏰ 위치 전송 타임아웃');
-              throw TimeoutException('위치 전송 타임아웃', const Duration(seconds: 10));
-            },
-          );
+      final response = await ApiHelper.put(
+        '${ApiConfig.userBase}/update_location',
+        body: requestBody,
+      );
 
       debugPrint('📋 응답 상태: ${response.statusCode}');
       debugPrint('📋 응답 내용: ${response.body}');

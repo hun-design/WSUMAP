@@ -6,6 +6,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/config/api_config.dart';
 import 'package:http/http.dart' as http;
+import 'jwt_service.dart';
+import 'api_helper.dart';
 
 /// 인증 관련 서비스 클래스
 class AuthService {
@@ -114,29 +116,65 @@ class AuthService {
           // 성공
           final data = jsonDecode(response.body);
           
-          // is_tutorial 값을 정확하게 처리
-          bool isTutorial = true; // 기본값
-          if (data.containsKey('is_tutorial')) {
-            final tutorialValue = data['is_tutorial'];
-            if (tutorialValue is bool) {
-              isTutorial = tutorialValue;
-            } else if (tutorialValue is String) {
-              isTutorial = tutorialValue.toLowerCase() == 'true';
-            } else if (tutorialValue is int) {
-              isTutorial = tutorialValue == 1;
+          // 🔥 새로운 서버 응답 구조 처리
+          if (data['success'] == true && data['user'] != null) {
+            final userData = data['user'];
+            
+            // 🔥 JWT 토큰 저장
+            if (data['token'] != null) {
+              await JwtService.saveToken(data['token']);
+              debugPrint('🔐 JWT 토큰 저장 완료');
             }
+            
+            // is_tutorial 값을 정확하게 처리
+            bool isTutorial = true; // 기본값
+            if (userData.containsKey('is_tutorial')) {
+              final tutorialValue = userData['is_tutorial'];
+              if (tutorialValue is bool) {
+                isTutorial = tutorialValue;
+              } else if (tutorialValue is String) {
+                isTutorial = tutorialValue.toLowerCase() == 'true';
+              } else if (tutorialValue is int) {
+                isTutorial = tutorialValue == 1;
+              }
+            }
+            
+            debugPrint('🔍 서버 응답에서 is_tutorial 원본 값: ${userData['is_tutorial']} (타입: ${userData['is_tutorial']?.runtimeType})');
+            debugPrint('🔍 처리된 Is_Tutorial 값: $isTutorial (타입: ${isTutorial.runtimeType})');
+            debugPrint('🔍 전체 서버 응답 데이터: $data');
+            debugPrint('🔍 사용자 데이터: $userData');
+            
+            return LoginResult.success(
+              userId: userData['id'],
+              userName: userData['name'],
+              isLogin: userData['islogin'] ?? userData['isLogin'] ?? userData['online'] ?? true,
+              isTutorial: isTutorial, // 튜토리얼 표시 여부
+            );
+          } else {
+            // 🔥 기존 응답 구조도 지원 (하위 호환성)
+            bool isTutorial = true; // 기본값
+            if (data.containsKey('is_tutorial')) {
+              final tutorialValue = data['is_tutorial'];
+              if (tutorialValue is bool) {
+                isTutorial = tutorialValue;
+              } else if (tutorialValue is String) {
+                isTutorial = tutorialValue.toLowerCase() == 'true';
+              } else if (tutorialValue is int) {
+                isTutorial = tutorialValue == 1;
+              }
+            }
+            
+            debugPrint('🔍 기존 응답 구조 사용 - is_tutorial 원본 값: ${data['is_tutorial']} (타입: ${data['is_tutorial']?.runtimeType})');
+            debugPrint('🔍 처리된 Is_Tutorial 값: $isTutorial (타입: ${isTutorial.runtimeType})');
+            debugPrint('🔍 전체 서버 응답 데이터: $data');
+            
+            return LoginResult.success(
+              userId: data['id'],
+              userName: data['name'],
+              isLogin: data['islogin'] ?? data['isLogin'] ?? data['online'] ?? true,
+              isTutorial: isTutorial, // 튜토리얼 표시 여부
+            );
           }
-          
-          debugPrint('🔍 서버 응답에서 is_tutorial 원본 값: ${data['is_tutorial']} (타입: ${data['is_tutorial']?.runtimeType})');
-          debugPrint('🔍 처리된 Is_Tutorial 값: $isTutorial (타입: ${isTutorial.runtimeType})');
-          debugPrint('🔍 전체 서버 응답 데이터: $data');
-          
-          return LoginResult.success(
-            userId: data['id'],
-            userName: data['name'],
-            isLogin: data['islogin'] ?? data['isLogin'] ?? data['online'] ?? true,
-            isTutorial: isTutorial, // 튜토리얼 표시 여부
-          );
         case 400:
           return LoginResult.failure('아이디와 비밀번호를 입력하세요.');
         case 401:
@@ -222,16 +260,10 @@ class AuthService {
 
       debugPrint('요청 데이터: $requestBody');
 
-      final response = await http
-          .put(
-            Uri.parse('$baseUrl/update'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: jsonEncode(requestBody),
-          )
-          .timeout(const Duration(seconds: 10));
+      final response = await ApiHelper.put(
+        '$baseUrl/update',
+        body: requestBody,
+      );
 
       debugPrint('=== 회원정보 수정 API 응답 ===');
       debugPrint('상태코드: ${response.statusCode}');
@@ -271,16 +303,10 @@ class AuthService {
     try {
       final requestBody = {'id': id};
 
-      final response = await http
-          .delete(
-            Uri.parse('${ApiConfig.userBase}/delete'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: jsonEncode(requestBody),
-          )
-          .timeout(const Duration(seconds: 10));
+      final response = await ApiHelper.delete(
+        '${ApiConfig.userBase}/delete',
+        body: requestBody,
+      );
 
       switch (response.statusCode) {
         case 200:
@@ -302,9 +328,7 @@ class AuthService {
   /// 서버 연결 테스트
   static Future<bool> testConnection() async {
     try {
-      final response = await http
-          .get(Uri.parse(baseUrl), headers: {'Accept': 'application/json'})
-          .timeout(const Duration(seconds: 5));
+      final response = await ApiHelper.get(baseUrl);
 
       debugPrint('서버 연결 테스트: ${response.statusCode}');
       return response.statusCode == 200 || response.statusCode == 404;
@@ -321,21 +345,12 @@ class AuthService {
       debugPrint('사용자 ID: $userId');
       debugPrint('위치 공유 활성화: $isEnabled');
 
-      final response = await http.put(
-        Uri.parse('${ApiConfig.userBase}/update_share_location'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: jsonEncode({
+      // 🔥 JWT 토큰을 포함한 위치 공유 상태 업데이트
+      final response = await ApiHelper.put(
+        '${ApiConfig.userBase}/update_share_location',
+        body: {
           'id': userId,
           'Is_location_public': isEnabled, // 서버에서 기대하는 필드명으로 변경
-        }),
-      ).timeout(
-        const Duration(seconds: 10), // 10초 타임아웃 추가
-        onTimeout: () {
-          debugPrint('⏰ 위치 공유 상태 업데이트 타임아웃');
-          throw TimeoutException('위치 공유 상태 업데이트 타임아웃', const Duration(seconds: 10));
         },
       );
 
@@ -374,13 +389,8 @@ class AuthService {
       debugPrint('=== 위치 공유 상태 조회 시작 ===');
       debugPrint('사용자 ID: $userId');
 
-      // 서버에서 전체 사용자 목록을 가져와서 현재 사용자의 위치 공유 상태를 찾음
-      final response = await http.get(
-        Uri.parse('${ApiConfig.userBase}/friend_request_list'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      );
+      // 🔥 JWT 토큰을 포함한 사용자 목록 조회
+      final response = await ApiHelper.get('${ApiConfig.userBase}/friend_request_list');
 
       debugPrint('서버 응답 상태: ${response.statusCode}');
       debugPrint('서버 응답 내용: ${response.body}');
@@ -436,12 +446,8 @@ class AuthService {
       debugPrint('=== 사용자 존재 여부 확인 시작 ===');
       debugPrint('확인할 사용자 ID: $userId');
 
-      final response = await http.get(
-        Uri.parse('${ApiConfig.userBase}/check_user/$userId'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      );
+      // 🔥 JWT 토큰을 포함한 사용자 존재 여부 확인
+      final response = await ApiHelper.get('${ApiConfig.userBase}/check_user/$userId');
 
       debugPrint('서버 응답 상태: ${response.statusCode}');
       debugPrint('서버 응답 내용: ${response.body}');
@@ -472,12 +478,8 @@ class AuthService {
       debugPrint('=== 사용자 목록 조회 시작 ===');
       debugPrint('📡 요청 URL: ${ApiConfig.userBase}/friend_request_list');
 
-      final response = await http.get(
-        Uri.parse('${ApiConfig.userBase}/friend_request_list'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      );
+      // 🔥 JWT 토큰을 포함한 친구 요청 목록 조회
+      final response = await ApiHelper.get('${ApiConfig.userBase}/friend_request_list');
 
       debugPrint('📡 서버 응답 상태: ${response.statusCode}');
       debugPrint('📡 서버 응답 내용 (원본): "${response.body}"');
@@ -565,12 +567,8 @@ class AuthService {
       debugPrint('=== 직접 사용자 존재 여부 확인 시작 ===');
       debugPrint('확인할 사용자 ID: $userId');
 
-      final response = await http.get(
-        Uri.parse('${ApiConfig.userBase}/check_user/$userId'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      );
+      // 🔥 JWT 토큰을 포함한 직접 사용자 존재 여부 확인
+      final response = await ApiHelper.get('${ApiConfig.userBase}/check_user/$userId');
 
       debugPrint('서버 응답 상태: ${response.statusCode}');
       debugPrint('서버 응답 내용: ${response.body}');
@@ -604,16 +602,11 @@ class AuthService {
 
       final requestBody = {'id': id};
 
-      final response = await http
-          .put(
-            Uri.parse('$baseUrl/update_tutorial'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: jsonEncode(requestBody),
-          )
-          .timeout(const Duration(seconds: 10));
+      // 🔥 JWT 토큰을 포함한 요청
+      final response = await ApiHelper.put(
+        '$baseUrl/update_tutorial',
+        body: requestBody,
+      );
 
       debugPrint('=== 튜토리얼 업데이트 API 응답 ===');
       debugPrint('상태코드: ${response.statusCode}');

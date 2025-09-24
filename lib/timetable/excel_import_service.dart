@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
+import '../services/api_helper.dart';
 
 class ExcelImportService {
   /// 엑셀 파일을 서버로 업로드 (xlsx만 허용)
@@ -37,17 +38,22 @@ class ExcelImportService {
         throw Exception('xlsx 파일만 업로드할 수 있습니다.');
       }
 
-      final uri = Uri.parse('${ApiConfig.timetableUploadBase}/$userId/upload');
-      print('[DEBUG] 업로드 요청 URI: $uri');
+      // 🔥 서버 라우터: POST /upload (authMiddleware 적용)
+      final uploadUrl = '${ApiConfig.timetableUploadBase}/upload';
+      print('[DEBUG] 업로드 요청 URI: $uploadUrl');
 
-      final request = http.MultipartRequest('POST', uri)
-        ..files.add(await http.MultipartFile.fromPath('excelFile', file.path));
+      // 🔥 JWT 토큰을 포함한 MultipartRequest 생성
+      final request = await ApiHelper.createMultipartRequest('POST', uploadUrl);
+      request.files.add(await http.MultipartFile.fromPath('excelFile', file.path));
 
-      print('[DEBUG] MultipartRequest 준비 완료, 업로드 시작');
+      print('[DEBUG] MultipartRequest 준비 완료 (JWT 토큰 포함), 업로드 시작');
+      print('[DEBUG] 요청 헤더: ${request.headers}');
+      print('[DEBUG] 요청 파일 수: ${request.files.length}');
 
       final response = await request.send();
 
       print('[DEBUG] 서버에서 받은 응답 상태 코드: ${response.statusCode}');
+      print('[DEBUG] 응답 헤더: ${response.headers}');
       final respStr = await response.stream.bytesToString();
       print('[DEBUG] 서버 응답 본문: $respStr');
 

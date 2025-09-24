@@ -638,6 +638,12 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     return buildingName;
   }
 
+  /// 🔥 현재 사용자 ID 가져오기
+  String _getCurrentUserId() {
+    final userAuth = context.read<UserAuth>();
+    return userAuth.userId ?? 'unknown';
+  }
+
   /// 🔥 튜토리얼 표시 메서드
   void _showTutorialIfNeeded() async {
     // 이미 표시했거나 화면이 마운트되지 않았거나 현재 표시 중이거나 확인 진행 중이면 표시하지 않음
@@ -648,6 +654,15 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       debugPrint(
         'ℹ️ 튜토리얼 표시 건너뜀 - 이미 표시됨: $_hasShownTutorial, 마운트됨: $mounted, 표시중: $_isShowingTutorial, 확인중: $_isTutorialCheckInProgress',
       );
+      return;
+    }
+
+    // 🔥 이번 세션에서 이미 튜토리얼을 표시했는지 확인
+    final prefs = await SharedPreferences.getInstance();
+    final sessionTutorialShown = prefs.getBool('session_tutorial_shown_${_getCurrentUserId()}') ?? false;
+    if (sessionTutorialShown) {
+      debugPrint('ℹ️ 이번 세션에서 이미 튜토리얼을 표시했음');
+      _hasShownTutorial = true;
       return;
     }
 
@@ -713,6 +728,11 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       _hasShownTutorial = true;
       _isShowingTutorial = true; // 표시 중 플래그 설정
       _isTutorialCheckInProgress = false; // 확인 완료
+      
+      // 🔥 이번 세션에서 튜토리얼을 표시했다고 저장
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('session_tutorial_shown_${_getCurrentUserId()}', true);
+      
       debugPrint('✅ 튜토리얼 표시 시작');
 
       // 즉시 표시
@@ -726,7 +746,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       });
     } else {
       debugPrint('ℹ️ 튜토리얼 표시하지 않음 (설정에 따라)');
-      _hasShownTutorial = true; // 표시하지 않았지만 표시했다고 표시
+      _hasShownTutorial = true; // 이번 세션에서는 표시했다고 표시
       _isTutorialCheckInProgress = false; // 확인 완료
     }
   }
