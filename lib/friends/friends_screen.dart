@@ -149,6 +149,12 @@ class _FriendsScreenState extends State<FriendsScreen>
       );
       _addController.clear();
       _clearCachedUserList(); // 캐시 초기화
+      
+      // 🔥 친구 추가 성공 후 데이터 새로고침
+      debugPrint('🔄 친구 추가 성공 후 데이터 새로고침 시작');
+      await controller.quickUpdate();
+      debugPrint('✅ 친구 데이터 새로고침 완료');
+      
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
       debugPrint('❌ UI: 친구 추가 중 오류: $e');

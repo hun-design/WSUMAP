@@ -26,15 +26,23 @@ class FriendApiService {
     final res = await ApiHelper.get('$baseUrl/myfriend');
     print('[친구 목록 응답] ${res.body}');
 
-    if (res.body.isEmpty || !res.body.trim().startsWith('[')) {
-      print('[WARN] 친구 목록 응답이 비었거나 JSON 배열이 아님');
+    if (res.body.isEmpty || res.body.trim() == '{}') {
+      print('[WARN] 친구 목록 응답이 비었거나 빈 객체임');
       return [];
     }
 
     try {
-      final List data = jsonDecode(res.body);
-      print('[친구 목록 파싱 데이터] $data');
-      return data.map((e) => Friend.fromJson(e)).toList();
+      // 🔥 서버 응답 구조에 맞게 파싱: {"success": true, "data": [...]}
+      final Map<String, dynamic> responseData = jsonDecode(res.body);
+      print('[친구 목록 파싱 데이터] $responseData');
+
+      if (responseData['success'] == true && responseData['data'] != null) {
+        final List<dynamic> dataList = responseData['data'];
+        return dataList.map((e) => Friend.fromJson(e as Map<String, dynamic>)).toList();
+      } else {
+        print('[ERROR] 서버 응답 구조가 올바르지 않음: $responseData');
+        return [];
+      }
     } catch (e, stack) {
       print('[ERROR] 친구 목록 파싱 실패: $e');
       print(stack);
@@ -186,18 +194,26 @@ class FriendApiService {
     final res = await ApiHelper.get('$baseUrl/request_list');
     print('[친구 요청 응답] ${res.body}');
 
-    if (res.body.isEmpty || !res.body.trim().startsWith('[')) {
-      print('[WARN] 친구 요청 응답이 비었거나 JSON 배열이 아님');
+    if (res.body.isEmpty || res.body.trim() == '{}') {
+      print('[WARN] 친구 요청 응답이 비었거나 빈 객체임');
       return [];
     }
 
     try {
-      final List data = jsonDecode(res.body);
-      print('[친구 요청 파싱 데이터] $data');
-      return data
-          .map((e) => FriendRequest.fromJson(e))
-          .where((req) => req.fromUserId.isNotEmpty)
-          .toList();
+      // 🔥 서버 응답 구조에 맞게 파싱: {"success": true, "data": [...]}
+      final Map<String, dynamic> responseData = jsonDecode(res.body);
+      print('[친구 요청 파싱 데이터] $responseData');
+
+      if (responseData['success'] == true && responseData['data'] != null) {
+        final List<dynamic> dataList = responseData['data'];
+        return dataList
+            .map((e) => FriendRequest.fromJson(e as Map<String, dynamic>))
+            .where((req) => req.fromUserId.isNotEmpty)
+            .toList();
+      } else {
+        print('[ERROR] 서버 응답 구조가 올바르지 않음: $responseData');
+        return [];
+      }
     } catch (e, stack) {
       print('[ERROR] 친구 요청 파싱 실패: $e');
       print(stack);
@@ -225,27 +241,35 @@ class FriendApiService {
 
       if (res.statusCode == 200) {
         // 빈 응답 처리
-        if (res.body.isEmpty || res.body.trim() == '[]') {
+        if (res.body.isEmpty || res.body.trim() == '{}') {
           print('[DEBUG] 보낸 친구 요청이 없음');
           return [];
         }
 
-        // JSON 파싱
-        final dynamic responseData = jsonDecode(res.body);
+        // 🔥 서버 응답 구조에 맞게 파싱: {"success": true, "data": [...]}
+        final Map<String, dynamic> responseData = jsonDecode(res.body);
+        print('[DEBUG] 🔍 서버 응답 원시 데이터: $responseData');
+        print('[DEBUG] 🔍 응답 데이터 타입: ${responseData.runtimeType}');
 
-        if (responseData is List) {
-          print('[DEBUG] 보낸 친구 요청 원시 데이터: $responseData');
+        if (responseData['success'] == true && responseData['data'] != null) {
+          final List<dynamic> dataList = responseData['data'];
+          print('[DEBUG] 보낸 친구 요청 원시 데이터: $dataList');
+          print('[DEBUG] 🔍 배열 길이: ${dataList.length}');
 
-          final requests = responseData
-              .map((e) => SentFriendRequest.fromJson(e as Map<String, dynamic>))
+          final requests = dataList
+              .map((e) {
+                print('[DEBUG] 🔍 개별 항목 파싱: $e');
+                return SentFriendRequest.fromJson(e as Map<String, dynamic>);
+              })
               .where((req) => req.toUserId.isNotEmpty)
               .toList();
 
           print('[DEBUG] 파싱된 보낸 친구 요청 수: ${requests.length}');
+          print('[DEBUG] 🔍 파싱된 요청들: ${requests.map((r) => '${r.toUserId}(${r.toUserName})').join(', ')}');
           print('[DEBUG] ✅ 보낸 친구 요청 조회 성공');
           return requests;
         } else {
-          print('[ERROR] 응답이 배열이 아님: $responseData');
+          print('[ERROR] 서버 응답 구조가 올바르지 않음: $responseData');
           return [];
         }
       } else {

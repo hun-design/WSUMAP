@@ -131,6 +131,7 @@ class SentFriendRequest {
       'add_name',
     ]);
 
+    // 🔥 서버에서 requestDate를 반환하지 않으므로 현재 시간으로 설정
     final requestDate = _extractString(json, [
       'request_date',
       'requestDate',
@@ -143,14 +144,19 @@ class SentFriendRequest {
       'CREATED_AT',
     ]);
 
+    // 🔥 서버에서 requestDate를 반환하지 않으므로 현재 시간으로 설정
+    final finalRequestDate = requestDate.isEmpty 
+        ? DateTime.now().toIso8601String() 
+        : requestDate;
+
     print(
-      '[DEBUG] 파싱 결과 - toUserId: $toUserId, toUserName: $toUserName, requestDate: $requestDate',
+      '[DEBUG] 파싱 결과 - toUserId: $toUserId, toUserName: $toUserName, requestDate: $finalRequestDate',
     );
 
     return SentFriendRequest(
       toUserId: toUserId,
       toUserName: toUserName.isEmpty ? toUserId : toUserName,
-      requestDate: requestDate,
+      requestDate: finalRequestDate,
     );
   }
 }

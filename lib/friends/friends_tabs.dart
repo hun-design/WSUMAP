@@ -92,40 +92,8 @@ class FriendsTabs {
                       return;
                     }
                     
-                    // 🔥 친구 데이터 새로고침 후 중복 체크
-                    await controller.quickUpdate();
-                    
-                    // 🔥 이미 친구인지 확인
-                    final isAlreadyFriend = controller.friends.any((friend) => friend.userId == enteredId);
-                    if (isAlreadyFriend) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('이미 친구인 사용자입니다'),
-                          backgroundColor: const Color(0xFFEF4444),
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      );
-                      return;
-                    }
-                    
-                    // 🔥 이미 친구 요청을 보냈는지 확인
-                    final hasSentRequest = controller.sentFriendRequests.any((request) => request.toUserId == enteredId);
-                    if (hasSentRequest) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('이미 친구 요청을 보낸 사용자입니다'),
-                          backgroundColor: const Color(0xFFEF4444),
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      );
-                      return;
-                    }
+                    // 🔥 서버에서 중복 체크를 하므로 클라이언트 측 체크 제거
+                    // 서버가 정확한 데이터베이스 상태를 기반으로 체크함
                     
                     // 모든 검증 통과 시 친구 추가 진행
                     onAddFriend();
