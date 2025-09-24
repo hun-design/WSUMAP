@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 
 class ApiConfig {
   // 🌐 Base Configuration
-  static const String baseHost = 'http://3.104.74.109';
-  static const String baseWsHost = '3.104.74.109'; // WebSocket용 호스트 (protocol 제외)
+  static const String baseHost = 'http://52.65.94.225';
+  static const String baseWsHost = '52.65.94.225'; // WebSocket용 호스트 (protocol 제외)
   
   // 🔌 Port Configuration
   static const int buildingPort = 3000;
