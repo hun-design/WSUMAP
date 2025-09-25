@@ -453,13 +453,15 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
     );
   }
 
-  /// 홈 화면 빌드
+  /// 🔥 홈 화면 빌드 (로그인 상태 엄격 검증)
   Widget _buildHomeScreen(UserAuth auth) {
     if (auth.isFirstLaunch) {
       return const WelcomeView();
-    } else if (auth.isLoggedIn) {
+    } else if (auth.isLoggedIn && auth.userId != null && !auth.userId!.startsWith('guest_')) {
+      // 🔥 로그인 상태이고 게스트가 아닌 경우에만 MapScreen으로 이동
       return const MapScreen();
     } else {
+      // 🔥 로그인하지 않았거나 게스트인 경우 인증 선택 화면으로 이동
       return const AuthSelectionView();
     }
   }

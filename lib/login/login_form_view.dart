@@ -55,7 +55,7 @@ class _LoginFormViewState extends State<LoginFormView> with TickerProviderStateM
     super.dispose();
   }
 
-  /// 로그인 처리
+  /// 🔥 로그인 처리 (서버 DB 검증 강화 및 즉시 실패 처리)
   void _handleLogin() async {
     final l10n = AppLocalizations.of(context)!;
     final id = usernameController.text.trim();
@@ -73,14 +73,16 @@ class _LoginFormViewState extends State<LoginFormView> with TickerProviderStateM
     // 🔥 키보드가 완전히 숨겨진 후 화면 전환 (부드러운 전환)
     await Future.delayed(const Duration(milliseconds: 100));
 
-    // 로그인 버튼을 누르는 순간 즉시 로딩 화면으로 이동
+    // 🔥 로그인 처리 전에 로딩 상태 표시
+    final userAuth = Provider.of<UserAuth>(context, listen: false);
+    
+    // 🔥 로그인 버튼을 누르는 순간 즉시 로딩 화면으로 이동
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const MapLoadingScreen()),
       (route) => false,
     );
 
-    // 로딩 화면에서 실제 로그인 처리
-    final userAuth = Provider.of<UserAuth>(context, listen: false);
+    // 🔥 로딩 화면에서 실제 로그인 처리 (서버 DB 검증 강화)
     final success = await userAuth.loginWithCredentials(
       id: id,
       password: password,
@@ -88,13 +90,14 @@ class _LoginFormViewState extends State<LoginFormView> with TickerProviderStateM
       context: context,
     );
 
-    // 로그인 실패 시 로그인 화면으로 돌아가기
+    // 🔥 로그인 실패 시 즉시 로그인 화면으로 돌아가기 (MapScreen 진입 방지)
     if (!success && mounted) {
+      debugPrint('🔥 로그인 실패 - 즉시 로그인 화면으로 돌아가기');
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const LoginFormView()),
         (route) => false,
       );
-      _showErrorDialog(userAuth.lastError ?? l10n.login_error);
+      // 🔥 에러 다이얼로그는 MapLoadingScreen에서 처리됨
     }
   }
 

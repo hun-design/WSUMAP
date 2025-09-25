@@ -9,7 +9,7 @@ import '../generated/app_localizations.dart';
 import '../providers/app_language_provider.dart';
 import '../providers/category_provider.dart';
 import '../screens/map_loading_screen.dart';
-import '../map/map_screen.dart';
+import '../welcome_view.dart';
 
 class AuthSelectionView extends StatefulWidget {
   const AuthSelectionView({super.key});
@@ -495,18 +495,18 @@ Widget _buildHeader(AppLocalizations l10n) {
     children: [
       IconButton(
         onPressed: () {
-          // UserAuth 상태를 먼저 초기화
+          // 🔥 UserAuth 상태를 먼저 초기화하여 게스트 진입 방지
           final userAuth = Provider.of<UserAuth>(context, listen: false);
           userAuth.resetToWelcome();
           
-          // 약간의 지연 후 네비게이션 (상태 변경이 적용되도록)
+          // 🔥 약간의 지연 후 Welcome 화면으로 이동 (게스트 진입 방지)
           Future.delayed(const Duration(milliseconds: 100), () {
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(
-                  builder: (context) => MapScreen(),
-            ),
-            (route) => false,
-          );
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(
+                builder: (context) => const WelcomeView(),
+              ),
+              (route) => false,
+            );
           });
         },
         icon: const Icon(

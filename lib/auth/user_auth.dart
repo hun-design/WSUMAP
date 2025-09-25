@@ -341,7 +341,7 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 🔥 사용자 로그인 (서버 API 연동) - 위치 전송 시작 및 웹소켓 연결 추가
+  /// 🔥 사용자 로그인 (서버 API 연동) - 서버 DB 검증 강화 및 게스트 진입 방지
   Future<bool> loginWithCredentials({
     required String id,
     required String password,
@@ -352,10 +352,15 @@ class UserAuth extends ChangeNotifier {
     _clearError();
 
     try {
+      debugPrint('🔄 로그인 시도 시작 - 사용자 ID: $id');
+      
+      // 🔥 서버 DB 검증 강화 - 로그인 API 호출
       final result = await AuthService.login(id: id, pw: password);
 
       if (result.isSuccess) {
         if (result.userId != null && result.userName != null) {
+          debugPrint('✅ 서버 DB 검증 성공 - 사용자 존재 확인');
+          
           _userId = result.userId!;
           _userName = result.userName!;
           _userRole = UserRole.studentProfessor;
@@ -379,6 +384,7 @@ class UserAuth extends ChangeNotifier {
           notifyListeners();
           return true;
         } else {
+          debugPrint('❌ 서버 응답에서 사용자 정보 누락');
           if (context != null) {
             final l10n = AppLocalizations.of(context)!;
             _setError(l10n.user_info_not_found);
@@ -388,17 +394,18 @@ class UserAuth extends ChangeNotifier {
           return false;
         }
       } else {
+        debugPrint('❌ 서버 DB 검증 실패: ${result.message}');
         _setError(result.message);
         return false;
       }
     } catch (e) {
+      debugPrint('❌ 로그인 중 예외 발생: $e');
       if (context != null) {
         final l10n = AppLocalizations.of(context)!;
         _setError(l10n.unexpected_login_error);
       } else {
         _setError('로그인 중 예상치 못한 오류가 발생했습니다.');
       }
-      debugPrint('로그인 예외: $e');
       return false;
     } finally {
       _setLoading(false);

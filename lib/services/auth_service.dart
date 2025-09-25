@@ -84,15 +84,16 @@ class AuthService {
     }
   }
 
-  /// 로그인 API 호출
+  /// 🔥 로그인 API 호출 (서버 DB 검증 강화)
   static Future<LoginResult> login({
     required String id,
     required String pw,
   }) async {
     try {
-      debugPrint('=== 로그인 API 요청 ===');
+      debugPrint('=== 🔥 강화된 로그인 API 요청 ===');
       debugPrint('URL: $baseUrl/login');
       debugPrint('아이디: $id');
+      debugPrint('🔍 서버 DB 검증 시작...');
 
       final requestBody = {'id': id, 'pw': pw};
 
@@ -107,18 +108,24 @@ class AuthService {
           )
           .timeout(const Duration(seconds: 10));
 
-      debugPrint('=== 로그인 API 응답 ===');
+      debugPrint('=== 🔥 강화된 로그인 API 응답 ===');
       debugPrint('상태코드: ${response.statusCode}');
       debugPrint('응답 내용: ${response.body}');
 
       switch (response.statusCode) {
         case 200:
-          // 성공
+          // 🔥 성공 - 서버 DB에서 사용자 존재 확인됨
           final data = jsonDecode(response.body);
           
           // 🔥 새로운 서버 응답 구조 처리
           if (data['success'] == true && data['user'] != null) {
             final userData = data['user'];
+            
+            // 🔥 사용자 정보 유효성 검증 강화
+            if (userData['id'] == null || userData['name'] == null) {
+              debugPrint('❌ 서버 응답에서 필수 사용자 정보 누락');
+              return LoginResult.failure('서버에서 사용자 정보를 받을 수 없습니다.');
+            }
             
             // 🔥 JWT 토큰 저장
             if (data['token'] != null) {
@@ -139,6 +146,7 @@ class AuthService {
               }
             }
             
+            debugPrint('✅ 서버 DB 검증 성공 - 사용자 존재 확인');
             debugPrint('🔍 서버 응답에서 is_tutorial 원본 값: ${userData['is_tutorial']} (타입: ${userData['is_tutorial']?.runtimeType})');
             debugPrint('🔍 처리된 Is_Tutorial 값: $isTutorial (타입: ${isTutorial.runtimeType})');
             debugPrint('🔍 전체 서버 응답 데이터: $data');
@@ -152,6 +160,11 @@ class AuthService {
             );
           } else {
             // 🔥 기존 응답 구조도 지원 (하위 호환성)
+            if (data['id'] == null || data['name'] == null) {
+              debugPrint('❌ 기존 응답 구조에서 필수 사용자 정보 누락');
+              return LoginResult.failure('서버에서 사용자 정보를 받을 수 없습니다.');
+            }
+            
             bool isTutorial = true; // 기본값
             if (data.containsKey('is_tutorial')) {
               final tutorialValue = data['is_tutorial'];
@@ -164,6 +177,7 @@ class AuthService {
               }
             }
             
+            debugPrint('✅ 서버 DB 검증 성공 - 사용자 존재 확인 (기존 구조)');
             debugPrint('🔍 기존 응답 구조 사용 - is_tutorial 원본 값: ${data['is_tutorial']} (타입: ${data['is_tutorial']?.runtimeType})');
             debugPrint('🔍 처리된 Is_Tutorial 값: $isTutorial (타입: ${isTutorial.runtimeType})');
             debugPrint('🔍 전체 서버 응답 데이터: $data');
@@ -176,18 +190,25 @@ class AuthService {
             );
           }
         case 400:
+          debugPrint('❌ 서버 DB 검증 실패 - 잘못된 요청');
           return LoginResult.failure('아이디와 비밀번호를 입력하세요.');
         case 401:
+          debugPrint('❌ 서버 DB 검증 실패 - 인증 실패');
           return LoginResult.failure('아이디 또는 비밀번호가 일치하지 않습니다.');
+        case 404:
+          debugPrint('❌ 서버 DB 검증 실패 - 사용자 존재하지 않음');
+          return LoginResult.failure('존재하지 않는 사용자입니다.');
         case 500:
+          debugPrint('❌ 서버 DB 검증 실패 - 서버 오류');
           return LoginResult.failure('로그인 처리 중 서버 오류가 발생했습니다.');
         default:
+          debugPrint('❌ 서버 DB 검증 실패 - 알 수 없는 오류: ${response.statusCode}');
           return LoginResult.failure(
             '알 수 없는 오류가 발생했습니다. (${response.statusCode})',
           );
       }
     } catch (e) {
-      debugPrint('로그인 네트워크 오류: $e');
+      debugPrint('❌ 로그인 네트워크 오류: $e');
       if (e.toString().contains('timeout') ||
           e.toString().contains('TimeoutException')) {
         return LoginResult.failure('서버 응답 시간이 초과되었습니다. 네트워크 연결을 확인해주세요.');
