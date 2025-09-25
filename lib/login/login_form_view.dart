@@ -67,6 +67,12 @@ class _LoginFormViewState extends State<LoginFormView> with TickerProviderStateM
       return;
     }
 
+    // 🔥 키보드 즉시 숨김 처리 (오버플로우 방지)
+    FocusScope.of(context).unfocus();
+    
+    // 🔥 키보드가 완전히 숨겨진 후 화면 전환 (부드러운 전환)
+    await Future.delayed(const Duration(milliseconds: 100));
+
     // 로그인 버튼을 누르는 순간 즉시 로딩 화면으로 이동
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const MapLoadingScreen()),
@@ -199,6 +205,12 @@ class _LoginFormViewState extends State<LoginFormView> with TickerProviderStateM
     );
 
     if (confirmed == true && mounted) {
+      // 🔥 키보드 즉시 숨김 처리 (오버플로우 방지)
+      FocusScope.of(context).unfocus();
+      
+      // 🔥 키보드가 완전히 숨겨진 후 화면 전환 (부드러운 전환)
+      await Future.delayed(const Duration(milliseconds: 100));
+
       // 게스트 로그인 확인 즉시 로딩 화면으로 이동
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const MapLoadingScreen()),
@@ -311,6 +323,8 @@ class _LoginFormViewState extends State<LoginFormView> with TickerProviderStateM
               position: _slideAnimation,
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(20),
+                // 🔥 키보드 오버플로우 방지를 위한 추가 설정
+                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

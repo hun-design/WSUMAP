@@ -86,12 +86,20 @@ class _MapLoadingScreenState extends State<MapLoadingScreen>
   }
 
   void _navigateToMapScreen() {
-    // 3초 후 MapScreen으로 이동 (MapScreen 초기화 완료까지 충분한 시간)
+    // 🔥 키보드 완전 숨김 후 MapScreen으로 이동 (오버플로우 방지)
     Timer(const Duration(milliseconds: 3000), () {
       if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const MapScreen()),
-        );
+        // 🔥 키보드가 완전히 숨겨진 상태에서 화면 전환
+        FocusScope.of(context).unfocus();
+        
+        // 🔥 부드러운 전환을 위한 추가 지연
+        Future.delayed(const Duration(milliseconds: 50), () {
+          if (mounted) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => const MapScreen()),
+            );
+          }
+        });
       }
     });
   }

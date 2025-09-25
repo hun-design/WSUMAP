@@ -330,6 +330,12 @@ class _AuthSelectionViewState extends State<AuthSelectionView>
 
   /// 게스트 로그인 실제 수행 (다이얼로그 없이)
   Future<void> _performGuestLogin() async {
+    // 🔥 키보드 즉시 숨김 처리 (오버플로우 방지)
+    FocusScope.of(context).unfocus();
+    
+    // 🔥 키보드가 완전히 숨겨진 후 화면 전환 (부드러운 전환)
+    await Future.delayed(const Duration(milliseconds: 100));
+
     // 게스트 로그인 버튼을 누르는 순간 즉시 로딩 화면으로 이동
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const MapLoadingScreen()),
@@ -378,6 +384,8 @@ class _AuthSelectionViewState extends State<AuthSelectionView>
                   position: _slideAnimation,
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(24),
+                    // 🔥 키보드 오버플로우 방지를 위한 추가 설정
+                    keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                     child: SizedBox(
                       height: MediaQuery.of(context).size.height - 
                               MediaQuery.of(context).padding.top - 48,

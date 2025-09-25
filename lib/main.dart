@@ -85,12 +85,19 @@ Future<void> _initializeNaverMapInBackground() async {
 Future<void> _setSystemUIMode() async {
   try {
     if (Platform.isAndroid) {
-      // Android에서 immersiveSticky 모드 사용
+      // 🔥 Android에서 키보드 오버플로우 방지를 위한 설정
       await SystemChrome.setEnabledSystemUIMode(
         SystemUiMode.immersiveSticky,
         overlays: [SystemUiOverlay.top],
       );
-      debugPrint('✅ Android - immersiveSticky 모드 설정');
+      
+      // 🔥 Android 키보드 처리 개선
+      await SystemChrome.setPreferredOrientations([
+        DeviceOrientation.portraitUp,
+        DeviceOrientation.portraitDown,
+      ]);
+      
+      debugPrint('✅ Android - immersiveSticky 모드 설정 (키보드 오버플로우 방지)');
     } else {
       // iOS에서는 manual 모드 사용
       await SystemChrome.setEnabledSystemUIMode(
