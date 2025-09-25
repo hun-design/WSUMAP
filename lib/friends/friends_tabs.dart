@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_application_1/components/woosong_button.dart';
 import 'package:flutter_application_1/components/woosong_input_field.dart';
 import 'package:flutter_application_1/friends/friends_controller.dart';
@@ -63,13 +64,38 @@ class FriendsTabs {
 
             SizedBox(
               width: double.infinity,
-              child: WoosongButton(
-                onPressed: isAddingFriend ? null : () async {
-                  // 백그라운드에서 사용자 목록을 확인하여 유효성 검증
-                  final enteredId = addController.text.trim();
-                  if (enteredId.isEmpty) {
-                    return;
-                  }
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 60),
+                curve: Curves.easeOutCubic,
+                transform: Matrix4.identity()..scale(isAddingFriend ? 0.92 : 1.0),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: isAddingFriend ? [
+                    BoxShadow(
+                      color: const Color(0xFF1E3A8A).withValues(alpha: 0.2),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ] : [
+                    BoxShadow(
+                      color: const Color(0xFF1E3A8A).withValues(alpha: 0.15),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: isAddingFriend ? null : () async {
+                      HapticFeedback.mediumImpact();
+                      // 백그라운드에서 사용자 목록을 확인하여 유효성 검증
+                      final enteredId = addController.text.trim();
+                      if (enteredId.isEmpty) {
+                        HapticFeedback.lightImpact();
+                        return;
+                      }
                   
                   // 🔥 사용자 목록 새로고침 후 확인
                   try {
@@ -79,6 +105,7 @@ class FriendsTabs {
                     // 새로고침된 사용자 목록에서 확인
                     final isValidUser = userList.any((user) => user['id'] == enteredId);
                     if (!isValidUser) {
+                      HapticFeedback.heavyImpact();
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(AppLocalizations.of(context)!.user_not_found),
@@ -99,6 +126,7 @@ class FriendsTabs {
                     onAddFriend();
                   } catch (e) {
                     debugPrint('❌ 사용자 목록 새로고침 실패: $e');
+                    HapticFeedback.heavyImpact();
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('사용자 확인 중 오류가 발생했습니다.'),
@@ -111,18 +139,23 @@ class FriendsTabs {
                     );
                   }
                 },
-                child: isAddingFriend
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
+                child: WoosongButton(
+                  onPressed: isAddingFriend ? null : () {}, // 활성화 상태 유지
+                  child: isAddingFriend
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
-                        ),
-                      )
-                    : Text(AppLocalizations.of(context)!.sendFriendRequest),
+                        )
+                      : Text(AppLocalizations.of(context)!.sendFriendRequest),
+                ),
+                  ),
+                ),
               ),
             ),
 

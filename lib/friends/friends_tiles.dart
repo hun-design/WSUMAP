@@ -15,36 +15,48 @@ class FriendsTiles {
     VoidCallback onShowDetails,
     VoidCallback onDelete,
   ) {
-    // FriendsController에서 최신 상태 가져오기
-    final friendsController = Provider.of<FriendsController>(
-      context,
-      listen: false,
-    );
-    final currentFriend = friendsController.friends.firstWhere(
-      (f) => f.userId == friend.userId,
-      orElse: () => friend, // 찾지 못하면 원본 사용
-    );
+    return Consumer<FriendsController>(
+      builder: (context, friendsController, child) {
+        // FriendsController에서 최신 상태 가져오기
+        final currentFriend = friendsController.friends.firstWhere(
+          (f) => f.userId == friend.userId,
+          orElse: () => friend, // 찾지 못하면 원본 사용
+        );
 
-    // 디버깅: 친구 상태 로그
-    debugPrint(
-      '🎨 ${friend.userName} (${friend.userId}) 타일 렌더링 - 원본 온라인: ${friend.isLogin}, 최신 온라인: ${currentFriend.isLogin}',
+        return _buildFriendTileContent(
+          context,
+          currentFriend,
+          onShowDetails,
+          onDelete,
+        );
+      },
     );
+  }
+
+  /// 친구 타일 내용 위젯 (성능 최적화를 위해 분리)
+  static Widget _buildFriendTileContent(
+    BuildContext context,
+    Friend friend,
+    VoidCallback onShowDetails,
+    VoidCallback onDelete,
+  ) {
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: currentFriend.isLogin
+          color: friend.isLogin
               ? const Color(0xFF10B981).withValues(alpha: 0.5) // 더 진한 초록색 테두리
               : const Color(0xFFE2E8F0),
-          width: currentFriend.isLogin ? 2 : 1, // 온라인 친구는 더 두꺼운 테두리
+          width: friend.isLogin ? 2 : 1, // 온라인 친구는 더 두꺼운 테두리
         ),
         boxShadow: [
           BoxShadow(
-            color: currentFriend.isLogin
+            color: friend.isLogin
                 ? const Color(0xFF10B981).withValues(
                     alpha: 0.1,
                   ) // 온라인 친구는 초록색 그림자
@@ -67,26 +79,26 @@ class FriendsTiles {
                   width: 50,
                   height: 50,
                   decoration: BoxDecoration(
-                    color: currentFriend.isLogin
+                    color: friend.isLogin
                         ? const Color(0xFF10B981).withValues(
                             alpha: 0.15,
                           ) // 더 진한 초록색 배경
                         : const Color(0xFF1E3A8A).withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: currentFriend.isLogin
+                      color: friend.isLogin
                           ? const Color(0xFF10B981).withValues(
                               alpha: 0.5,
                             ) // 더 진한 초록색 테두리
                           : const Color(0xFF1E3A8A).withValues(alpha: 0.3),
-                      width: currentFriend.isLogin
+                      width: friend.isLogin
                           ? 2.5
                           : 2, // 온라인 친구는 더 두꺼운 테두리
                     ),
                   ),
                   child: Icon(
                     Icons.person,
-                    color: currentFriend.isLogin
+                    color: friend.isLogin
                         ? const Color(0xFF10B981) // 초록색 아이콘
                         : const Color(0xFF1E3A8A),
                     size: 24,
@@ -102,7 +114,7 @@ class FriendsTiles {
                         style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 16,
-                          color: currentFriend.isLogin
+                          color: friend.isLogin
                               ? const Color(0xFF10B981) // 온라인 친구는 초록색 텍스트
                               : const Color(0xFF1E3A8A),
                         ),
@@ -115,7 +127,7 @@ class FriendsTiles {
                             width: 6,
                             height: 6,
                             decoration: BoxDecoration(
-                              color: currentFriend.isLogin
+                              color: friend.isLogin
                                   ? const Color(0xFF10B981) // 초록색 온라인 표시
                                   : Colors.grey,
                               shape: BoxShape.circle,
@@ -123,12 +135,12 @@ class FriendsTiles {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            currentFriend.isLogin
+                            friend.isLogin
                                 ? AppLocalizations.of(context)!.online
                                 : AppLocalizations.of(context)!.offline,
                             style: TextStyle(
                               fontSize: 12,
-                              color: currentFriend.isLogin
+                              color: friend.isLogin
                                   ? const Color(0xFF10B981) // 초록색 온라인 텍스트
                                   : Colors.grey,
                               fontWeight: FontWeight.w500,
@@ -139,13 +151,32 @@ class FriendsTiles {
                     ],
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.person_remove,
-                    color: Color(0xFFEF4444),
+                Semantics(
+                  label: AppLocalizations.of(context)!.friendDeleteTitle,
+                  button: true,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        onDelete();
+                      },
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Icon(
+                          Icons.person_remove,
+                          color: Color(0xFFEF4444),
+                          size: 20,
+                        ),
+                      ),
+                    ),
                   ),
-                  tooltip: AppLocalizations.of(context)!.friendDeleteTitle,
-                  onPressed: onDelete,
                 ),
               ],
             ),
@@ -163,6 +194,7 @@ class FriendsTiles {
   ) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -235,13 +267,32 @@ class FriendsTiles {
               color: const Color(0xFFEF4444).withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: IconButton(
-              icon: const Icon(
-                Icons.cancel,
-                color: Color(0xFFEF4444),
-                size: 20,
+            child: Semantics(
+              label: AppLocalizations.of(context)!.cancelRequest,
+              button: true,
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    onCancel();
+                  },
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.cancel,
+                      color: Color(0xFFEF4444),
+                      size: 20,
+                    ),
+                  ),
+                ),
               ),
-              onPressed: onCancel,
             ),
           ),
         ],
@@ -258,6 +309,7 @@ class FriendsTiles {
   ) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -346,13 +398,32 @@ class FriendsTiles {
                   color: const Color(0xFF10B981).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.check,
-                    color: Color(0xFF10B981),
-                    size: 20,
+                child: Semantics(
+                  label: '수락',
+                  button: true,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        onAccept();
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.check,
+                          color: Color(0xFF10B981),
+                          size: 20,
+                        ),
+                      ),
+                    ),
                   ),
-                  onPressed: onAccept,
                 ),
               ),
               const SizedBox(width: 8),
@@ -363,13 +434,32 @@ class FriendsTiles {
                   color: const Color(0xFFEF4444).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: IconButton(
-                  icon: const Icon(
-                    Icons.close,
-                    color: Color(0xFFEF4444),
-                    size: 20,
+                child: Semantics(
+                  label: '거절',
+                  button: true,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        onReject();
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEF4444).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.close,
+                          color: Color(0xFFEF4444),
+                          size: 20,
+                        ),
+                      ),
+                    ),
                   ),
-                  onPressed: onReject,
                 ),
               ),
             ],

@@ -1,7 +1,6 @@
 // lib/friends/friends_screen.dart - 분할된 파일들을 사용하는 리팩토링된 메인 화면
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_application_1/friends/friend.dart';
 import 'package:flutter_application_1/friends/friend_api_service.dart';
 import 'package:flutter_application_1/friends/friend_repository.dart';
@@ -143,6 +142,7 @@ class _FriendsScreenState extends State<FriendsScreen>
 
       // 성공 - 예외가 발생하지 않았으면 성공
       debugPrint('✅ UI: 친구 요청 성공으로 판단');
+      HapticFeedback.lightImpact();
       FriendsUtils.showSuccessMessage(
         context,
         AppLocalizations.of(context)!.friend_request_sent_success,
@@ -162,6 +162,7 @@ class _FriendsScreenState extends State<FriendsScreen>
       debugPrint('❌ UI: 예외 스택: ${StackTrace.current}');
       debugPrint('❌ UI: 예외 메시지: ${e.toString()}');
 
+      HapticFeedback.heavyImpact();
       // 구체적인 에러 메시지 처리
       final errorMsg = FriendsUtils.getAddFriendErrorMessage(context, e);
       FriendsUtils.showErrorMessage(context, errorMsg);
@@ -514,6 +515,8 @@ class _FriendsScreenState extends State<FriendsScreen>
                               // 요청 취소 로직
                               try {
                                 await controller.cancelSentRequest(userId);
+                                // 모달 상태 즉시 업데이트
+                                setModalState(() {});
                                 FriendsUtils.showSuccessMessage(
                                   context,
                                   AppLocalizations.of(
@@ -539,6 +542,8 @@ class _FriendsScreenState extends State<FriendsScreen>
                               // 요청 수락 로직
                               try {
                                 await controller.acceptRequest(userId);
+                                // 모달 상태 즉시 업데이트
+                                setModalState(() {});
                                 FriendsUtils.showSuccessMessage(
                                   context,
                                   AppLocalizations.of(
@@ -558,6 +563,8 @@ class _FriendsScreenState extends State<FriendsScreen>
                               // 요청 거절 로직
                               try {
                                 await controller.rejectRequest(userId);
+                                // 모달 상태 즉시 업데이트
+                                setModalState(() {});
                                 FriendsUtils.showSuccessMessage(
                                   context,
                                   AppLocalizations.of(
@@ -621,30 +628,26 @@ class _FriendsScreenState extends State<FriendsScreen>
               return AnimatedContainer(
                 duration: Duration(milliseconds: 300 + (index * 100)),
                 curve: Curves.easeOutBack,
-                child: Consumer<FriendsController>(
-                  builder: (context, friendsController, child) {
-                    return FriendsTiles.buildFriendTile(
-                      context,
-                      friend,
-                      () => FriendsDialogs.showFriendDetailsDialog(
-                        context,
-                        friend,
-                        widget.onShowFriendLocation,
-                      ),
-                      () => FriendsDialogs.showDeleteFriendDialog(
-                        context,
-                        friend,
-                        () async {
-                          await controller.deleteFriend(friend.userId);
-                          final l10n = AppLocalizations.of(context)!;
-                          final message = l10n.friendDeleteSuccessMessage(
-                            friend.userName,
-                          );
-                          FriendsUtils.showSuccessMessage(context, message);
-                        },
-                      ),
-                    );
-                  },
+                child: FriendsTiles.buildFriendTile(
+                  context,
+                  friend,
+                  () => FriendsDialogs.showFriendDetailsDialog(
+                    context,
+                    friend,
+                    widget.onShowFriendLocation,
+                  ),
+                  () => FriendsDialogs.showDeleteFriendDialog(
+                    context,
+                    friend,
+                    () async {
+                      await controller.deleteFriend(friend.userId);
+                      final l10n = AppLocalizations.of(context)!;
+                      final message = l10n.friendDeleteSuccessMessage(
+                        friend.userName,
+                      );
+                      FriendsUtils.showSuccessMessage(context, message);
+                    },
+                  ),
                 ),
               );
             }),

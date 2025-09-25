@@ -1,5 +1,6 @@
 // lib/components/woosong_button.dart - null 허용하도록 수정
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class WoosongButton extends StatefulWidget {
   final VoidCallback? onPressed; // null 허용으로 변경
@@ -28,15 +29,15 @@ class _WoosongButtonState extends State<WoosongButton>
   void initState() {
     super.initState();
     _animationController = AnimationController(
-      duration: const Duration(milliseconds: 150),
+      duration: const Duration(milliseconds: 80),
       vsync: this,
     );
     _scaleAnimation = Tween<double>(
       begin: 1.0,
-      end: 0.95,
+      end: 0.88,
     ).animate(CurvedAnimation(
       parent: _animationController,
-      curve: Curves.easeInOut,
+      curve: Curves.easeOutCubic,
     ));
   }
 
@@ -55,7 +56,10 @@ class _WoosongButtonState extends State<WoosongButton>
       child: ScaleTransition(
         scale: _scaleAnimation,
         child: GestureDetector(
-          onTapDown: isEnabled ? (_) => _animationController.forward() : null,
+          onTapDown: isEnabled ? (_) {
+            HapticFeedback.lightImpact();
+            _animationController.forward();
+          } : null,
           onTapUp: isEnabled ? (_) => _animationController.reverse() : null,
           onTapCancel: isEnabled ? () => _animationController.reverse() : null,
           onTap: widget.onPressed,

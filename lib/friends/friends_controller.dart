@@ -916,12 +916,19 @@ class FriendsController extends ChangeNotifier {
     try {
       debugPrint('✅ 친구 요청 수락: $addId');
       await repository.acceptRequest(addId);
+      
+      // 즉시 UI 업데이트를 위해 로컬에서 해당 요청 제거
+      friendRequests.removeWhere((request) => request.fromUserId == addId);
+      notifyListeners();
+      
+      // 백그라운드에서 서버와 동기화
       await quickUpdate();
       debugPrint('✅ 친구 요청 수락 완료');
     } catch (e) {
       errorMessage = e.toString();
       debugPrint('❌ 친구 요청 수락 실패: $e');
       notifyListeners();
+      rethrow; // UI에서 에러 처리할 수 있도록 예외 재발생
     }
   }
 
@@ -929,12 +936,19 @@ class FriendsController extends ChangeNotifier {
     try {
       debugPrint('❌ 친구 요청 거절: $addId');
       await repository.rejectRequest(addId);
+      
+      // 즉시 UI 업데이트를 위해 로컬에서 해당 요청 제거
+      friendRequests.removeWhere((request) => request.fromUserId == addId);
+      notifyListeners();
+      
+      // 백그라운드에서 서버와 동기화
       await quickUpdate();
       debugPrint('✅ 친구 요청 거절 완료');
     } catch (e) {
       errorMessage = e.toString();
       debugPrint('❌ 친구 요청 거절 실패: $e');
       notifyListeners();
+      rethrow; // UI에서 에러 처리할 수 있도록 예외 재발생
     }
   }
 
@@ -942,12 +956,19 @@ class FriendsController extends ChangeNotifier {
     try {
       debugPrint('🗑️ 친구 삭제: $addId');
       await repository.deleteFriend(addId);
+      
+      // 즉시 UI 업데이트를 위해 로컬에서 해당 친구 제거
+      friends.removeWhere((friend) => friend.userId == addId);
+      notifyListeners();
+      
+      // 백그라운드에서 서버와 동기화
       await quickUpdate();
       debugPrint('✅ 친구 삭제 완료');
     } catch (e) {
       errorMessage = e.toString();
       debugPrint('❌ 친구 삭제 실패: $e');
       notifyListeners();
+      rethrow; // UI에서 에러 처리할 수 있도록 예외 재발생
     }
   }
 
@@ -955,12 +976,19 @@ class FriendsController extends ChangeNotifier {
     try {
       debugPrint('🚫 친구 요청 취소: $friendId');
       await repository.cancelSentRequest(friendId);
+      
+      // 즉시 UI 업데이트를 위해 로컬에서 해당 요청 제거
+      sentFriendRequests.removeWhere((request) => request.toUserId == friendId);
+      notifyListeners();
+      
+      // 백그라운드에서 서버와 동기화
       await quickUpdate();
       debugPrint('✅ 친구 요청 취소 완료');
     } catch (e) {
       errorMessage = e.toString();
       debugPrint('❌ 친구 요청 취소 실패: $e');
       notifyListeners();
+      rethrow; // UI에서 에러 처리할 수 있도록 예외 재발생
     }
   }
 
