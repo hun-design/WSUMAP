@@ -341,7 +341,8 @@ class InquiryService {
       debugPrint('API 기본 URL: ${ApiConfig.baseHost}:3001');
 
       final List<String> possibleUrls = [
-        '${ApiConfig.baseHost}:3001/inquiry', // 🔥 서버 라우트: router.get('/', authMiddleware, inquiryController.getInquiry)
+        '${ApiConfig.baseHost}:3001/inquiry/my', // 🔥 서버 라우트: router.get('/my', authMiddleware, inquiryController.getInquiry)
+        '${ApiConfig.baseHost}:3001/inquiry', // 대안 경로
         '${ApiConfig.baseHost}:3001/user/inquiry', // 대안 경로
       ];
 
@@ -371,12 +372,13 @@ class InquiryService {
             debugPrint('파싱된 데이터 개수: ${data.length}');
             debugPrint('데이터 내용: $data');
 
-            // 서버에서 빈 배열이 반환되는 경우 빈 리스트 반환 (테스트 데이터 비활성화)
+            // 서버에서 빈 배열이 반환되는 경우 빈 리스트 반환
             if (data.isEmpty) {
               debugPrint('⚠️ 서버에서 빈 배열이 반환되었습니다. 빈 리스트를 반환합니다.');
               return [];
             }
 
+            // 데이터가 있는 경우 파싱
             final List<InquiryItem> inquiries = data.map((item) {
               debugPrint('=== 개별 문의 파싱 시작 ===');
               debugPrint('원본 데이터: $item');
@@ -454,8 +456,15 @@ class InquiryService {
 
             debugPrint('✅ 문의 목록 조회 성공: ${inquiries.length}개');
             return inquiries;
+          } else if (response.statusCode == 404) {
+            debugPrint('⚠️ 404 응답: 문의를 찾을 수 없습니다.');
+            debugPrint('응답 내용: ${response.body}');
+            
+            // 서버에서 문의가 없을 때 404를 반환하므로 빈 리스트 반환
+            return [];
           } else {
             debugPrint('❌ 문의 목록 조회 실패: ${response.statusCode}');
+            debugPrint('응답 내용: ${response.body}');
           }
         } catch (e) {
           debugPrint('❌ URL 시도 ${i + 1} 실패: $e');
