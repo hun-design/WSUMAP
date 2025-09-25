@@ -1,4 +1,4 @@
-// lib/components/woosong_button.dart - null 허용하도록 수정
+// lib/components/woosong_button.dart - 네이티브 버튼처럼 즉시 반응하는 버튼
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -20,119 +20,67 @@ class WoosongButton extends StatefulWidget {
   State<WoosongButton> createState() => _WoosongButtonState();
 }
 
-class _WoosongButtonState extends State<WoosongButton>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 80),
-      vsync: this,
-    );
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.88,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeOutCubic,
-    ));
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
+class _WoosongButtonState extends State<WoosongButton> {
   @override
   Widget build(BuildContext context) {
     final isEnabled = widget.onPressed != null;
     
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: ScaleTransition(
-        scale: _scaleAnimation,
-        child: GestureDetector(
-          onTapDown: isEnabled ? (_) {
-            HapticFeedback.lightImpact();
-            _animationController.forward();
-          } : null,
-          onTapUp: isEnabled ? (_) => _animationController.reverse() : null,
-          onTapCancel: isEnabled ? () => _animationController.reverse() : null,
-          onTap: widget.onPressed,
-          child: Container(
-            height: 56,
-            decoration: BoxDecoration(
-              gradient: widget.isOutlined
-                  ? null
-                  : widget.isPrimary
-                      ? LinearGradient(
-                          colors: isEnabled
-                              ? [
-                                  const Color(0xFF1E3A8A), // 우송대 진한 남색
-                                  const Color(0xFF3B82F6), // 밝은 남색
-                                ]
-                              : [
-                                  const Color(0xFFE2E8F0), // 비활성화 색상
-                                  const Color(0xFFCBD5E1),
-                                ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        )
-                      : LinearGradient(
-                          colors: isEnabled
-                              ? [
-                                  const Color(0xFF64748B),
-                                  const Color(0xFF475569),
-                                ]
-                              : [
-                                  const Color(0xFFE2E8F0),
-                                  const Color(0xFFCBD5E1),
-                                ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-              color: widget.isOutlined ? Colors.transparent : null,
-              borderRadius: BorderRadius.circular(16),
-              border: widget.isOutlined
-                  ? Border.all(
-                      color: isEnabled 
-                          ? const Color(0xFF1E3A8A)
-                          : const Color(0xFFCBD5E1),
-                      width: 2,
-                    )
-                  : null,
-              boxShadow: widget.isOutlined || !isEnabled
-                  ? null
-                  : [
-                      BoxShadow(
-                        color: const Color(0xFF1E3A8A).withOpacity(0.3),
-                        blurRadius: 12,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-            ),
-            child: Center(
-              child: DefaultTextStyle(
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: widget.isOutlined
-                      ? (isEnabled 
-                          ? const Color(0xFF1E3A8A)
-                          : const Color(0xFFCBD5E1))
-                      : (isEnabled 
-                          ? Colors.white
-                          : const Color(0xFF94A3B8)),
-                  letterSpacing: -0.2,
-                ),
-                child: widget.child,
-              ),
-            ),
+      child: ElevatedButton(
+        onPressed: isEnabled ? () {
+          // 🔥 즉시 햅틱 피드백
+          HapticFeedback.lightImpact();
+          // 🔥 즉시 실행
+          widget.onPressed?.call();
+        } : null,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: widget.isOutlined
+              ? Colors.transparent
+              : widget.isPrimary
+                  ? (isEnabled
+                      ? const Color(0xFF1E3A8A)
+                      : const Color(0xFFE2E8F0))
+                  : (isEnabled
+                      ? const Color(0xFF64748B)
+                      : const Color(0xFFE2E8F0)),
+          foregroundColor: widget.isOutlined
+              ? (isEnabled 
+                  ? const Color(0xFF1E3A8A)
+                  : const Color(0xFFCBD5E1))
+              : (isEnabled 
+                  ? Colors.white
+                  : const Color(0xFF94A3B8)),
+          elevation: widget.isOutlined || !isEnabled ? 0 : 8,
+          shadowColor: const Color(0xFF1E3A8A).withOpacity(0.3),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: widget.isOutlined
+                ? BorderSide(
+                    color: isEnabled 
+                        ? const Color(0xFF1E3A8A)
+                        : const Color(0xFFCBD5E1),
+                    width: 2,
+                  )
+                : BorderSide.none,
           ),
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          minimumSize: const Size(double.infinity, 56),
+        ),
+        child: DefaultTextStyle(
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: widget.isOutlined
+                ? (isEnabled 
+                    ? const Color(0xFF1E3A8A)
+                    : const Color(0xFFCBD5E1))
+                : (isEnabled 
+                    ? Colors.white
+                    : const Color(0xFF94A3B8)),
+            letterSpacing: -0.2,
+          ),
+          child: widget.child,
         ),
       ),
     );

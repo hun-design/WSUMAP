@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/status.dart' as status;
-import '../config/api_config.dart'; // 🔥 추가 필요
+import '../config/api_config.dart';
 
 class WebSocketService {
   static final WebSocketService _instance = WebSocketService._internal();
@@ -77,7 +77,7 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     };
   }
 
-  // 🔌 웹소켓 연결
+  // 🔌 웹소켓 연결 (최적화된 버전)
   Future<void> connect(String userId) async {
     // 🔥 게스트 사용자는 웹소켓 연결 차단
     if (userId.startsWith('guest_')) {
@@ -102,14 +102,29 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
       debugPrint('🔄 다른 사용자로 연결 변경: $_userId -> $userId');
       await disconnect();
       // 연결 해제 후 잠시 대기
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(const Duration(milliseconds: 300));
     }
 
     _userId = userId;
     _shouldReconnect = true;
     _reconnectAttempts = 0;
 
-    await _doConnect();
+    // 🔥 연결 타임아웃 설정
+    try {
+      await _doConnect().timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          debugPrint('⏰ 웹소켓 연결 타임아웃 (15초)');
+          throw TimeoutException('웹소켓 연결 타임아웃', const Duration(seconds: 15));
+        },
+      );
+    } catch (e) {
+      debugPrint('❌ 웹소켓 연결 실패: $e');
+      if (_shouldReconnect) {
+        _scheduleReconnect();
+      }
+      rethrow;
+    }
   }
 
   // 실제 연결 수행
@@ -250,13 +265,6 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     debugPrint('🧹 기존 연결 정리 완료');
   }
 
-  // 🔥 연결 상태 재확인 및 복구
-  Future<void> _ensureConnection() async {
-    if (!_isConnected || _channel == null || _subscription == null) {
-      debugPrint('⚠️ 웹소켓 연결 상태 불량 - 재연결 시도');
-      await _doConnect();
-    }
-  }
 
   // 🔥 메시지 리스너 설정
   Future<void> _setupMessageListener() async {
@@ -445,15 +453,6 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     // _messageController.add(data); // 제거
   }
 
-  // 🔥 웹소켓 연결 확인 메시지 처리
-  void _handleConnect(Map<String, dynamic> data) {
-    debugPrint('✅ 웹소켓 연결 확인됨');
-  }
-
-  // 🔥 웹소켓 연결 해제 확인 메시지 처리
-  void _handleDisconnect(Map<String, dynamic> data) {
-    debugPrint('✅ 웹소켓 연결 해제 확인됨');
-  }
 
   // 🔥 등록 확인 메시지 처리
   void _handleRegistered(Map<String, dynamic> data) {
@@ -467,14 +466,6 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     });
   }
 
-  // 🔥 사용자 로그인 처리
-  void _handleUserLogin(Map<String, dynamic> data) {
-    final userId = data['userId'];
-    debugPrint('👤 사용자 로그인: $userId');
-
-    // 로그인 이벤트를 스트림으로 전달
-    _messageController.add({'type': 'user_login', 'userId': userId});
-  }
 
   // 🔥 온라인 사용자 목록 업데이트 처리 (개선)
   void _handleOnlineUsersUpdate(Map<String, dynamic> data) {

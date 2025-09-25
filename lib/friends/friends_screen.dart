@@ -56,6 +56,10 @@ class _FriendsScreenState extends State<FriendsScreen>
     WidgetsBinding.instance.removeObserver(this);
     controller.dispose();
     _addController.dispose();
+    
+    // 🔥 캐시 정리
+    _clearCachedUserList();
+    
     super.dispose();
   }
 
@@ -148,12 +152,16 @@ class _FriendsScreenState extends State<FriendsScreen>
         AppLocalizations.of(context)!.friend_request_sent_success,
       );
       _addController.clear();
-      _clearCachedUserList(); // 캐시 초기화
       
-      // 🔥 친구 추가 성공 후 데이터 새로고침
-      debugPrint('🔄 친구 추가 성공 후 데이터 새로고침 시작');
-      await controller.quickUpdate();
-      debugPrint('✅ 친구 데이터 새로고침 완료');
+      // 🔥 친구 추가 성공 후 캐시 정리 및 데이터 새로고침
+      _clearCachedUserList(); // 사용자 목록 캐시 초기화
+      
+      // 🔥 백그라운드에서 친구 데이터 새로고침 (UI 블로킹 없음)
+      Future.microtask(() async {
+        debugPrint('🔄 백그라운드에서 친구 데이터 새로고침 시작');
+        await controller.quickUpdate();
+        debugPrint('✅ 백그라운드 친구 데이터 새로고침 완료');
+      });
       
       if (mounted) Navigator.of(context).pop();
     } catch (e) {

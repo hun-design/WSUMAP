@@ -50,6 +50,11 @@
 				<array>
 					<integer>3000</integer>
 					<integer>3001</integer>
+					<integer>3002</integer>
+				</array>
+				<key>NSExceptionPortsWebSocket</key>
+				<array>
+					<integer>3002</integer>
 				</array>
 			</dict>
 			<key>map.naver.com</key>
@@ -103,8 +108,15 @@
 	<string>이 앱이 나침반 및 방향 기능을 위해 모션 센서를 사용합니다.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>이 앱이 사진 라이브러리에 접근하여 사진을 선택하려고 합니다.</string>
+	<key>NSUserNotificationsUsageDescription</key>
+	<string>이 앱이 친구 요청 및 실시간 알림을 위해 알림 권한이 필요합니다.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>background-fetch</string>
+		<string>background-processing</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

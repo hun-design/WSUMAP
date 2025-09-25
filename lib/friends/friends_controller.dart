@@ -5,6 +5,7 @@ import 'friend.dart';
 import 'friend_repository.dart';
 import '../services/websocket_service.dart';
 import '../services/notification_service.dart';
+import '../services/performance_monitor.dart';
 
 class FriendsController extends ChangeNotifier {
   final FriendRepository repository;
@@ -856,6 +857,9 @@ class FriendsController extends ChangeNotifier {
   }
 
   Future<void> addFriend(String addId) async {
+    // 🔥 성능 모니터링 시작
+    PerformanceMonitor().startOperation('addFriend');
+    
     try {
       debugPrint('👤 친구 추가 요청: $addId');
 
@@ -867,17 +871,11 @@ class FriendsController extends ChangeNotifier {
       await repository.requestFriend(addId);
       debugPrint('✅ repository.requestFriend 완료');
 
-      // 🔥 친구 요청 성공 후 즉시 보낸 요청 목록 새로고침
-      debugPrint('🔄 보낸 요청 목록 새로고침 중...');
-      try {
-        sentFriendRequests = await repository.getSentFriendRequests();
-        debugPrint('✅ 보낸 요청 목록 새로고침 완료: ${sentFriendRequests.length}개');
-
-        // 🔥 UI 즉시 업데이트
-        notifyListeners();
-      } catch (e) {
-        debugPrint('❌ 보낸 요청 목록 새로고침 실패: $e');
-      }
+      // 🔥 성공 시 즉시 로컬 상태 업데이트 (서버 동기화는 백그라운드에서)
+      _optimisticAddSentRequest(addId);
+      
+      // 🔥 백그라운드에서 서버와 동기화 (UI 블로킹 없음)
+      _syncSentRequestsInBackground();
 
       debugPrint('✅ 친구 추가 요청 완료');
 
@@ -909,22 +907,87 @@ class FriendsController extends ChangeNotifier {
 
       // 예외를 다시 던져서 UI에서 처리하도록 함
       rethrow;
+    } finally {
+      // 🔥 성능 모니터링 완료
+      PerformanceMonitor().endOperation('addFriend');
+    }
+  }
+
+  /// 🔥 낙관적 업데이트: 보낸 요청 즉시 추가 (서버 응답 대기 없음)
+  void _optimisticAddSentRequest(String addId) {
+    // 이미 존재하는지 확인
+    final existingRequest = sentFriendRequests.firstWhere(
+      (request) => request.toUserId == addId,
+      orElse: () => SentFriendRequest(
+        toUserId: '',
+        toUserName: '',
+        requestDate: '',
+      ),
+    );
+
+    if (existingRequest.toUserId.isEmpty) {
+      // 새로운 요청 추가 (임시 데이터)
+      final newRequest = SentFriendRequest(
+        toUserId: addId,
+        toUserName: '로딩 중...', // 서버에서 실제 이름을 받아올 때까지 임시
+        requestDate: DateTime.now().toIso8601String(),
+      );
+      
+      sentFriendRequests.insert(0, newRequest); // 맨 앞에 추가
+      debugPrint('✅ 낙관적 업데이트: 보낸 요청 즉시 추가됨');
+    }
+  }
+
+  /// 🔥 백그라운드에서 보낸 요청 목록 동기화
+  Future<void> _syncSentRequestsInBackground() async {
+    try {
+      debugPrint('🔄 백그라운드에서 보낸 요청 목록 동기화 시작...');
+      final serverSentRequests = await repository.getSentFriendRequests();
+      
+      // 서버 데이터로 업데이트
+      sentFriendRequests = serverSentRequests;
+      
+      debugPrint('✅ 백그라운드 동기화 완료: ${sentFriendRequests.length}개');
+      
+      // UI 업데이트 (백그라운드에서)
+      notifyListeners();
+    } catch (e) {
+      debugPrint('❌ 백그라운드 동기화 실패: $e');
     }
   }
 
   Future<void> acceptRequest(String addId) async {
+    FriendRequest? removedRequest;
     try {
       debugPrint('✅ 친구 요청 수락: $addId');
-      await repository.acceptRequest(addId);
       
-      // 즉시 UI 업데이트를 위해 로컬에서 해당 요청 제거
+      // 🔥 낙관적 업데이트: 즉시 UI에서 요청 제거
+      removedRequest = friendRequests.firstWhere(
+        (request) => request.fromUserId == addId,
+        orElse: () => FriendRequest(
+          fromUserId: '',
+          fromUserName: '',
+          createdAt: '',
+        ),
+      );
+      
       friendRequests.removeWhere((request) => request.fromUserId == addId);
       notifyListeners();
       
-      // 백그라운드에서 서버와 동기화
-      await quickUpdate();
+      // 🔥 서버 요청 (백그라운드에서)
+      await repository.acceptRequest(addId);
+      
+      // 🔥 백그라운드에서 친구 목록 동기화
+      _syncFriendsInBackground();
+      
       debugPrint('✅ 친구 요청 수락 완료');
     } catch (e) {
+      // 🔥 실패 시 롤백: 제거된 요청을 다시 추가
+      if (removedRequest != null && removedRequest.fromUserId.isNotEmpty) {
+        friendRequests.add(removedRequest);
+        notifyListeners();
+      }
+      
       errorMessage = e.toString();
       debugPrint('❌ 친구 요청 수락 실패: $e');
       notifyListeners();
@@ -933,22 +996,56 @@ class FriendsController extends ChangeNotifier {
   }
 
   Future<void> rejectRequest(String addId) async {
+    FriendRequest? removedRequest;
     try {
       debugPrint('❌ 친구 요청 거절: $addId');
-      await repository.rejectRequest(addId);
       
-      // 즉시 UI 업데이트를 위해 로컬에서 해당 요청 제거
+      // 🔥 낙관적 업데이트: 즉시 UI에서 요청 제거
+      removedRequest = friendRequests.firstWhere(
+        (request) => request.fromUserId == addId,
+        orElse: () => FriendRequest(
+          fromUserId: '',
+          fromUserName: '',
+          createdAt: '',
+        ),
+      );
+      
       friendRequests.removeWhere((request) => request.fromUserId == addId);
       notifyListeners();
       
-      // 백그라운드에서 서버와 동기화
-      await quickUpdate();
+      // 🔥 서버 요청 (백그라운드에서)
+      await repository.rejectRequest(addId);
+      
       debugPrint('✅ 친구 요청 거절 완료');
     } catch (e) {
+      // 🔥 실패 시 롤백: 제거된 요청을 다시 추가
+      if (removedRequest != null && removedRequest.fromUserId.isNotEmpty) {
+        friendRequests.add(removedRequest);
+        notifyListeners();
+      }
+      
       errorMessage = e.toString();
       debugPrint('❌ 친구 요청 거절 실패: $e');
       notifyListeners();
       rethrow; // UI에서 에러 처리할 수 있도록 예외 재발생
+    }
+  }
+
+  /// 🔥 백그라운드에서 친구 목록 동기화
+  Future<void> _syncFriendsInBackground() async {
+    try {
+      debugPrint('🔄 백그라운드에서 친구 목록 동기화 시작...');
+      final serverFriends = await repository.getMyFriends();
+      
+      // 서버 데이터로 업데이트
+      friends = serverFriends;
+      
+      debugPrint('✅ 백그라운드 친구 목록 동기화 완료: ${friends.length}명');
+      
+      // UI 업데이트 (백그라운드에서)
+      notifyListeners();
+    } catch (e) {
+      debugPrint('❌ 백그라운드 친구 목록 동기화 실패: $e');
     }
   }
 

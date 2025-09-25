@@ -72,8 +72,13 @@ class Friend {
 class FriendRequest {
   final String fromUserId;
   final String fromUserName;
+  final String createdAt;
 
-  FriendRequest({required this.fromUserId, required this.fromUserName});
+  FriendRequest({
+    required this.fromUserId, 
+    required this.fromUserName,
+    required this.createdAt,
+  });
 
   factory FriendRequest.fromJson(Map<String, dynamic> json) {
     return FriendRequest(
@@ -90,6 +95,21 @@ class FriendRequest {
         'name',
         'fromUserName',
         'from_name',
+      ]),
+      createdAt: _extractString(json, [
+        'created_at',
+        'createdAt',
+        'request_date',
+        'requestDate',
+        'date',
+        'timestamp',
+      ]).isEmpty ? DateTime.now().toIso8601String() : _extractString(json, [
+        'created_at',
+        'createdAt',
+        'request_date',
+        'requestDate',
+        'date',
+        'timestamp',
       ]),
     );
   }

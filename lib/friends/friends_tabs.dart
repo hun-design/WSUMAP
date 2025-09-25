@@ -9,7 +9,7 @@ import 'package:flutter_application_1/services/auth_service.dart';
 
 /// 탭 관련 위젯들
 class FriendsTabs {
-  /// 친구 추가 탭
+  /// 친구 추가 탭 (최적화된 버전)
   static Widget buildAddFriendTab(
     BuildContext context,
     StateSetter setModalState,
@@ -64,72 +64,24 @@ class FriendsTabs {
 
             SizedBox(
               width: double.infinity,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 60),
-                curve: Curves.easeOutCubic,
-                transform: Matrix4.identity()..scale(isAddingFriend ? 0.92 : 1.0),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: isAddingFriend ? [
-                    BoxShadow(
-                      color: const Color(0xFF1E3A8A).withValues(alpha: 0.2),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ] : [
-                    BoxShadow(
-                      color: const Color(0xFF1E3A8A).withValues(alpha: 0.15),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(16),
-                    onTap: isAddingFriend ? null : () async {
-                      HapticFeedback.mediumImpact();
-                      // 백그라운드에서 사용자 목록을 확인하여 유효성 검증
-                      final enteredId = addController.text.trim();
-                      if (enteredId.isEmpty) {
-                        HapticFeedback.lightImpact();
-                        return;
-                      }
+              child: WoosongButton(
+                onPressed: isAddingFriend ? null : () {
+                  // 🔥 즉시 햅틱 피드백
+                  HapticFeedback.lightImpact();
                   
-                  // 🔥 사용자 목록 새로고침 후 확인
-                  try {
-                    // 사용자 목록 새로고침
-                    onRefreshUserList();
-                    
-                    // 새로고침된 사용자 목록에서 확인
-                    final isValidUser = userList.any((user) => user['id'] == enteredId);
-                    if (!isValidUser) {
-                      HapticFeedback.heavyImpact();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(AppLocalizations.of(context)!.user_not_found),
-                          backgroundColor: const Color(0xFFEF4444),
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      );
-                      return;
-                    }
-                    
-                    // 🔥 서버에서 중복 체크를 하므로 클라이언트 측 체크 제거
-                    // 서버가 정확한 데이터베이스 상태를 기반으로 체크함
-                    
-                    // 모든 검증 통과 시 친구 추가 진행
-                    onAddFriend();
-                  } catch (e) {
-                    debugPrint('❌ 사용자 목록 새로고침 실패: $e');
+                  final enteredId = addController.text.trim();
+                  if (enteredId.isEmpty) {
+                    HapticFeedback.lightImpact();
+                    return;
+                  }
+              
+                  // 🔥 즉시 검증 및 처리
+                  final isValidUser = userList.any((user) => user['id'] == enteredId);
+                  if (!isValidUser) {
                     HapticFeedback.heavyImpact();
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('사용자 확인 중 오류가 발생했습니다.'),
+                        content: Text(AppLocalizations.of(context)!.user_not_found),
                         backgroundColor: const Color(0xFFEF4444),
                         behavior: SnackBarBehavior.floating,
                         shape: RoundedRectangleBorder(
@@ -137,25 +89,27 @@ class FriendsTabs {
                         ),
                       ),
                     );
+                    return;
                   }
+                  
+                  // 🔥 즉시 친구 추가 진행 (로그인 버튼처럼 즉시 반응)
+                  onAddFriend();
+                  
+                  // 🔥 백그라운드에서 사용자 목록 새로고침
+                  Future.microtask(() => onRefreshUserList());
                 },
-                child: WoosongButton(
-                  onPressed: isAddingFriend ? null : () {}, // 활성화 상태 유지
-                  child: isAddingFriend
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
-                            ),
+                child: isAddingFriend
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
                           ),
-                        )
-                      : Text(AppLocalizations.of(context)!.sendFriendRequest),
-                ),
-                  ),
-                ),
+                        ),
+                      )
+                    : Text(AppLocalizations.of(context)!.sendFriendRequest),
               ),
             ),
 
