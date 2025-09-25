@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:developer' as developer;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -47,8 +48,8 @@ void main() async {
 /// 백그라운드에서 앱 초기화 작업 수행 (최적화된 버전)
 Future<void> _initializeAppInBackground() async {
   try {
-    // 병렬로 초기화 작업 수행하여 성능 향상
-    await Future.wait([
+    // 🔥 더 빠른 병렬 초기화 - 즉시 실행
+    unawaited(Future.wait([
       // 세로 모드 고정
       SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp,
@@ -58,9 +59,9 @@ Future<void> _initializeAppInBackground() async {
       _setSystemUIMode(),
       // 네이버 지도 초기화
       _initializeNaverMapInBackground(),
-    ]);
+    ]));
     
-    debugPrint('✅ 백그라운드 초기화 완료');
+    debugPrint('✅ 백그라운드 초기화 시작 (비동기)');
   } catch (e) {
     debugPrint('❌ 백그라운드 초기화 오류: $e');
     // 개별 작업 실패 시에도 앱이 계속 실행되도록 처리

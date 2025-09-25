@@ -84,8 +84,6 @@ class UserAuth extends ChangeNotifier {
   bool _isFirstLaunch = true;
   
   // 성능 최적화를 위한 상태 캐싱
-  bool _disposed = false;
-  DateTime? _lastLoginTime;
 
   /// 현재 사용자 역할
   UserRole? get userRole => _userRole;
@@ -146,15 +144,6 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 🔥 웹소켓 연결 해제
-  void _stopWebSocketConnection() {
-    try {
-      WebSocketService().disconnect();
-      debugPrint('✅ 웹소켓 연결 해제 완료');
-    } catch (e) {
-      debugPrint('❌ 웹소켓 연결 해제 오류: $e');
-    }
-  }
 
   /// 🔥 위치 전송 시작 (게스트 제외)
   void _startLocationSending(BuildContext context) {
@@ -422,8 +411,8 @@ class UserAuth extends ChangeNotifier {
     _clearError();
 
     try {
-      await Future.delayed(const Duration(milliseconds: 500));
-
+      // 🔥 게스트 로그인 지연 시간 제거 - 즉시 처리
+      
       // 게스트 ID 생성 (타임스탬프 기반)
       final guestId = 'guest_${DateTime.now().millisecondsSinceEpoch}';
 
@@ -441,8 +430,6 @@ class UserAuth extends ChangeNotifier {
       // 🔥 게스트 로그인 시 위치 전송 및 웹소켓 연결 시작 제거
       debugPrint('✅ 게스트 로그인 완료 - 위치 전송 및 웹소켓 연결 없음');
       notifyListeners();
-
-      await Future.delayed(const Duration(milliseconds: 200));
     } catch (e) {
       debugPrint('❌ 게스트 로그인 오류: $e');
       _setError('게스트 로그인 중 오류가 발생했습니다.');
@@ -457,8 +444,8 @@ class UserAuth extends ChangeNotifier {
     _clearError();
 
     try {
-      await Future.delayed(const Duration(milliseconds: 500));
-
+      // 🔥 관리자 로그인 지연 시간 제거 - 즉시 처리
+      
       _userRole = UserRole.admin;
       _userId = 'admin';
       if (context != null) {

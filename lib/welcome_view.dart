@@ -133,8 +133,8 @@ class _WelcomeViewState extends State<WelcomeView>
       _prepareLocationInBackground();
     });
 
-    // 2초 후 자동으로 AuthSelectionView로 이동
-    Timer(const Duration(seconds: 2), () {
+    // 🔥 1초로 단축하여 더 빠른 화면 전환
+    Timer(const Duration(seconds: 1), () {
       if (mounted) {
         _navigateToAuthSelection();
       }
@@ -184,12 +184,12 @@ class _WelcomeViewState extends State<WelcomeView>
         debugPrint('✅ Welcome에서 초고속 위치 요청 시작...');
 
         try {
-          // 🔥 더 적극적인 위치 요청 (타임아웃 증가)
+          // 🔥 더 빠른 위치 요청 (타임아웃 단축)
           await locationManager.requestLocationQuickly().timeout(
-            const Duration(seconds: 3), // 0.5초에서 3초로 증가
+            const Duration(seconds: 1), // 1초로 단축하여 빠른 진행
             onTimeout: () {
-              debugPrint('⏰ Welcome 위치 요청 타임아웃 (3초) - 정상 진행');
-              throw TimeoutException('Welcome 위치 타임아웃', const Duration(seconds: 3));
+              debugPrint('⏰ Welcome 위치 요청 타임아웃 (1초) - 정상 진행');
+              throw TimeoutException('Welcome 위치 타임아웃', const Duration(seconds: 1));
             },
           );
 
