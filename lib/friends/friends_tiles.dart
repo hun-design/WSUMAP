@@ -23,6 +23,9 @@ class FriendsTiles {
           orElse: () => friend, // 찾지 못하면 원본 사용
         );
 
+        // 🔥 실시간 상태 변경 감지를 위한 디버깅
+        debugPrint('🔄 친구 타일 업데이트: ${currentFriend.userName} - 온라인: ${currentFriend.isLogin}');
+
         return _buildFriendTileContent(
           context,
           currentFriend,

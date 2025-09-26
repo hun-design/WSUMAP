@@ -34,7 +34,7 @@ class FriendsController extends ChangeNotifier {
   StreamSubscription? _wsConnectionSubscription;
   StreamSubscription? _wsOnlineUsersSubscription;
 
-  static const Duration _updateInterval = Duration(seconds: 5);
+  static const Duration _updateInterval = Duration(seconds: 2); // 5초 → 2초로 변경
   DateTime? _lastUpdate;
   bool _isRealTimeEnabled = true;
 
@@ -104,6 +104,11 @@ class FriendsController extends ChangeNotifier {
 
   // 📨 웹소켓 메시지 처리 (개선)
   void _handleWebSocketMessage(Map<String, dynamic> message) {
+    debugPrint('📨 FriendsController: 웹소켓 메시지 수신');
+    debugPrint('📨 FriendsController: 메시지 타입: ${message['type']}');
+    debugPrint('📨 FriendsController: 메시지 내용: $message');
+    debugPrint('📨 FriendsController: 현재 사용자 ID: $myId');
+
     // 🔥 게스트 사용자는 웹소켓 메시지 처리 제외
     if (myId.startsWith('guest_')) {
       debugPrint('⚠️ 게스트 사용자 - 웹소켓 메시지 처리 제외');
@@ -182,12 +187,18 @@ class FriendsController extends ChangeNotifier {
 
         // 🔥 새로 추가: 친구 로그인 처리
         case 'friend_logged_in':
+          debugPrint('📨 FriendsController: friend_logged_in 메시지 처리 시작');
+          debugPrint('📨 FriendsController: 로그인 사용자 ID: ${message['userId']}');
           _handleFriendLoggedIn(message);
+          debugPrint('📨 FriendsController: friend_logged_in 메시지 처리 완료');
           break;
 
         // 🔥 새로 추가: 친구 로그아웃 처리
         case 'friend_logged_out':
+          debugPrint('📨 FriendsController: friend_logged_out 메시지 처리 시작');
+          debugPrint('📨 FriendsController: 로그아웃 사용자 ID: ${message['userId']}');
           _handleFriendLoggedOut(message);
+          debugPrint('📨 FriendsController: friend_logged_out 메시지 처리 완료');
           break;
 
         // 🔥 하트비트 응답 처리
@@ -236,21 +247,34 @@ class FriendsController extends ChangeNotifier {
 
   // 🔌 연결 상태 변경 처리
   void _handleConnectionChange(bool isConnected) {
+    final previousState = isWebSocketConnected;
     isWebSocketConnected = isConnected;
-    debugPrint('🔌 웹소켓 연결 상태 변경: $isConnected');
+    debugPrint('🔌 웹소켓 연결 상태 변경: $previousState → $isConnected');
 
     if (isConnected) {
       debugPrint('✅ 웹소켓 연결됨 - 실시간 모드 활성화');
-      // 🔥 타이머 완전 중지 및 정리
+      debugPrint('🔄 폴링 타이머 완전 중지 중...');
+      
+      // 🔥 폴링 타이머 완전 정리
       _updateTimer?.cancel();
       _updateTimer = null;
-
+      
+      debugPrint('✅ 폴링 타이머 중지 완료 - 실시간 모드로 전환');
+      
       // 🔥 웹소켓 연결 시 초기 데이터 로드 및 동기화
       _initializeWithWebSocket();
+      
+      // 🔥 웹소켓 연결 시 즉시 온라인 사용자 목록 요청
+      _requestOnlineUsers();
+      
     } else {
       debugPrint('❌ 웹소켓 연결 끊어짐 - 폴링 모드로 전환');
+      debugPrint('🔄 폴링 타이머 시작 중...');
+      
       // 🔥 웹소켓이 끊어지면 폴링 재시작
       _startRealTimeUpdates();
+      
+      debugPrint('✅ 폴링 모드 활성화 완료');
     }
 
     notifyListeners();
@@ -475,11 +499,16 @@ class FriendsController extends ChangeNotifier {
     final loggedInUserId = message['userId'];
     debugPrint('👤 친구 로그인 감지: $loggedInUserId');
     debugPrint('👤 친구 로그인 메시지 전체: $message');
+    debugPrint('👤 현재 온라인 사용자 목록: $onlineUsers');
+    debugPrint('👤 현재 친구 목록 수: ${friends.length}');
 
     // 🔥 실시간으로 즉시 온라인 사용자 목록에 추가
     if (!onlineUsers.contains(loggedInUserId)) {
       onlineUsers.add(loggedInUserId);
       debugPrint('✅ 실시간: 온라인 사용자 목록에 추가: $loggedInUserId');
+      debugPrint('✅ 업데이트된 온라인 사용자 목록: $onlineUsers');
+    } else {
+      debugPrint('ℹ️ 이미 온라인 사용자 목록에 존재: $loggedInUserId');
     }
 
     // 🔥 친구 목록에서 해당 사용자의 상태를 즉시 온라인으로 업데이트
@@ -487,6 +516,7 @@ class FriendsController extends ChangeNotifier {
     for (int i = 0; i < friends.length; i++) {
       if (friends[i].userId == loggedInUserId) {
         found = true;
+        final oldStatus = friends[i].isLogin;
         if (!friends[i].isLogin) {
           friends[i] = Friend(
             userId: friends[i].userId,
@@ -497,7 +527,7 @@ class FriendsController extends ChangeNotifier {
             lastLocation: friends[i].lastLocation,
             isLocationPublic: friends[i].isLocationPublic,
           );
-          debugPrint('✅ 실시간: ${friends[i].userName} 상태를 온라인으로 업데이트');
+          debugPrint('✅ 실시간: ${friends[i].userName} 상태를 온라인으로 업데이트 ($oldStatus → true)');
         } else {
           debugPrint('ℹ️ ${friends[i].userName} 이미 온라인 상태');
         }
@@ -507,11 +537,21 @@ class FriendsController extends ChangeNotifier {
 
     if (!found) {
       debugPrint('⚠️ 친구 목록에서 해당 사용자를 찾을 수 없음: $loggedInUserId');
+      debugPrint('⚠️ 친구 목록의 모든 userId: ${friends.map((f) => f.userId).toList()}');
     }
 
     // 🔥 즉시 UI 업데이트
     debugPrint('🔄 UI 업데이트 트리거 - 친구 로그인');
+    debugPrint('🔄 notifyListeners() 호출 전 상태: ${friends.where((f) => f.userId == loggedInUserId).map((f) => '${f.userName}: ${f.isLogin}').join(', ')}');
+    
+    // 🔥 강제 UI 새로고침을 위한 추가 트리거
+    _forceUIUpdate();
+    
+    // 🔥 친구 로그인 알림 표시
+    _showFriendStatusNotification(loggedInUserId, true);
+    
     notifyListeners();
+    debugPrint('🔄 notifyListeners() 호출 완료');
   }
 
   // 🔥 위치 공유 상태 변경 처리
@@ -562,34 +602,116 @@ class FriendsController extends ChangeNotifier {
     }
   }
 
-  // 🔥 새로 추가: 친구 로그아웃 처리 메서드
+  // 🔥 강제 UI 업데이트 메서드
+  void _forceUIUpdate() {
+    try {
+      debugPrint('🔄 강제 UI 업데이트 시작');
+      
+      // 현재 시간을 업데이트하여 UI 강제 새로고침 트리거
+      _lastUpdate = DateTime.now();
+      
+      // 친구 목록의 참조를 변경하여 UI가 다시 빌드되도록 함
+      final updatedFriends = List<Friend>.from(friends);
+      friends = updatedFriends;
+      
+      debugPrint('🔄 강제 UI 업데이트 완료');
+    } catch (e) {
+      debugPrint('❌ 강제 UI 업데이트 중 오류: $e');
+    }
+  }
+
+  // 🔥 온라인 사용자 목록 요청 메서드
+  void _requestOnlineUsers() {
+    try {
+      debugPrint('📡 온라인 사용자 목록 요청 중...');
+      
+      // 웹소켓을 통해 온라인 사용자 목록 요청
+      _wsService.sendMessage({
+        'type': 'get_online_users',
+        'userId': myId,
+        'timestamp': DateTime.now().toIso8601String(),
+      });
+      
+      debugPrint('✅ 온라인 사용자 목록 요청 전송 완료');
+    } catch (e) {
+      debugPrint('❌ 온라인 사용자 목록 요청 중 오류: $e');
+    }
+  }
+
+  // 🔥 친구 상태 변경 알림 표시
+  void _showFriendStatusNotification(String userId, bool isOnline) {
+    try {
+      // 친구 이름 찾기
+      final friend = friends.firstWhere(
+        (f) => f.userId == userId,
+        orElse: () => Friend(
+          userId: userId,
+          userName: '알 수 없는 사용자',
+          profileImage: '',
+          phone: '',
+          isLogin: isOnline,
+          lastLocation: '',
+          isLocationPublic: false,
+        ),
+      );
+
+      final statusText = isOnline ? '온라인' : '오프라인';
+      final message = '${friend.userName}님이 $statusText 상태가 되었습니다.';
+      
+      debugPrint('🔔 친구 상태 알림: $message');
+      debugPrint('🔔 상태 변경 시간: ${DateTime.now().toIso8601String()}');
+      
+      // 🔥 즉시 UI 강제 새로고침을 위한 추가 트리거
+      Future.delayed(const Duration(milliseconds: 100), () {
+        _forceUIUpdate();
+        notifyListeners();
+      });
+      
+      // 실제 알림 표시는 나중에 구현할 수 있음
+      // NotificationService.showFriendStatusNotification(message);
+      
+    } catch (e) {
+      debugPrint('❌ 친구 상태 알림 표시 중 오류: $e');
+    }
+  }
+
+  // 🔥 새로 추가: 친구 로그아웃 처리 메서드 (개선된 버전)
   void _handleFriendLoggedOut(Map<String, dynamic> message) {
     final loggedOutUserId = message['userId'];
     debugPrint('👤 친구 로그아웃 감지: $loggedOutUserId');
     debugPrint('👤 친구 로그아웃 메시지 전체: $message');
+    debugPrint('👤 현재 온라인 사용자 목록: $onlineUsers');
+    debugPrint('👤 현재 친구 목록 수: ${friends.length}');
 
-    // 온라인 사용자 목록에서 제거
-    if (onlineUsers.contains(loggedOutUserId)) {
+    // 🔥 즉시 온라인 사용자 목록에서 제거
+    bool wasOnline = onlineUsers.contains(loggedOutUserId);
+    if (wasOnline) {
       onlineUsers.remove(loggedOutUserId);
-      debugPrint('✅ 온라인 사용자 목록에서 제거: $loggedOutUserId');
+      debugPrint('✅ 즉시: 온라인 사용자 목록에서 제거: $loggedOutUserId');
+      debugPrint('✅ 업데이트된 온라인 사용자 목록: $onlineUsers');
+    } else {
+      debugPrint('ℹ️ 온라인 사용자 목록에 존재하지 않음: $loggedOutUserId');
     }
 
-    // 친구 목록에서 해당 사용자의 상태를 오프라인으로 업데이트
+    // 🔥 즉시 친구 목록에서 해당 사용자의 상태를 오프라인으로 업데이트
     bool found = false;
+    bool statusChanged = false;
     for (int i = 0; i < friends.length; i++) {
       if (friends[i].userId == loggedOutUserId) {
         found = true;
+        final oldStatus = friends[i].isLogin;
         if (friends[i].isLogin) {
           friends[i] = Friend(
             userId: friends[i].userId,
             userName: friends[i].userName,
             profileImage: friends[i].profileImage,
             phone: friends[i].phone,
-            isLogin: false,
+            isLogin: false, // 🔥 즉시 오프라인으로 변경
             lastLocation: friends[i].lastLocation,
             isLocationPublic: friends[i].isLocationPublic,
           );
-          debugPrint('✅ ${friends[i].userName} 상태를 오프라인으로 업데이트');
+          statusChanged = true;
+          debugPrint('✅ 즉시: ${friends[i].userName} 상태를 오프라인으로 업데이트 ($oldStatus → false)');
         } else {
           debugPrint('ℹ️ ${friends[i].userName} 이미 오프라인 상태');
         }
@@ -599,10 +721,30 @@ class FriendsController extends ChangeNotifier {
 
     if (!found) {
       debugPrint('⚠️ 친구 목록에서 해당 사용자를 찾을 수 없음: $loggedOutUserId');
+      debugPrint('⚠️ 친구 목록의 모든 userId: ${friends.map((f) => f.userId).toList()}');
     }
 
-    debugPrint('🔄 UI 업데이트 트리거 - 친구 로그아웃');
-    notifyListeners();
+    // 🔥 상태가 변경된 경우에만 UI 업데이트
+    if (statusChanged || wasOnline) {
+      debugPrint('🔄 UI 업데이트 트리거 - 친구 로그아웃 (상태 변경됨)');
+      debugPrint('🔄 notifyListeners() 호출 전 상태: ${friends.where((f) => f.userId == loggedOutUserId).map((f) => '${f.userName}: ${f.isLogin}').join(', ')}');
+      
+      // 🔥 즉시 UI 업데이트
+      notifyListeners();
+      
+      // 🔥 추가 강제 UI 새로고침 (지연 없이)
+      Future.delayed(const Duration(milliseconds: 50), () {
+        _forceUIUpdate();
+        notifyListeners();
+      });
+      
+      // 🔥 친구 로그아웃 알림 표시
+      _showFriendStatusNotification(loggedOutUserId, false);
+      
+      debugPrint('🔄 notifyListeners() 호출 완료');
+    } else {
+      debugPrint('ℹ️ 상태 변경 없음 - UI 업데이트 스킵');
+    }
   }
 
   // 👥 친구들의 온라인 상태 업데이트 (개선)
@@ -700,11 +842,14 @@ class FriendsController extends ChangeNotifier {
     }
 
     _updateTimer = Timer.periodic(_updateInterval, (timer) {
-      // 웹소켓이 연결되면 타이머 완전 중지
+      debugPrint('⏰ 폴링 타이머 실행 - 웹소켓 연결 상태: $isWebSocketConnected');
+      
+      // 🔥 웹소켓이 연결되면 타이머 즉시 완전 중지
       if (isWebSocketConnected) {
-        debugPrint('📡 웹소켓 연결됨 - 폴링 타이머 완전 중지');
+        debugPrint('📡 웹소켓 연결됨 - 폴링 타이머 즉시 완전 중지');
         timer.cancel(); // 타이머 자체를 중지
         _updateTimer = null; // 타이머 참조 해제
+        debugPrint('✅ 폴링 타이머 완전 정리 완료');
         return;
       }
 
@@ -714,6 +859,8 @@ class FriendsController extends ChangeNotifier {
         _silentUpdate();
       }
     });
+    
+    debugPrint('✅ 폴링 타이머 시작됨 - 간격: ${_updateInterval.inSeconds}초');
   }
 
   // 🔄 조용한 업데이트

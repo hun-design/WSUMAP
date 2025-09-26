@@ -28,8 +28,8 @@ class ApiConfig {
   static String get websocketBase => 'ws://$baseWsHost:$websocketPort';
   
   // 🔥 WebSocket 관련 상수들
-  static const Duration heartbeatInterval = Duration(seconds: 60);
-  static const Duration reconnectDelay = Duration(seconds: 5);
+  static const Duration heartbeatInterval = Duration(seconds: 10); // 60초 → 10초로 변경
+  static const Duration reconnectDelay = Duration(seconds: 3); // 5초 → 3초로 변경
   static const Duration connectionTimeout = Duration(seconds: 10);
   static const int maxReconnectAttempts = 5;
   

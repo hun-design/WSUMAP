@@ -249,8 +249,9 @@ class UserAuth extends ChangeNotifier {
           debugPrint('❌ 서버 전용 로그아웃: 웹소켓 알림 전송 실패: $wsError');
         }
 
-        // 🔥 2. 잠시 대기하여 서버가 친구들에게 메시지를 전송할 시간 확보
-        await Future.delayed(const Duration(milliseconds: 300));
+        // 🔥 2. 잠시 대기하여 서버가 친구들에게 메시지를 전송할 시간 확보 (300ms → 1000ms로 증가)
+        debugPrint('⏳ 서버가 친구들에게 로그아웃 메시지를 전송할 시간 대기 중...');
+        await Future.delayed(const Duration(milliseconds: 1000));
 
         // 3. 서버에 로그아웃 요청
         final result = await AuthService.logout(id: _userId!);
@@ -499,8 +500,9 @@ class UserAuth extends ChangeNotifier {
         debugPrint('❌ UserAuth: 웹소켓 해제 중 오류: $wsError');
       }
 
-      // 🔥 2. 잠시 대기하여 서버가 친구들에게 로그아웃 메시지를 전송할 시간 확보
-      await Future.delayed(const Duration(milliseconds: 500));
+      // 🔥 2. 잠시 대기하여 서버가 친구들에게 로그아웃 메시지를 전송할 시간 확보 (500ms → 1500ms로 증가)
+      debugPrint('⏳ 서버가 친구들에게 로그아웃 메시지를 전송할 시간 대기 중...');
+      await Future.delayed(const Duration(milliseconds: 1500));
 
       // 3. 위치 전송 중지
       if (context != null) {

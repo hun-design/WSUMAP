@@ -308,22 +308,29 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
       debugPrint('📨 메시지 내용: $data');
       debugPrint('📨 메시지 타입: ${data['type']}');
       debugPrint('📨 전체 메시지: $message');
+      debugPrint('📨 현재 연결된 사용자: $_userId');
 
       switch (data['type']) {
         // 🔥 서버에서 처리하는 메시지들만 유지
         case 'registered':
+          debugPrint('📨 처리 중: registered 메시지');
           _handleRegistered(data);
           break;
 
         case 'online_users_update':
+          debugPrint('📨 처리 중: online_users_update 메시지');
           _handleOnlineUsersUpdate(data);
           break;
 
         case 'friend_logged_in':
+          debugPrint('📨 처리 중: friend_logged_in 메시지');
+          debugPrint('📨 친구 로그인 사용자 ID: ${data['userId']}');
           _handleFriendLoggedIn(data);
           break;
 
         case 'friend_logged_out':
+          debugPrint('📨 처리 중: friend_logged_out 메시지');
+          debugPrint('📨 친구 로그아웃 사용자 ID: ${data['userId']}');
           _handleFriendLoggedOut(data);
           break;
 
@@ -353,12 +360,20 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
           debugPrint('❤️ 하트비트 응답 수신');
           break;
 
+        // 🔥 서버에서 로그아웃 확인 메시지 처리
+        case 'logout_confirmed':
+          debugPrint('✅ 서버에서 로그아웃 확인됨');
+          break;
+
         default:
           debugPrint('⚠️ 알 수 없는 메시지 타입: ${data['type']}');
       }
 
       // 모든 메시지를 스트림으로 전달
+      debugPrint('📨 메시지 스트림으로 전달: ${data['type']}');
+      debugPrint('📨 전달할 메시지 내용: $data');
       _messageController.add(data);
+      debugPrint('📨 메시지 스트림 전달 완료');
     } catch (e) {
       debugPrint('❌ 메시지 파싱 오류: $e');
     }
@@ -367,29 +382,35 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
   // 🔥 새로 추가: 친구 로그아웃 처리 메서드
   void _handleFriendLoggedOut(Map<String, dynamic> data) {
     final loggedOutUserId = data['userId'];
-    debugPrint('👋 친구 로그아웃: $loggedOutUserId');
-    debugPrint('👋 친구 로그아웃 메시지 전체: $data');
+    debugPrint('👋 웹소켓 서비스: 친구 로그아웃 감지: $loggedOutUserId');
+    debugPrint('👋 웹소켓 서비스: 친구 로그아웃 메시지 전체: $data');
+    debugPrint('👋 웹소켓 서비스: 메시지 타입 확인: ${data['type']}');
+    debugPrint('👋 웹소켓 서비스: 사용자 ID 타입: ${loggedOutUserId.runtimeType}');
+    debugPrint('👋 웹소켓 서비스: 현재 연결된 사용자 ID: $_userId');
 
     // 🔥 메시지 중복 전송 방지 - _handleMessage에서 이미 전송됨
     // _messageController.add(data); // 제거
 
     // 🔥 추가 디버깅: 온라인 사용자 목록에서 제거
-    debugPrint('🔥 친구 로그아웃으로 인한 온라인 사용자 목록 업데이트');
-    debugPrint('🔥 메시지 스트림으로 전달됨 - FriendsController에서 처리 예정');
+    debugPrint('🔥 웹소켓 서비스: 친구 로그아웃으로 인한 온라인 사용자 목록 업데이트');
+    debugPrint('🔥 웹소켓 서비스: 메시지 스트림으로 전달됨 - FriendsController에서 처리 예정');
   }
 
   // 🔥 새로 추가: 친구 로그인 처리 메서드
   void _handleFriendLoggedIn(Map<String, dynamic> data) {
     final loggedInUserId = data['userId'];
-    debugPrint('👋 친구 로그인: $loggedInUserId');
-    debugPrint('👋 친구 로그인 메시지 전체: $data');
+    debugPrint('👋 웹소켓 서비스: 친구 로그인 감지: $loggedInUserId');
+    debugPrint('👋 웹소켓 서비스: 친구 로그인 메시지 전체: $data');
+    debugPrint('👋 웹소켓 서비스: 메시지 타입 확인: ${data['type']}');
+    debugPrint('👋 웹소켓 서비스: 사용자 ID 타입: ${loggedInUserId.runtimeType}');
+    debugPrint('👋 웹소켓 서비스: 현재 연결된 사용자 ID: $_userId');
 
     // 🔥 메시지 중복 전송 방지 - _handleMessage에서 이미 전송됨
     // _messageController.add(data); // 제거
 
     // 🔥 추가 디버깅: 온라인 사용자 목록에 추가
-    debugPrint('🔥 친구 로그인으로 인한 온라인 사용자 목록 업데이트');
-    debugPrint('🔥 메시지 스트림으로 전달됨 - FriendsController에서 처리 예정');
+    debugPrint('🔥 웹소켓 서비스: 친구 로그인으로 인한 온라인 사용자 목록 업데이트');
+    debugPrint('🔥 웹소켓 서비스: 메시지 스트림으로 전달됨 - FriendsController에서 처리 예정');
   }
 
   // 🔥 새로 추가: 위치 공유 상태 변경 처리 메서드
@@ -527,19 +548,33 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     }
 
     try {
-      // 🔥 서버에서 처리하는 메시지가 없으므로 연결 해제만 수행
-      debugPrint('📤 웹소켓 연결 해제 시작');
+      // 🔥 1단계: 서버에 로그아웃 알림 전송
+      debugPrint('📤 서버에 로그아웃 알림 전송 중...');
+      _sendMessage({
+        'type': 'logout',
+        'userId': _userId,
+        'timestamp': DateTime.now().toIso8601String(),
+      });
 
-      // 서버가 메시지를 처리할 시간 확보
-      await Future.delayed(const Duration(milliseconds: 200));
+      // 🔥 2단계: 서버가 친구들에게 알림을 보낼 시간 확보 (기존 200ms → 1000ms로 증가)
+      debugPrint('⏳ 서버가 친구들에게 로그아웃 알림을 보낼 시간 대기 중...');
+      await Future.delayed(const Duration(milliseconds: 1000));
+
+      // 🔥 3단계: 추가 확인 - 하트비트 응답 대기 (선택적)
+      debugPrint('💓 로그아웃 확인을 위한 추가 대기...');
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      debugPrint('✅ 서버 로그아웃 알림 처리 완료');
     } catch (e) {
       debugPrint('❌ 로그아웃 메시지 전송 실패: $e');
+      // 실패해도 연결은 해제해야 함
     }
 
-    // 재연결 방지 설정
+    // 🔥 재연결 방지 설정
     _shouldReconnect = false;
 
-    // 기존 disconnect 메서드 호출
+    // 🔥 4단계: 웹소켓 연결 해제
+    debugPrint('🔌 웹소켓 연결 해제 시작...');
     await disconnect();
 
     debugPrint('✅ 로그아웃 및 웹소켓 연결 해제 완료');
@@ -603,13 +638,17 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
   // 💓 하트비트 시작
   void _startHeartbeat() {
     _heartbeatTimer?.cancel();
+    debugPrint('💓 하트비트 시작 - 간격: ${_heartbeatInterval.inSeconds}초');
     _heartbeatTimer = Timer.periodic(_heartbeatInterval, (timer) {
       if (_isConnected) {
+        debugPrint('💓 하트비트 전송');
         _sendMessage({
           'type': 'heartbeat',
+          'userId': _userId,
           'timestamp': DateTime.now().toIso8601String(),
         });
       } else {
+        debugPrint('💓 웹소켓 연결 안됨 - 하트비트 타이머 중지');
         timer.cancel();
       }
     });
