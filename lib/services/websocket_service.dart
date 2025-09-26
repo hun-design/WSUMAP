@@ -351,6 +351,12 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
           _handleFriendDeleted(data);
           break;
 
+        // 🔥 친구 상태 요청 응답 처리
+        case 'friend_status_response':
+          debugPrint('📨 친구 상태 응답 수신');
+          _handleFriendStatusResponse(data);
+          break;
+
         // 🔥 위치 공유 상태 변경 처리 추가
         case 'friend_location_share_status_change':
           _handleFriendLocationShareStatusChange(data);
@@ -469,6 +475,30 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     final deletedUserName = data['deletedUserName'];
     debugPrint('🗑️ 친구 삭제: $deletedUserName ($deletedUserId)');
     debugPrint('🗑️ 친구 삭제 메시지 전체: $data');
+
+    // 🔥 메시지 중복 전송 방지 - _handleMessage에서 이미 전송됨
+    // _messageController.add(data); // 제거
+  }
+
+  // 🔥 새로 추가: 친구 상태 응답 처리
+  void _handleFriendStatusResponse(Map<String, dynamic> data) {
+    debugPrint('📨 친구 상태 응답 처리 시작');
+    debugPrint('📨 친구 상태 응답 데이터: $data');
+
+    // 서버에서 받은 친구 상태 정보를 처리
+    if (data['friends'] != null && data['friends'] is List) {
+      final friendsData = data['friends'] as List;
+      debugPrint('📨 서버에서 받은 친구 상태 수: ${friendsData.length}');
+      
+      // 각 친구의 상태를 로그로 출력
+      for (var friendData in friendsData) {
+        if (friendData is Map) {
+          final userId = friendData['userId']?.toString() ?? '';
+          final isOnline = friendData['isOnline'] ?? false;
+          debugPrint('📨 친구 상태: $userId - ${isOnline ? '온라인' : '오프라인'}');
+        }
+      }
+    }
 
     // 🔥 메시지 중복 전송 방지 - _handleMessage에서 이미 전송됨
     // _messageController.add(data); // 제거
