@@ -6,6 +6,7 @@ import 'dart:io';
 import '../config/api_config.dart';
 import '../utils/ios_location_utils.dart';
 import 'api_helper.dart';
+import 'jwt_service.dart';
 
 /// 위치 획득 결과
 class LocationResult {
@@ -158,7 +159,7 @@ class LocationService {
       debugPrint('📋 응답 상태: ${response.statusCode}');
       debugPrint('📋 응답 내용: ${response.body}');
 
-      // 상태 코드별 처리
+      // 상태 코드별 처리 (크로스 플랫폼 최적화)
       switch (response.statusCode) {
         case 200:
           debugPrint('✅ 위치 전송 성공 (좌표 매핑 수정됨)');
@@ -166,6 +167,11 @@ class LocationService {
           break;
         case 400:
           debugPrint('❌ 잘못된 요청 데이터: ${response.body}');
+          break;
+        case 401:
+          debugPrint('❌ 인증 토큰이 유효하지 않음: ${response.body}');
+          // 토큰 만료 시 자동 갱신 시도
+          await _handleTokenExpiry();
           break;
         case 404:
           debugPrint('❌ 사용자를 찾을 수 없음: ${response.body}');
@@ -541,5 +547,19 @@ class LocationService {
     _currentRequest = null;
     _locationSentCallbacks.clear();
     debugPrint('🧹 LocationService 정리 완료');
+  }
+
+  /// 🔥 토큰 만료 처리 (크로스 플랫폼 최적화)
+  static Future<void> _handleTokenExpiry() async {
+    try {
+      debugPrint('🔄 토큰 만료 감지 - 자동 갱신 시도');
+      
+      // JWT 서비스에서 토큰 제거
+      await JwtService.clearToken();
+      
+      debugPrint('✅ 토큰 만료 처리 완료');
+    } catch (e) {
+      debugPrint('❌ 토큰 만료 처리 중 오류: $e');
+    }
   }
 }

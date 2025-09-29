@@ -121,7 +121,7 @@ class ApiHelper {
     }
   }
 
-  /// 🔥 JWT 토큰이 포함된 헤더로 PUT 요청
+  /// 🔥 JWT 토큰이 포함된 헤더로 PUT 요청 (크로스 플랫폼 최적화)
   static Future<http.Response> put(
     String url, {
     Map<String, String>? headers,
@@ -144,10 +144,33 @@ class ApiHelper {
       }
     }
     
-    return await http.put(Uri.parse(url), headers: authHeaders, body: jsonBody);
+    debugPrint('🌐 PUT 요청: $url');
+    debugPrint('🔐 요청 헤더: $authHeaders');
+    debugPrint('📤 요청 본문: $jsonBody');
+    
+    try {
+      final response = await http.put(Uri.parse(url), headers: authHeaders, body: jsonBody).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          debugPrint('⏰ PUT 요청 타임아웃: $url');
+          throw TimeoutException('PUT 요청 타임아웃', const Duration(seconds: 15));
+        },
+      );
+      
+      debugPrint('📡 PUT 응답 상태: ${response.statusCode}');
+      debugPrint('📡 PUT 응답 본문: ${response.body}');
+      
+      // 🔥 PUT 요청 후 관련 캐시 무효화
+      _invalidateRelatedCache(url);
+      
+      return response;
+    } catch (e) {
+      debugPrint('❌ PUT 요청 실패: $e');
+      rethrow;
+    }
   }
 
-  /// 🔥 JWT 토큰이 포함된 헤더로 DELETE 요청
+  /// 🔥 JWT 토큰이 포함된 헤더로 DELETE 요청 (크로스 플랫폼 최적화)
   static Future<http.Response> delete(
     String url, {
     Map<String, String>? headers,
@@ -170,7 +193,30 @@ class ApiHelper {
       }
     }
     
-    return await http.delete(Uri.parse(url), headers: authHeaders, body: jsonBody);
+    debugPrint('🌐 DELETE 요청: $url');
+    debugPrint('🔐 요청 헤더: $authHeaders');
+    debugPrint('📤 요청 본문: $jsonBody');
+    
+    try {
+      final response = await http.delete(Uri.parse(url), headers: authHeaders, body: jsonBody).timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          debugPrint('⏰ DELETE 요청 타임아웃: $url');
+          throw TimeoutException('DELETE 요청 타임아웃', const Duration(seconds: 15));
+        },
+      );
+      
+      debugPrint('📡 DELETE 응답 상태: ${response.statusCode}');
+      debugPrint('📡 DELETE 응답 본문: ${response.body}');
+      
+      // 🔥 DELETE 요청 후 관련 캐시 무효화
+      _invalidateRelatedCache(url);
+      
+      return response;
+    } catch (e) {
+      debugPrint('❌ DELETE 요청 실패: $e');
+      rethrow;
+    }
   }
 
   /// 🔥 JWT 토큰이 포함된 헤더로 MultipartRequest 생성

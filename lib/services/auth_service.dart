@@ -221,33 +221,28 @@ class AuthService {
     }
   }
 
-  /// 로그아웃 API 호출
+  /// 🔥 로그아웃 API 호출 (JWT 토큰 포함)
   static Future<AuthResult> logout({required String id}) async {
     try {
-      debugPrint('=== 로그아웃 API 요청 ===');
+      debugPrint('=== 🔥 JWT 토큰 포함 로그아웃 API 요청 ===');
       debugPrint('URL: $baseUrl/logout');
       debugPrint('아이디: $id');
 
-      final requestBody = {'id': id};
+      // 🔥 JWT 토큰을 포함한 로그아웃 요청 (서버에서 authMiddleware로 토큰 검증)
+      final response = await ApiHelper.post(
+        '$baseUrl/logout',
+        body: {}, // 서버에서 토큰에서 사용자 ID를 추출하므로 body는 비워둠
+      );
 
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/logout'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: jsonEncode(requestBody),
-          )
-          .timeout(const Duration(seconds: 10));
-
-      debugPrint('=== 로그아웃 API 응답 ===');
+      debugPrint('=== 🔥 JWT 토큰 포함 로그아웃 API 응답 ===');
       debugPrint('상태코드: ${response.statusCode}');
       debugPrint('응답 내용: ${response.body}');
 
       switch (response.statusCode) {
         case 200:
           return AuthResult.success(message: '로그아웃되었습니다.');
+        case 401:
+          return AuthResult.failure('인증 토큰이 유효하지 않습니다.');
         case 404:
           return AuthResult.failure('존재하지 않는 사용자입니다.');
         case 500:
@@ -258,7 +253,7 @@ class AuthService {
           );
       }
     } catch (e) {
-      debugPrint('로그아웃 네트워크 오류: $e');
+      debugPrint('❌ 로그아웃 네트워크 오류: $e');
       return AuthResult.failure('네트워크 연결에 실패했습니다.');
     }
   }

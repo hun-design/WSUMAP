@@ -1,5 +1,6 @@
 // lib/services/jwt_service.dart
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -114,7 +115,7 @@ class JwtService {
     return token != null;
   }
 
-  /// 🔥 Authorization 헤더 생성
+  /// 🔥 Authorization 헤더 생성 (크로스 플랫폼 최적화)
   static Future<Map<String, String>> getAuthHeaders() async {
     final token = await getToken();
     debugPrint('🔐 JWT 토큰 상태: ${token != null ? "있음" : "없음"}');
@@ -125,12 +126,16 @@ class JwtService {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        'User-Agent': 'WSUMAP-Mobile/1.0.0', // 크로스 플랫폼 식별
+        'X-Platform': Platform.isAndroid ? 'android' : Platform.isIOS ? 'ios' : 'unknown',
       };
     } else {
       debugPrint('⚠️ JWT 토큰이 없어서 인증 헤더 없이 요청');
       return {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        'User-Agent': 'WSUMAP-Mobile/1.0.0', // 크로스 플랫폼 식별
+        'X-Platform': Platform.isAndroid ? 'android' : Platform.isIOS ? 'ios' : 'unknown',
       };
     }
   }
