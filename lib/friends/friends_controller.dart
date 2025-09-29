@@ -638,22 +638,58 @@ class FriendsController extends ChangeNotifier {
       debugPrint('⚠️ 현재 친구 목록 (${friends.length}명): ${friends.map((f) => '${f.userId}(${f.userName})').join(', ')}');
       debugPrint('⚠️ 온라인 사용자 목록: ${onlineUsers.join(', ')}');
       
-      // 🔥 웹소켓 연결 중에는 친구 목록 새로고침 제약 (실시간 데이터 보존)
-      if (isWebSocketConnected) {
-        debugPrint('❌ 웹소켓 연결 중 - 친구 목록 새로고침 제외 (실시간 데이터 보존)');
-      } else {
-        debugPrint('🔄 폴링 모드 - 친구 목록 새로고침 시작');
-        Future.microtask(() async {
-          try {
-            final newFriends = await repository.getMyFriends();
-            friends = newFriends;
-            notifyListeners();
-            debugPrint('✅ 친구 목록 새로고침 완료');
-          } catch (e) {
-            debugPrint('❌ 친구 목록 새로고침 실패: $e');
+      // 🔥 친구가 목록에 없으면 친구 목록 새로고침 (실시간 상태 보존)
+      debugPrint('🔄 친구 목록 새로고침 시작 - 새로운 친구 발견됨');
+      Future.microtask(() async {
+        try {
+          // 친구 목록 새로고침
+          final newFriends = await repository.getMyFriends();
+          
+          // 새로운 친구가 있으면 추가하되 기존 실시간 상태 보존
+          final combinedFriends = <Friend>[];
+          
+          // 모든 새 친구를 추가하되 실시간 상태 우선 적용
+          for (final newFriend in newFriends) {
+            // 이미 실시간 상태로 관리 중인 친구인지 확인
+            final existingFriend = friends.firstWhere(
+              (f) => f.userId == newFriend.userId,
+              orElse: () => Friend(
+                userId: '',
+                userName: '',
+                profileImage: '',
+                phone: '',
+                isLogin: false,
+                lastLocation: '',
+                isLocationPublic: false,
+              ),
+            );
+            
+            // 실시간 상태가 변경되었으면 보존, 아니면 서버 상태 사용
+            final useRealTimeStatus = existingFriend.userId.isNotEmpty && 
+                                    ((existingFriend.isLogin != newFriend.isLogin) || 
+                                     onlineUsers.contains(existingFriend.userId));
+            
+            combinedFriends.add(Friend(
+              userId: newFriend.userId,
+              userName: newFriend.userName,
+              profileImage: newFriend.profileImage,
+              phone: newFriend.phone,
+              isLogin: useRealTimeStatus ? existingFriend.isLogin : newFriend.isLogin,
+              lastLocation: newFriend.lastLocation,
+              isLocationPublic: newFriend.isLocationPublic,
+            ));
+            
+            final statusSource = useRealTimeStatus ? '실시간' : '서버';
+            debugPrint('✅ 친구 상태 반영 ($statusSource): ${newFriend.userName} - 온라인: ${combinedFriends.last.isLogin}');
           }
-        });
-      }
+          
+          friends = combinedFriends;
+          notifyListeners();
+          debugPrint('✅ 친구 목록 새로고침 완료 - ${friends.length}명 (실시간 상태 보존)');
+        } catch (e) {
+          debugPrint('❌ 친구 목록 새로고침 실패: $e');
+        }
+      });
     }
 
     // 🔥 즉시 UI 업데이트 (실시간 반영)
@@ -790,22 +826,54 @@ class FriendsController extends ChangeNotifier {
       debugPrint('⚠️ 현재 친구 목록 (${friends.length}명): ${friends.map((f) => '${f.userId}(${f.userName})').join(', ')}');
       debugPrint('⚠️ 온라인 사용자 목록: ${onlineUsers.join(', ')}');
 
-      // 🔥 웹소켓 연결 중에는 친구 목록 새로고침 제약 (실시간 데이터 보존)
-      if (isWebSocketConnected) {
-        debugPrint('❌ 웹소켓 연결 중 - 친구 목록 새로고침 제외 (실시간 데이터 보존)');
-      } else {
-        debugPrint('🔄 폴링 모드 - 친구 목록 새로고침 시작');
-        Future.microtask(() async {
-          try {
-            final newFriends = await repository.getMyFriends();
-            friends = newFriends;
-            notifyListeners();
-            debugPrint('✅ 친구 목록 새로고침 완료');
-          } catch (e) {
-            debugPrint('❌ 친구 목록 새로고침 실패: $e');
+      // 🔥 친구가 목록에 없으면 친구 목록 새로고침 (실시간 중에도 확인)
+      debugPrint('🔄 새로운 친구 로그인 감지 - 친구 목록 새로고침');
+      Future.microtask(() async {
+        try {
+          // 친구 목록 새로고침하되 실시간 상태 보존
+          final newFriends = await repository.getMyFriends();
+          
+          // 실시간 상태와 서버 상태 병합
+          final combinedFriends = <Friend>[];
+          
+          for (final newFriend in newFriends) {
+            // 기존 실시간 상태 확인
+            final existingFriend = friends.firstWhere(
+              (f) => f.userId == newFriend.userId,
+              orElse: () => Friend(
+                userId: '',
+                userName: '',
+                profileImage: '',
+                phone: '',
+                isLogin: false,
+                lastLocation: '',
+                isLocationPublic: false,
+              ),
+            );
+            
+            // 실시간 상태가 있으면 우선 적용
+            final preserveRealTimeStatus = existingFriend.userId.isNotEmpty && 
+                                         (onlineUsers.contains(existingFriend.userId) ||
+                                          existingFriend.isLogin != newFriend.isLogin);
+            
+            combinedFriends.add(Friend(
+              userId: newFriend.userId,
+              userName: newFriend.userName,
+              profileImage: newFriend.profileImage,
+              phone: newFriend.phone,
+              isLogin: preserveRealTimeStatus ? existingFriend.isLogin : newFriend.isLogin,
+              lastLocation: newFriend.lastLocation,
+              isLocationPublic: newFriend.isLocationPublic,
+            ));
           }
-        });
-      }
+          
+          friends = combinedFriends;
+          notifyListeners();
+          debugPrint('✅ 친구 목록 새로고침 완료 - ${combinedFriends.length}명 (실시간 상태 보존)');
+        } catch (e) {
+          debugPrint('❌ 친구 목록 새로고침 실패: $e');
+        }
+      });
     }
 
     // 🔥 즉시 UI 업데이트 (지연 제거)
