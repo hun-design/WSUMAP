@@ -156,6 +156,26 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     final userAuth = context.read<UserAuth>(); // watch 대신 read 사용
     final currentUserId = userAuth.userId;
 
+    // 🔥 사용자 변경 감지 시 FriendsController 재생성 (친구 목록 초기화)
+    if (_lastUserId != null && _lastUserId != currentUserId && currentUserId != null) {
+      debugPrint('🔄 사용자 변경 감지: $_lastUserId → $currentUserId');
+      debugPrint('🔄 FriendsController 재생성 시작');
+      
+      // 기존 FriendsController 정리
+      _friendsController.removeListener(_onFriendsControllerChanged);
+      _friendsController.clearAllData(); // 즉시 데이터 초기화
+      _friendsController.dispose();
+      
+      // 새로운 FriendsController 생성
+      _friendsController = FriendsController(
+        FriendRepository(FriendApiService()),
+        currentUserId,
+      );
+      _friendsController.addListener(_onFriendsControllerChanged);
+      
+      debugPrint('✅ FriendsController 재생성 완료 - 새로운 사용자: $currentUserId');
+    }
+
     // 🔥 새 사용자 로그인 감지 시에만 처리 (더 엄격한 조건)
     if (currentUserId != _lastUserId &&
         currentUserId != null &&

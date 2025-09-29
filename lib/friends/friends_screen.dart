@@ -52,6 +52,31 @@ class _FriendsScreenState extends State<FriendsScreen>
   }
 
   @override
+  void didUpdateWidget(FriendsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    
+    // 🔥 사용자 ID 변경 시 FriendsController 재생성
+    if (oldWidget.userId != widget.userId) {
+      debugPrint('🔄 FriendsScreen 사용자 변경 감지: ${oldWidget.userId} → ${widget.userId}');
+      
+      // 기존 컨트롤러 정리
+      controller.clearAllData(); // 즉시 데이터 초기화
+      controller.dispose();
+      
+      // 새로운 컨트롤러 생성
+      controller = FriendsController(FriendRepository(FriendApiService()), widget.userId)
+        ..addListener(() {
+          if (mounted) {
+            setState(() {});
+          }
+        })
+        ..loadAll();
+      
+      debugPrint('✅ FriendsScreen FriendsController 재생성 완료');
+    }
+  }
+
+  @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     controller.dispose();

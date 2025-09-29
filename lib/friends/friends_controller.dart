@@ -505,21 +505,38 @@ class FriendsController extends ChangeNotifier {
     notifyListeners();
   }
 
-  // 🔥 서버 데이터와 웹소켓 데이터 동기화 (단순화된 버전)
+  // 🔥 서버 데이터와 웹소켓 데이터 동기화 (수정된 버전)
   void _syncWithServerData() {
     debugPrint('🔄 서버 데이터와 웹소켓 데이터 동기화 시작');
     debugPrint('🔄 웹소켓 연결 상태: $isWebSocketConnected');
 
     bool hasChanges = false;
 
-    // 🔥 단순화: 웹소켓 연결 시 웹소켓 데이터 우선, 아니면 서버 데이터 우선
+    // 🔥 수정된 로직: 웹소켓 상태가 있으면 웹소켓 데이터와 서버 데이터를 모두 고려
     for (int i = 0; i < friends.length; i++) {
       final friend = friends[i];
       final isOnlineInServer = friend.isLogin;
       final isOnlineInWebSocket = onlineUsers.contains(friend.userId);
 
-      // 🔥 단순화된 로직: 웹소켓 연결 시 웹소켓 데이터 우선, 아니면 서버 데이터 우선
-      final shouldBeOnline = isWebSocketConnected ? isOnlineInWebSocket : isOnlineInServer;
+      // 🔥 수정된 로직: 웹소켓이 연결되어 있으면 웹소켓 데이터를 믿되, 서버 데이터와 충돌시 웹소켓 우선
+      // 만약 웹소켓에서 온라인이지만 서버에서 오프라인이면, 웹소켓 우선 (실시간 상태)
+      // 만약 웹소켓에서 오프라인이지만 서버에서 온라인이면, 웹소켓 우선 (실시간 연결 끊김)
+      bool shouldBeOnline;
+      if (isWebSocketConnected) {
+        // 웹소켓이 연결된 경우: 웹소켓 온라인 상태가 더 정확하므로 우선시
+        // 단, 새로운 친구가 서버에서만 온라인 표시된 경우에는 웹소켓 온라인 목록을 업데이트
+        shouldBeOnline = isOnlineInWebSocket;
+        
+        // 서버에서 온라인이지만 웹소켓 목록에 없는 경우 추가
+        if (isOnlineInServer && !isOnlineInWebSocket && !onlineUsers.contains(friend.userId)) {
+          onlineUsers.add(friend.userId);
+          shouldBeOnline = true;
+          debugPrint('📡 서버 온라인 친구를 웹소켓 목록에 추가: ${friend.userName}');
+        }
+      } else {
+        // 웹소켓이 끊어진 경우: 서버 데이터만 믿음
+        shouldBeOnline = isOnlineInServer;
+      }
       
       if (friend.isLogin != shouldBeOnline) {
         friends[i] = Friend(
@@ -540,7 +557,7 @@ class FriendsController extends ChangeNotifier {
         }
         
         hasChanges = true;
-        debugPrint('✅ ${friend.userName} 상태 동기화: ${friend.isLogin} → $shouldBeOnline');
+        debugPrint('✅ ${friend.userName} 상태 동기화: ${friend.isLogin} → $shouldBeOnline (웹소켓: $isOnlineInWebSocket, 서버: $isOnlineInServer)');
       }
     }
 
@@ -1200,7 +1217,7 @@ class FriendsController extends ChangeNotifier {
     }
   }
 
-  // 🔥 강화된 친구 상태 동기화 메서드
+  // 🔥 강화된 친구 상태 동기화 메서드 (수정됨)
   Future<void> _enhancedFriendStatusSync() async {
     try {
       debugPrint('🔄 강화된 친구 상태 동기화 시작');
@@ -1223,19 +1240,32 @@ class FriendsController extends ChangeNotifier {
       final wsOnlineUsers = actualWsConnected ? onlineUsers : <String>[];
       debugPrint('📡 웹소켓 온라인 사용자 목록: ${wsOnlineUsers.length}명');
       
-      // 🔥 3. 서버 데이터와 웹소켓 데이터 비교하여 충돌 해결
+      // 🔥 3. 수정된 충돌 해결 로직 - 웹소켓 상태를 실시간 상태로 우선하되 서버 백업 고려
       bool hasChanges = false;
       for (int i = 0; i < serverFriends.length; i++) {
         final serverFriend = serverFriends[i];
         final isOnlineInWebSocket = wsOnlineUsers.contains(serverFriend.userId);
         
-        // 🔥 웹소켓이 연결되어 있고 웹소켓에서 온라인 상태가 확인되면 웹소켓 우선
-        final shouldBeOnline = (actualWsConnected && isOnlineInWebSocket) ? true : serverFriend.isLogin;
+        bool shouldBeOnline;
+        if (actualWsConnected) {
+          // 웹소켓 연결된 경우: 웹소켓 상태 우선
+          // 단, 서버에서 온라인인데 웹소켓 목록에 없는 경우 (신규 연결 등) 웹소켓 목록 업데이트
+          shouldBeOnline = isOnlineInWebSocket;
+          
+          if (serverFriend.isLogin && !isOnlineInWebSocket && !onlineUsers.contains(serverFriend.userId)) {
+            onlineUsers.add(serverFriend.userId);
+            shouldBeOnline = true;
+            debugPrint('📡 서버 온라인 친구를 웹소켓 목록에 추가: ${serverFriend.userName}');
+          }
+        } else {
+          // 웹소켓 연결 안됨: 서버 데이터만 믿음
+          shouldBeOnline = serverFriend.isLogin;
+        }
         
         debugPrint('🔍 친구 상태 분석: ${serverFriend.userName}(${serverFriend.userId})');
         debugPrint('  - 서버 상태: ${serverFriend.isLogin}');
         debugPrint('  - 웹소켓 상태: $isOnlineInWebSocket ($actualWsConnected)');
-        debugPrint('  - 최종 결정: $shouldBeOnline');
+        debugPrint('  - 최종 결정: ${shouldBeOnline}');
         
         if (serverFriend.isLogin != shouldBeOnline) {
           serverFriends[i] = Friend(
@@ -1728,7 +1758,7 @@ class FriendsController extends ChangeNotifier {
     }
   }
 
-  // 🔥 웹소켓 데이터 기반 친구 상태 업데이트
+  // 🔥 웹소켓 데이터 기반 친구 상태 업데이트 (개선됨)
   void _updateFriendsStatusFromWebSocket() {
     bool hasChanges = false;
 
@@ -1736,6 +1766,7 @@ class FriendsController extends ChangeNotifier {
       final isOnlineInWebSocket = onlineUsers.contains(friends[i].userId);
       final currentStatus = friends[i].isLogin;
 
+      // 상태 변경이 있고, 웹소켓 상태가 실제로 다르면 업데이트
       if (currentStatus != isOnlineInWebSocket) {
         friends[i] = Friend(
           userId: friends[i].userId,
@@ -1747,7 +1778,7 @@ class FriendsController extends ChangeNotifier {
           isLocationPublic: friends[i].isLocationPublic,
         );
         debugPrint(
-          '✅ ${friends[i].userName} 상태 변경: $currentStatus → $isOnlineInWebSocket (웹소켓)',
+          '✅ ${friends[i].userName} 상태 변경: ${currentStatus ? '온라인' : '오프라인'} → ${isOnlineInWebSocket ? '온라인' : '오프라인'} (웹소켓 기반)',
         );
         hasChanges = true;
       }
@@ -2441,6 +2472,16 @@ class FriendsController extends ChangeNotifier {
   void dispose() {
     debugPrint('🛑 FriendsController 정리 중...');
 
+    // 🔥 친구 목록 및 데이터 완전 초기화
+    friends.clear();
+    friendRequests.clear();
+    sentFriendRequests.clear();
+    onlineUsers.clear();
+    _realTimeStatusCache.clear();
+    _statusTimestamp.clear();
+    
+    debugPrint('✅ 친구 데이터 완전 초기화 완료');
+
     // 🔥 타이머 정리
     _updateTimer?.cancel();
     _updateTimer = null;
@@ -2518,20 +2559,28 @@ class FriendsController extends ChangeNotifier {
     debugPrint('✅ 실시간 상태 즉시 업데이트 완료');
   }
 
-  // 🔥 실시간 상태 캐시 확인 메서드 (서버 동기화 시 사용)
-  bool _getRealTimeStatus(String userId) {
-    final cachedStatus = _realTimeStatusCache[userId];
-    final statusTime = _statusTimestamp[userId];
+
+  // 🔥 사용자 변경 시 즉시 데이터 초기화 메서드
+  void clearAllData() {
+    debugPrint('🔄 FriendsController 데이터 즉시 초기화 시작');
     
-    if (cachedStatus != null && statusTime != null) {
-      // 최근 5분 이내의 상태이면 실시간 상태 우선
-      final timeDiff = DateTime.now().difference(statusTime);
-      if (timeDiff.inMinutes < 5) {
-        debugPrint('🔥 실시간 상태 캐시 사용: $userId = $cachedStatus (${timeDiff.inSeconds}초 전)');
-        return cachedStatus;
-      }
-    }
+    // 모든 친구 관련 데이터 초기화
+    friends.clear();
+    friendRequests.clear();
+    sentFriendRequests.clear();
+    onlineUsers.clear();
+    _realTimeStatusCache.clear();
+    _statusTimestamp.clear();
     
-    return false; // 기본값은 서버 상태 사용
+    // 상태 초기화
+    isLoading = false;
+    isRefreshing = false;
+    errorMessage = null;
+    isWebSocketConnected = false;
+    
+    debugPrint('✅ FriendsController 데이터 즉시 초기화 완료');
+    
+    // UI 업데이트
+    notifyListeners();
   }
 }
