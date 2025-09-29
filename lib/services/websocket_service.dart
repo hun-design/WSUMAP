@@ -359,7 +359,7 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
         case 'Login_Status':
           _handleLoginStatusChange(data);
           // 🔥 Login_Status 메시지는 변환되어 스트림에서 처리되므로 여기서는 리턴하지 않음
-          break;
+          return; // 🔥 중복 스트림 전달 방지
 
         case 'heartbeat_response':
           // 하트비트 응답은 특별한 처리 없음
@@ -520,85 +520,72 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     debugPrint('📤 등록 완료 - 서버에서 온라인 사용자 목록 전송 대기');
   }
 
-  // 🔥 Login_Status 메시지 처리 (서버에서 보내는 친구 로그인/로그아웃 알림)
+  // 🔥 Login_Status 메시지 처리 (서버에서 보내는 친구 로그인/로그아웃 알림) - 개선된 버전
   void _handleLoginStatusChange(Map<String, dynamic> data) {
     final userId = data['userId'];
     final statusRaw = data['status'];
-    final isOnline = statusRaw == true || statusRaw == "true" || statusRaw == 1 || statusRaw == "online";
     final message = data['message'];
     final timestamp = data['timestamp'];
     
-    debugPrint('🔥🔥🔥 Login_Status 핸들러 실행 🔥🔥🔥');
-    debugPrint('📨 원본 데이터: $data');
-    debugPrint('📨 친구 ID: $userId');
-    debugPrint('📨 원본 status 값: $statusRaw');
-    debugPrint('📨 변환된 온라인 상태: $isOnline');
-    debugPrint('📨 메시지: $message');
-    debugPrint('📨 타임스탬프: $timestamp');
+    // 🔥 상태 값 정규화
+    final isOnline = _normalizeStatusValue(statusRaw);
     
-    // 기존 friend_status_change와 동일한 데이터 형식으로 변환하여 전달
+    if (kDebugMode) {
+      debugPrint('🔥 Login_Status 메시지 처리 시작');
+      debugPrint('📨 친구 ID: $userId');
+      debugPrint('📨 원본 status 값: $statusRaw');
+      debugPrint('📨 정규화된 상태: $isOnline');
+      debugPrint('📨 메시지: $message');
+    }
+    
+    // 🔥 friend_status_change 형식으로 변환
     final friendStatusMessage = {
       'type': 'friend_status_change',
       'userId': userId,
       'isOnline': isOnline,
       'message': message,
       'timestamp': timestamp,
+      'source': 'Login_Status', // 🔥 메시지 출처 표시
     };
     
-    debugPrint('📨 변환된 메시지: $friendStatusMessage');
-    
-    // 변환된 메시지를 스트림으로 전달하여 FriendsController에서 처리하도록 함
-    debugPrint('📡 변환된 메시지 스트림 컨트롤러에 추가 시도');
-    debugPrint('📡 스트림 컨트롤러 상태: ${_messageController.isClosed ? "CLOSED" : "OPEN"}');
-    debugPrint('📡 스트림 컨트롤러 구독자 수: ${_messageController.hasListener ? "있음" : "없음"}');
-    
+    // 🔥 변환된 메시지를 스트림으로 전달
     try {
       _messageController.add(friendStatusMessage);
-      debugPrint('✅ Login_Status 메시지 스트림으로 전파 완료');
-      
-      // 🔥 실시간 상태 직접 전달 (스트림 실패 시 대비책)
-      debugPrint('🔥 실시간 상태 직접 전달 시작');
-      _notifyRealTimeStatusChange(userId, isOnline, message);
+      if (kDebugMode) {
+        debugPrint('✅ Login_Status → friend_status_change 변환 완료');
+      }
     } catch (e) {
-      debugPrint('❌ 스트림 추가 실패: $e');
-      
-      // 🔥 스트림 실패 시에도 실시간 상태 전달
-      debugPrint('🔥 스트림 실패에도 불구하고 실시간 상태 전달');
-      _notifyRealTimeStatusChange(userId, isOnline, message);
+      if (kDebugMode) {
+        debugPrint('❌ Login_Status 메시지 변환 실패: $e');
+      }
     }
   }
 
-  // 🔥 실시간 상태 변경 직접 전달 메서드 (스트림 실패 시 대비책)
-  void _notifyRealTimeStatusChange(String userId, bool isOnline, String message) {
-    debugPrint('🔥 실시간 상태 직접 전달: $userId = $isOnline');
-    debugPrint('📱 메시지: $message');
-    
-    // 🔥 글로벌 상태 변경 이벤트 발생 (static 방식)
-    // 이를 통해 다른 곳에서 구독할 수 있도록 함
-    _broadcastRealTimeStatusChange(userId, isOnline, message);
+  // 🔥 상태 값 정규화 헬퍼
+  bool _normalizeStatusValue(dynamic value) {
+    if (value == null) return false;
+    if (value is bool) return value;
+    if (value is String) {
+      final lowerValue = value.toLowerCase();
+      return lowerValue == 'true' || lowerValue == 'online' || lowerValue == '1';
+    }
+    if (value is int) {
+      return value == 1;
+    }
+    return false;
   }
 
-  // 🔥 글로벌 상태 변경 브로드캐스트
-  void _broadcastRealTimeStatusChange(String userId, bool isOnline, String message) {
-    // 🔥 이벤트 스트림을 통해 전달
-    final statusEvent = {
-      'type': 'real_time_status_change',
-      'userId': userId,
-      'isOnline': isOnline,
-      'message': message,
-      'timestamp': DateTime.now().toIso8601String(),
-      'source': 'direct_websocket',
-    };
-    
-    debugPrint('📡 실시간 상태 이벤트 브로드캐스트: $statusEvent');
-    
-    try {
-      _messageController.add(statusEvent);
-      debugPrint('✅ 실시간 상태 이벤트 브로드캐스트 완료');
-    } catch (e) {
-      debugPrint('❌ 실시간 상태 이벤트 브로드캐스트 실패: $e');
-    }
-  }
+  // 🔥 실시간 상태 변경 직접 전달 메서드 (제거됨 - 중복 처리 방지)
+  // void _notifyRealTimeStatusChange(String userId, bool isOnline, String message) {
+  //   // 이 메서드는 더 이상 사용되지 않음
+  //   // Login_Status 메시지는 friend_status_change로 변환되어 처리됨
+  // }
+
+  // 🔥 글로벌 상태 변경 브로드캐스트 (제거됨 - 중복 처리 방지)
+  // void _broadcastRealTimeStatusChange(String userId, bool isOnline, String message) {
+  //   // 이 메서드는 더 이상 사용되지 않음
+  //   // Login_Status 메시지는 friend_status_change로 변환되어 처리됨
+  // }
 
   // 🔥 로그 출력 여부 결정 메서드
   bool _shouldLogMessage(String messageType) {
@@ -619,15 +606,15 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
   // 🔥 플랫폼별 최적화된 연결 타임아웃 (크로스 플랫폼 최적화)
   Duration get _platformConnectionTimeout {
     if (Platform.isAndroid) {
-      return const Duration(seconds: 12); // 안드로이드 최적화
+      return const Duration(seconds: 12); // 안드로이드: 네트워크 지연 고려
     } else if (Platform.isIOS) {
-      return const Duration(seconds: 8); // iOS 최적화
+      return const Duration(seconds: 8); // iOS: 빠른 연결
     } else if (Platform.isWindows) {
-      return const Duration(seconds: 10); // Windows 최적화
+      return const Duration(seconds: 10); // Windows: 중간값
     } else if (Platform.isMacOS) {
-      return const Duration(seconds: 9); // macOS 최적화
+      return const Duration(seconds: 9); // macOS: 최적화
     } else if (Platform.isLinux) {
-      return const Duration(seconds: 11); // Linux 최적화
+      return const Duration(seconds: 11); // Linux: 네트워크 다양성 고려
     }
     return const Duration(seconds: 10); // 기본값
   }
@@ -635,17 +622,17 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
   // 🔥 플랫폼별 최적화된 하트비트 간격 (네트워크 부하 감소를 위해 조정)
   Duration get _platformHeartbeatInterval {
     if (Platform.isAndroid) {
-      return const Duration(seconds: 30); // 안드로이드: 500ms → 30초
+      return const Duration(seconds: 30); // 안드로이드: 배터리 최적화
     } else if (Platform.isIOS) {
-      return const Duration(seconds: 30); // iOS: 800ms → 30초
+      return const Duration(seconds: 30); // iOS: 배터리 최적화
     } else if (Platform.isWindows) {
-      return const Duration(seconds: 30); // Windows: 300ms → 30초
+      return const Duration(seconds: 30); // Windows: 네트워크 최적화
     } else if (Platform.isMacOS) {
-      return const Duration(seconds: 30); // macOS: 600ms → 30초
+      return const Duration(seconds: 30); // macOS: 네트워크 최적화
     } else if (Platform.isLinux) {
-      return const Duration(seconds: 30); // Linux: 400ms → 30초
+      return const Duration(seconds: 30); // Linux: 네트워크 최적화
     }
-    return const Duration(seconds: 30); // 기본값: 500ms → 30초
+    return const Duration(seconds: 30); // 기본값: 네트워크 최적화
   }
 
 

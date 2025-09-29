@@ -128,50 +128,19 @@ class SentFriendRequest {
   });
 
   factory SentFriendRequest.fromJson(Map<String, dynamic> json) {
-    print('[DEBUG] SentFriendRequest 파싱 시도: $json');
-
-    // 서버 명세에 따라 u."Id", u."Name" 형태로 응답이 옴
     final toUserId = _extractString(json, [
-      'Id', // 서버에서 u."Id" 사용 (대문자 I)
-      'id', // 소문자 버전
-      'ID', // 전체 대문자 버전
-      'to_user_id', // 혹시 다른 형태로 올 경우 대비
-      'toUserId',
-      'friend_id',
-      'add_id',
+      'Id', 'id', 'ID', 'to_user_id', 'toUserId', 'friend_id', 'add_id',
     ]);
 
     final toUserName = _extractString(json, [
-      'Name', // 서버에서 u."Name" 사용 (대문자 N)
-      'name', // 소문자 버전
-      'NAME', // 전체 대문자 버전
-      'to_user_name', // 혹시 다른 형태로 올 경우 대비
-      'toUserName',
-      'friend_name',
-      'add_name',
+      'Name', 'name', 'NAME', 'to_user_name', 'toUserName', 'friend_name', 'add_name',
     ]);
 
-    // 🔥 서버에서 requestDate를 반환하지 않으므로 현재 시간으로 설정
     final requestDate = _extractString(json, [
-      'request_date',
-      'requestDate',
-      'RequestDate',
-      'created_at',
-      'createdAt',
-      'date',
-      'timestamp',
-      'Date',
-      'CREATED_AT',
+      'request_date', 'requestDate', 'RequestDate', 'created_at', 'createdAt', 'date', 'timestamp', 'Date', 'CREATED_AT',
     ]);
 
-    // 🔥 서버에서 requestDate를 반환하지 않으므로 현재 시간으로 설정
-    final finalRequestDate = requestDate.isEmpty 
-        ? DateTime.now().toIso8601String() 
-        : requestDate;
-
-    print(
-      '[DEBUG] 파싱 결과 - toUserId: $toUserId, toUserName: $toUserName, requestDate: $finalRequestDate',
-    );
+    final finalRequestDate = requestDate.isEmpty ? DateTime.now().toIso8601String() : requestDate;
 
     return SentFriendRequest(
       toUserId: toUserId,

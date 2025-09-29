@@ -146,7 +146,7 @@ class _BuildingInfoWindowState extends State<BuildingInfoWindow> {
           onTap: () => _showImageDialog(imagePaths, 0, isNetworkImage),
           child: Stack(
             children: [
-              // 대표 이미지
+              // 🎯 대표 이미지 (버퍼 최적화)
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Image.network(
@@ -154,6 +154,13 @@ class _BuildingInfoWindowState extends State<BuildingInfoWindow> {
                   width: 120,
                   height: 120,
                   fit: BoxFit.cover,
+                  // 🎯 ImageReader_JNI 로그 방지를 위한 캐시 및 버퍼 최적화
+                  cacheWidth: 120, // 정확한 해상도로 캐시하여 메모리 절약
+                  cacheHeight: 120,
+                  filterQuality: FilterQuality.medium, // 고품질 필터 비활성화로 성능 향상
+                  headers: {
+                    'Cache-Control': 'max-age=3600', // 1시간 캐시 설정
+                  },
                   loadingBuilder: (context, child, loadingProgress) {
                     if (loadingProgress == null) return child;
                     return Container(
@@ -304,7 +311,6 @@ class _BuildingInfoWindowState extends State<BuildingInfoWindow> {
 
   Widget _buildStatusAndHours(AppLocalizations l10n) {
     final statusColor = widget.building.statusColor;
-    final isOpen = widget.building.isOpen;
 
     return Row(
       children: [
@@ -470,6 +476,11 @@ class _ImageDialogState extends State<_ImageDialog> {
                     fit: BoxFit.contain,
                     width: MediaQuery.of(context).size.width,
                     height: MediaQuery.of(context).size.height,
+                    // 🎯 ImageReader_JNI 로그 방지를 위한 대화상자용 최적화
+                    filterQuality: FilterQuality.medium, // 품질과 성능 균형
+                    headers: {
+                      'Cache-Control': 'max-age=7200', // 2시간 캐시 (더 긴 캐시)
+                    },
                     loadingBuilder: (context, child, loadingProgress) {
                       if (loadingProgress == null) return child;
                       return Center(

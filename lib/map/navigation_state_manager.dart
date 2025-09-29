@@ -175,4 +175,19 @@ class NavigationStateManager extends ChangeNotifier {
       ),
     );
   }
+
+  @override
+  void dispose() {
+    debugPrint('🗺️ NavigationStateManager dispose 시작...');
+    
+    // 🔥 모든 상태 초기화로 메모리 정리
+    _showNavigationStatus = false;
+    _estimatedDistance = '';
+    _estimatedTime = '';
+    _navigationStart = null;
+    _navigationEnd = null;
+    
+    debugPrint('✅ NavigationStateManager dispose 완료');
+    super.dispose();
+  }
 }

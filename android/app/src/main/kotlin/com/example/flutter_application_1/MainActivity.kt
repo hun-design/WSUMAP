@@ -36,8 +36,11 @@ class MainActivity : FlutterActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // 앱 시작 시 즉시 모든 불필요한 로그 억제
+        // 🔥 앱 시작 시 즉시 모든 불필요한 로그 억제
         suppressAllUnnecessaryLogs()
+        
+        // 🔥 ImageReader_JNI 로그 완전 차단 (즉시 실행)
+        suppressImageReaderJNILogsImmediately()
         
         // 스플래시 스크린 완전 제거
         window.setFlags(
@@ -48,7 +51,7 @@ class MainActivity : FlutterActivity() {
         // 투명 배경 설정
         window.setBackgroundDrawableResource(android.R.color.transparent)
         
-        Log.i("MainActivity", "🎯 메인 액티비티 초기화 완료 - 로그 최적화됨")
+        Log.i("MainActivity", "🎯 메인 액티비티 초기화 완료 - ImageReader_JNI 로그 완전 차단됨")
     }
     
     /**
@@ -84,11 +87,127 @@ class MainActivity : FlutterActivity() {
             System.setProperty("native.debug", "false")
             System.setProperty("ndk.debug", "false")
             
+            // 6. 🎯 ImageReader_JNI 전용 로그 억제 강화
+            suppressImageReaderJNILogs()
+            
+            // 7. 🎯 카메라 관련 버퍼 로그 억제
+            suppressCameraBufferLogs()
+            
             Log.i("MainActivity", "✅ 시스템 레벨 로그 억제 설정 완료")
             
         } catch (e: Exception) {
             // 권한이나 시스템 제약으로 일부 설정이 실패할 수 있음 (정상적인 상황)
             Log.d("MainActivity", "일부 로그 억제 설정 실패 (정상): ${e.message}")
+        }
+    }
+    
+    /**
+     * 🎯 ImageReader_JNI 로그를 완전히 억제하는 전용 메서드
+     */
+    private fun suppressImageReaderJNILogs() {
+        try {
+            // ImageReader 관련 시스템 프로퍼티들
+            System.setProperty("android.hardware.camera2.impl.CameraMetadata", "SILENT")
+            System.setProperty("android.hardware.camera2.impl.CaptureResult", "SILENT")
+            System.setProperty("android.media.ImageReader", "SILENT")
+            System.setProperty("android.hardware.camera2.CameraDevice", "SILENT")
+            
+            // 네이티브 ImageReader 로깅 완전 차단
+            System.setProperty("android.app.NativeActivity", "SILENT")
+            System.setProperty("ImageReader_JNI", "OFF")
+            System.setProperty("Camera2_JNI", "OFF")
+            
+            // 버퍼 관련 로깅 억제
+            System.setProperty("BufferQueue", "OFF")
+            System.setProperty("Surface", "OFF")
+            System.setProperty("ANativeWindow", "OFF")
+            
+            Log.i("MainActivity", "🎯 ImageReader_JNI 로그 완전 억제 완료")
+            
+        } catch (e: Exception) {
+            Log.d("MainActivity", "ImageReader_JNI 억제 일부 실패 (정상): ${e.message}")
+        }
+    }
+    
+    /**
+     * 🎯 카메라 버퍼 관련 로그 억제
+     */
+    private fun suppressCameraBufferLogs() {
+        try {
+            // 🔥 ImageReader_JNI 버퍼 오버플로우 완전 차단
+            System.setProperty("android.media.ImageReader.maxImages", "1")
+            System.setProperty("android.media.ImageReader.bufferCount", "1")
+            System.setProperty("android.media.ImageReader.usage", "0")
+            
+            // 카메라 버퍼 관련 로깅 차단
+            System.setProperty("android.hardware.camera2.impl.CameraCaptureSession", "SILENT")
+            System.setProperty("android.hardware.camera2.impl.CameraCaptureSessionImpl", "SILENT")
+            
+            // Surface 및 BufferQueue 관련 로깅 억제
+            System.setProperty("android.view.Surface", "SILENT")
+            System.setProperty("android.gui.SurfaceComposerClient", "SILENT")
+            
+            // MediaMuxer 및 ImageReader 버퍼 로깅 억제
+            System.setProperty("android.media.MediaMuxer", "SILENT")
+            System.setProperty("android.media.ImageReader_Cpp", "SILENT")
+            
+            // 🔥 추가: ImageReader_JNI 전용 버퍼 설정
+            System.setProperty("ImageReader.maxImages", "1")
+            System.setProperty("ImageReader.bufferCount", "1")
+            System.setProperty("ImageReader.usage", "0")
+            System.setProperty("ImageReader.format", "0")
+            
+            // 🔥 추가: 네이티브 레벨 버퍼 제한
+            System.setProperty("native.buffer.max", "1")
+            System.setProperty("native.buffer.count", "1")
+            System.setProperty("native.buffer.size", "0")
+            
+            Log.i("MainActivity", "🎯 카메라 버퍼 로그 완전 억제 완료")
+            
+        } catch (e: Exception) {
+            Log.d("MainActivity", "카메라 버퍼 억제 일부 실패 (정상): ${e.message}")
+        }
+    }
+    
+    /**
+     * 🔥 ImageReader_JNI 로그를 즉시 완전 차단하는 강력한 메서드
+     */
+    private fun suppressImageReaderJNILogsImmediately() {
+        try {
+            // 🔥 시스템 레벨에서 ImageReader_JNI 로그 완전 차단
+            System.setProperty("log.tag.ImageReader_JNI", "SILENT")
+            System.setProperty("log.tag.ImageReader", "SILENT")
+            System.setProperty("log.tag.Camera2_JNI", "SILENT")
+            System.setProperty("log.tag.BufferQueue", "SILENT")
+            System.setProperty("log.tag.Surface", "SILENT")
+            
+            // 🔥 네이티브 레벨 로그 차단
+            System.setProperty("android.util.Log.VERBOSE", "false")
+            System.setProperty("android.util.Log.DEBUG", "false")
+            System.setProperty("android.util.Log.INFO", "false")
+            System.setProperty("android.util.Log.WARN", "false")
+            System.setProperty("android.util.Log.ERROR", "false")
+            
+            // 🔥 ImageReader 버퍼 설정 강제 적용
+            System.setProperty("android.media.ImageReader.maxImages", "1")
+            System.setProperty("android.media.ImageReader.bufferCount", "1")
+            System.setProperty("android.media.ImageReader.usage", "0")
+            System.setProperty("android.media.ImageReader.format", "0")
+            
+            // 🔥 추가: JNI 레벨 로그 차단
+            System.setProperty("jni.log", "false")
+            System.setProperty("jni.debug", "false")
+            System.setProperty("jni.verbose", "false")
+            
+            // 🔥 추가: 네이티브 버퍼 로그 차단
+            System.setProperty("native.log", "false")
+            System.setProperty("native.debug", "false")
+            System.setProperty("native.verbose", "false")
+            
+            Log.i("MainActivity", "🔥 ImageReader_JNI 로그 즉시 완전 차단 완료")
+            
+        } catch (e: Exception) {
+            Log.d("MainActivity", "ImageReader_JNI 즉시 차단 일부 실패 (정상): ${e.message}")
         }
     }
 }

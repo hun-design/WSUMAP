@@ -34,8 +34,32 @@ class MapLocationHandler {
   });
 
   void dispose() {
-    _autoMoveTimer?.cancel();
-    _forceAutoMoveTimer?.cancel();
+    debugPrint('🗺️ MapLocationHandler dispose 시작...');
+    
+    // 🔥 모든 타이머 정리
+    try {
+      _autoMoveTimer?.cancel();
+      _autoMoveTimer = null;
+    } catch (e) {
+      debugPrint('⚠️ _autoMoveTimer 취소 실패: $e');
+    }
+
+    try {
+      _forceAutoMoveTimer?.cancel();
+      _forceAutoMoveTimer = null;
+    } catch (e) {
+      debugPrint('⚠️ _forceAutoMoveTimer 취소 실패: $e');
+    }
+
+    // 🔥 상태 변수들 초기화
+    _hasFoundInitialLocation = false;
+    _isMapReady = false;
+    _hasTriedAutoMove = false;
+    _autoMoveScheduled = false;
+    _autoMoveRetryCount = 0;
+    _isRequestingLocation = false;
+    
+    debugPrint('✅ MapLocationHandler dispose 완료');
   }
 
   void setMapReady(bool ready) {

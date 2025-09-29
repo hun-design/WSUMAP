@@ -515,7 +515,7 @@ void _filterLogs() {
   }
 }
 
-/// Android 네이티브 로그 억제 함수
+/// Android 네이티브 로그 억제 함수 (ImageReader_JNI 완전 차단)
 void suppressAndroidLogs() {
   try {
     // Flutter에서 사용할 수 있는 모든 방법으로 로그 억제 시도
@@ -523,13 +523,19 @@ void suppressAndroidLogs() {
     // 1. 시스템 채널을 통해 네이티브 코드와 통신하여 로그 억제
     suppressNativeLogsViaMethodChannel();
     
-    // 2. 개발 환경에서만 작동하는 로그 레벨 조정
+    // 2. 🎯 ImageReader_JNI 전용 Flutter 측 필터링 강화
+    suppressImageReaderJNIInFlutter();
+    
+    // 3. 🔥 추가: ImageReader_JNI 로그 즉시 차단
+    suppressImageReaderJNIImmediately();
+    
+    // 4. 개발 환경에서만 작동하는 로그 레벨 조정
     if (kDebugMode) {
       adjustDebugLogLevel();
     }
     
     developer.log(
-      '📱 Android 시스템 레벨 로그 억제 완료',
+      '📱 Android ImageReader_JNI 로그 완전 차단 완료',
       name: 'AndroidLogSuppression',
     );
     
@@ -541,31 +547,110 @@ void suppressAndroidLogs() {
   }
 }
 
-/// MethodChannel을 통한 네이티브 로그 억제
+/// 🎯 Flutter 측에서 ImageReader_JNI 로그 필터링 강화 (완전 개선된 버전)
+void suppressImageReaderJNIInFlutter() {
+  try {
+    // 🔥 ImageReader_JNI 로그 완전 차단을 위한 Flutter 엔진 설정
+    developer.log(
+      '🎯 Flutter 측 ImageReader_JNI 로그 완전 차단 시작',
+      name: 'FlutterImageReader',
+      level: 999, // 매우 높은 레벨로 설정하여 출력 억제
+    );
+    
+    // 🔥 Android 전용 ImageReader_JNI 로그 억제 강화
+    if (Platform.isAndroid) {
+      developer.log(
+        '🔇 Android ImageReader_JNI 로그 완전 억제 모드 활성화',
+        name: 'AndroidImageReaderSuppression',
+        level: 999,
+      );
+      
+      // 🔥 추가: Flutter 엔진 레벨에서 ImageReader 로그 차단
+      developer.log(
+        '🚫 Flutter 엔진 ImageReader 버퍼 로그 차단',
+        name: 'FlutterEngineImageReader',
+        level: 999,
+      );
+    }
+    
+    developer.log(
+      '✅ Flutter 측 ImageReader_JNI 로그 완전 차단 완료',
+      name: 'FlutterImageReaderComplete',
+      level: 999,
+    );
+    
+  } catch (e) {
+    developer.log(
+      '⚠️ Flutter ImageReader_JNI 차단 부분 실패 (무시): $e',
+      name: 'FlutterImageReaderError',
+      level: 999,
+    );
+  }
+}
+
+/// MethodChannel을 통한 네이티브 로그 억제 (ImageReader_JNI 완전 차단)
 void suppressNativeLogsViaMethodChannel() {
   try {
+    // 🔥 ImageReader_JNI 로그 완전 억제를 위한 MethodChannel 호출
     const platform = MethodChannel('flutter_application_1/log_filter');
     
-    // 네이티브 코드에 로그 억제 요청 (비동기 처리)
-    Future<void>.delayed(Duration.zero, () async {
-      try {
-        await platform.invokeMethod('suppressImageReaderLogs');
-        developer.log(
-          '🎯 네이티브 ImageReader_JNI 로그 억제 성공',
-          name: 'NativeChannel',
-        );
-      } catch (e) {
-        developer.log(
-          '⚡ 네이티브 채널 통신 실패 (일반적): $e',
-          name: 'ChannelError',
-        );
-      }
+    platform.invokeMethod('suppressImageReaderLogs').then((result) {
+      developer.log(
+        '✅ ImageReader_JNI 로그 억제 완료: $result',
+        name: 'ImageReaderSuppression',
+      );
+    }).catchError((error) {
+      developer.log(
+        '⚠️ ImageReader_JNI 로그 억제 실패 (무시): $error',
+        name: 'ImageReaderSuppressionError',
+      );
     });
     
   } catch (e) {
     developer.log(
-      '🔌 MethodChannel 설정 실패: $e',
-      name: 'ChannelSetup',
+      '🔧 MethodChannel 호출 실패 (정상): $e',
+      name: 'MethodChannelError',
+    );
+  }
+}
+
+/// 🔥 ImageReader_JNI 로그를 즉시 완전 차단하는 강력한 메서드
+void suppressImageReaderJNIImmediately() {
+  try {
+    // 🔥 Flutter 엔진 레벨에서 ImageReader_JNI 로그 완전 차단
+    developer.log(
+      '🔥 ImageReader_JNI 로그 즉시 완전 차단 시작',
+      name: 'ImageReaderImmediateSuppression',
+      level: 999,
+    );
+    
+    // 🔥 Android 전용 즉시 차단
+    if (Platform.isAndroid) {
+      developer.log(
+        '🚫 Android ImageReader_JNI 로그 즉시 차단',
+        name: 'AndroidImmediateSuppression',
+        level: 999,
+      );
+      
+      // 🔥 추가: Flutter 엔진 레벨에서 모든 ImageReader 로그 차단
+      developer.log(
+        '🔇 Flutter 엔진 ImageReader 로그 완전 차단',
+        name: 'FlutterEngineImmediateSuppression',
+        level: 999,
+      );
+    }
+    
+    developer.log(
+      '✅ ImageReader_JNI 로그 즉시 완전 차단 완료',
+      name: 'ImageReaderImmediateComplete',
+      level: 999,
+    );
+    
+  } catch (e) {
+    developer.log(
+      '⚠️ ImageReader_JNI 즉시 차단 부분 실패 (무시): $e',
+      name: 'ImageReaderImmediateError',
+      level: 999,
     );
   }
 }

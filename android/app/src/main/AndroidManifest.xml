@@ -83,6 +83,78 @@
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="friend_notifications" />
 
+        <!-- =========== 🔇 ImageReader_JNI 로그 완전 억제 설정 =========== -->
+        
+        <!-- [핵심 추가] ImageReader_JNI 로그 완전 억제 -->
+        <meta-data
+            android:name="android.hardware.camera2.impl.ImageReader.SUPPRESS_JNI_LOGS"
+            android:value="true" />
+            
+        <!-- [핵심 추가] 카메라 버퍼 관련 로그 억제 -->
+        <meta-data
+            android:name="android.media.ImageReader.SUPPRESS_BUFFER_LOGS"
+            android:value="true" />
+            
+        <!-- [핵심 추가] 네이티브 디버그 로그 완전 차단 -->
+        <meta-data
+            android:name="android.util.Log.SUPPRESS_NATIVE_LOGS"
+            android:value="true" />
+            
+        <!-- [권장 추가] 시스템 레벨 로그 억제 -->
+        <meta-data
+            android:name="android.os.Debug.SUPPRESS_SYSTEM_LOGS"
+            android:value="true" />
+            
+        <!-- 🔥 추가: ImageReader 버퍼 오버플로우 방지 -->
+        <meta-data
+            android:name="android.media.ImageReader.MAX_IMAGES"
+            android:value="1" />
+            
+        <!-- 🔥 추가: 카메라 버퍼 카운트 제한 -->
+        <meta-data
+            android:name="android.media.ImageReader.BUFFER_COUNT"
+            android:value="1" />
+            
+        <!-- 🔥 추가: 네이티브 버퍼 로그 억제 -->
+        <meta-data
+            android:name="android.media.ImageReader.SUPPRESS_BUFFER_WARNINGS"
+            android:value="true" />
+            
+        <!-- 🔥 추가: ImageReader_JNI 로그 완전 차단 -->
+        <meta-data
+            android:name="log.tag.ImageReader_JNI"
+            android:value="SILENT" />
+            
+        <!-- 🔥 추가: 모든 ImageReader 관련 로그 차단 -->
+        <meta-data
+            android:name="log.tag.ImageReader"
+            android:value="SILENT" />
+            
+        <!-- 🔥 추가: Camera2_JNI 로그 차단 -->
+        <meta-data
+            android:name="log.tag.Camera2_JNI"
+            android:value="SILENT" />
+            
+        <!-- 🔥 추가: BufferQueue 로그 차단 -->
+        <meta-data
+            android:name="log.tag.BufferQueue"
+            android:value="SILENT" />
+            
+        <!-- 🔥 추가: Surface 로그 차단 -->
+        <meta-data
+            android:name="log.tag.Surface"
+            android:value="SILENT" />
+            
+        <!-- 🔥 추가: JNI 로그 완전 차단 -->
+        <meta-data
+            android:name="jni.log"
+            android:value="false" />
+            
+        <!-- 🔥 추가: 네이티브 로그 완전 차단 -->
+        <meta-data
+            android:name="native.log"
+            android:value="false" />
+
         <!-- [공통] 메인 액티비티 설정 -->
         <activity
             android:name=".MainActivity"

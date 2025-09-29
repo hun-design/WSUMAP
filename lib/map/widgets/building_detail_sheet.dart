@@ -186,7 +186,7 @@ class BuildingDetailSheet extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            // 대표 이미지
+            // 🎯 대표 이미지 (버퍼 최적화)
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Image.network(
@@ -194,6 +194,13 @@ class BuildingDetailSheet extends StatelessWidget {
                 width: double.infinity,
                 height: 200,
                 fit: BoxFit.cover,
+                // 🎯 ImageReader_JNI 로그 방지를 위한 메모리 최적화
+                cacheWidth: (MediaQuery.of(context).size.width * 0.9).toInt(), // 화면 너비 기반 캐시
+                cacheHeight: 200,
+                filterQuality: FilterQuality.medium,
+                headers: {
+                  'Cache-Control': 'max-age=3600', // 1시간 캐시
+                },
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
                     width: double.infinity,
@@ -273,6 +280,14 @@ class BuildingDetailSheet extends StatelessWidget {
                   child: Image.network(
                     building.imageUrls![index],
                     fit: BoxFit.contain,
+                    width: MediaQuery.of(context).size.width,
+                    height: MediaQuery.of(context).size.height,
+                    // 🎯 갤러리용 ImageReader_JNI 로그 방지 최적화
+                    filterQuality: FilterQuality.high, // 갤러리는 더 높은 품질 유지
+                    headers: {
+                      'Cache-Control': 'max-age=14400', // 4시간 캐시 (갤러리는 더 긴 캐시)
+                      'Accept': 'image/webp,image/apng,image/*,*/*;q=0.8', // 최적 이미지 포맷 요청
+                    },
                     errorBuilder: (context, error, stackTrace) {
                       return Container(
                         color: Colors.grey.shade900,

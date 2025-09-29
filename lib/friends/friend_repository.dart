@@ -9,12 +9,9 @@ class FriendRepository {
   Future<List<Friend>> getMyFriends() =>
       apiService.fetchMyFriends();
   Future<void> requestFriend(String addId) async {
-    print('[DEBUG] 🔄 Repository.requestFriend 시작: addId=$addId');
     try {
       await apiService.addFriend(addId);
-      print('[DEBUG] ✅ Repository.requestFriend 성공');
     } catch (e) {
-      print('[DEBUG] ❌ Repository.requestFriend 실패: $e');
       rethrow;
     }
   }

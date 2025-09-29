@@ -344,11 +344,54 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
   @override
   void dispose() {
-    _navigationManager.dispose();
-    WidgetsBinding.instance.removeObserver(this);
-    _controller.dispose();
-    _locationController.dispose();
-    _friendsController.removeListener(_onFriendsControllerChanged);
+    debugPrint('🗺️ MapScreen dispose 시작...');
+    
+    // 🔥 모든 리스너와 리소스 정리
+    try {
+      WidgetsBinding.instance.removeObserver(this);
+    } catch (e) {
+      debugPrint('⚠️ WidgetsBinding observer 제거 실패: $e');
+    }
+
+    try {
+      _navigationManager.dispose();
+    } catch (e) {
+      debugPrint('⚠️ NavigationManager dispose 실패: $e');
+    }
+
+    try {
+      _friendsController.removeListener(_onFriendsControllerChanged);
+      _friendsController.dispose();
+    } catch (e) {
+      debugPrint('⚠️ FriendsController dispose 실패: $e');
+    }
+
+    try {
+      _controller.dispose();
+    } catch (e) {
+      debugPrint('⚠️ MapScreenController dispose 실패: $e');
+    }
+
+    try {
+      _locationController.dispose();
+    } catch (e) {
+      debugPrint('⚠️ LocationController dispose 실패: $e');
+    }
+
+    try {
+      _buildingMarkerService.dispose();
+    } catch (e) {
+      debugPrint('⚠️ BuildingMarkerService dispose 실패: $e');
+    }
+
+    // 🔥 상태 변수들 초기화
+    _lastUserId = null;
+    _hasProcessedTimetableBuilding = false;
+    _hasShownTutorial = false;
+    _isShowingTutorial = false;
+    _isTutorialCheckInProgress = false;
+    
+    debugPrint('✅ MapScreen dispose 완료');
     super.dispose();
   }
 

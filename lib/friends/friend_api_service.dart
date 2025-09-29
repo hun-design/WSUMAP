@@ -74,39 +74,17 @@ class FriendApiService {
   /// 친구 추가 요청
   Future<void> addFriend(String addId) async {
     if (addId.isEmpty) {
-      print('[ERROR] 친구 추가 add_id가 비어있음! 요청 차단');
       throw Exception('상대방 ID가 올바르지 않습니다.');
     }
 
-    print('[DEBUG] ===== 친구 추가 요청 시작 =====');
-    print('[DEBUG] addId: $addId');
-
-    // 🔥 서버에 직접 친구 요청 전송 (올바른 경로 사용)
-    print('[DEBUG] 📤 서버에 친구 요청 전송 중...');
-    print('[DEBUG] 요청 URL: $baseUrl/add');
-    print('[DEBUG] 요청 바디: ${jsonEncode({'add_id': addId})}');
     final res = await ApiHelper.post(
       '$baseUrl/add',
       body: {'add_id': addId},
     );
 
-    print('[DEBUG] 📥 서버 응답 수신');
-    print('[DEBUG] 응답 상태: ${res.statusCode}');
-    print('[DEBUG] 응답 내용: "${res.body}"');
-    print('[DEBUG] 응답 길이: ${res.body.length}');
-    print('[DEBUG] 응답 타입: ${res.body.runtimeType}');
-
-    // 🔥 서버 응답에 따른 처리
-    print('[DEBUG] 🔍 상태 코드 분석: ${res.statusCode}');
-    print('[DEBUG] 🔍 응답 내용: "${res.body}"');
-    
     if (res.statusCode == 200 || res.statusCode == 201) {
-      // 성공 응답 (200: OK, 201: Created)
-      print('[DEBUG] ✅ 친구 추가 성공 응답 (상태 코드: ${res.statusCode})');
-      
-      // 응답 내용 확인 - 서버가 성공 상태를 반환하지만 에러 메시지를 포함할 수 있음
+      // 성공 응답 체크
       final responseBody = res.body.toLowerCase();
-      print('[DEBUG] 🔍 응답 내용 분석: $responseBody');
       
       if (responseBody.contains('존재하지 않는') || 
           responseBody.contains('not found') || 
@@ -117,75 +95,52 @@ class FriendApiService {
           responseBody.contains('불가능') ||
           responseBody.contains('이미') ||
           responseBody.contains('자기 자신')) {
-        print('[ERROR] ❌ 성공 응답이지만 실패 메시지 포함: ${res.body}');
         throw Exception('친구 추가에 실패했습니다: ${res.body}');
       }
-      
-      print('[DEBUG] ✅ 친구 추가 성공 완료');
     } else {
-      // 실패 응답
-      print('[ERROR] ❌ 친구 추가 실패: ${res.statusCode} ${res.body}');
-      print('[DEBUG] 🔍 실패 응답 처리 시작 - 상태 코드: ${res.statusCode}');
-      
-      // 🔥 상태 코드별 에러 메시지
-      String errorMessage = '친구 추가 실패';
-      
-      print('[DEBUG] 🔍 switch 문 시작 - 상태 코드: ${res.statusCode}');
-      switch (res.statusCode) {
-        case 400:
-          print('[DEBUG] 🔍 400 케이스 실행');
-          if (res.body.contains('자기 자신')) {
-            errorMessage = '자기 자신을 친구로 추가할 수 없습니다';
-          } else {
-            errorMessage = '잘못된 요청입니다';
-          }
-          break;
-        case 401:
-          errorMessage = '인증이 필요합니다';
-          break;
-        case 403:
-          errorMessage = '권한이 없습니다';
-          break;
-        case 404:
-          print('[DEBUG] 🔍 404 상태 코드 감지됨');
-          print('[DEBUG] 🔍 404 응답 내용: "${res.body}"');
-          errorMessage = '존재하지 않는 사용자입니다';
-          print('[DEBUG] 🔍 404 에러 메시지 설정: $errorMessage');
-          break;
-        case 409:
-          errorMessage = '이미 친구이거나 요청을 보낸 사용자입니다';
-          break;
-        case 500:
-          errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요';
-          break;
-        default:
-          print('[DEBUG] 🔍 default 케이스 실행 - 상태 코드: ${res.statusCode}');
-          // 🔥 서버 응답 내용에 따라 구체적인 에러 메시지 제공
-          final responseBody = res.body.toLowerCase();
-          
-          if (responseBody.contains('이미 친구') || responseBody.contains('already friend')) {
-            errorMessage = '이미 친구인 사용자입니다';
-          } else if (responseBody.contains('존재하지 않는') || responseBody.contains('not found') || responseBody.contains('user not found')) {
-            errorMessage = '존재하지 않는 사용자입니다';
-          } else if (responseBody.contains('이미 요청') || responseBody.contains('already requested')) {
-            errorMessage = '이미 친구 요청을 보낸 사용자입니다';
-          } else if (responseBody.contains('자기 자신') || responseBody.contains('self')) {
-            errorMessage = '자기 자신을 친구로 추가할 수 없습니다';
-          } else if (responseBody.contains('invalid') || responseBody.contains('잘못된')) {
-            errorMessage = '잘못된 사용자 ID입니다';
-          } else {
-            // 🔥 서버 응답 내용을 그대로 표시
-            errorMessage = '친구 추가에 실패했습니다: ${res.body}';
-          }
-      }
-      
-      print('[ERROR] ❌ 최종 에러 메시지: $errorMessage');
-      print('[DEBUG] 🚀 Exception 던지기: $errorMessage');
-      print('[DEBUG] 🚀 Exception 타입: Exception');
-      final exception = Exception(errorMessage);
-      print('[DEBUG] 🚀 Exception 생성됨: $exception');
-      print('[DEBUG] 🚀 Exception 던지기 직전...');
-      throw exception;
+      // 에러 응답 처리
+      String errorMessage = _getErrorMessageFromResponse(res.statusCode, res.body);
+      throw Exception(errorMessage);
+    }
+  }
+
+  // 상태 코드별 에러 메시지 생성
+  String _getErrorMessageFromResponse(int statusCode, String responseBody) {
+    switch (statusCode) {
+      case 400:
+        if (responseBody.contains('자기 자신')) {
+          return '자기 자신을 친구로 추가할 수 없습니다';
+        }
+        return '잘못된 요청입니다';
+      case 401:
+        return '인증이 필요합니다';
+      case 403:
+        return '권한이 없습니다';
+      case 404:
+        return '존재하지 않는 사용자입니다';
+      case 409:
+        return '이미 친구이거나 요청을 보낸 사용자입니다';
+      case 500:
+        return '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요';
+      default:
+        return _parseErrorMessageFromBody(responseBody);
+    }
+  }
+
+  // 응답 본문에서 에러 메시지 파싱
+  String _parseErrorMessageFromBody(String responseBody) {
+    final lowerBody = responseBody.toLowerCase();
+    
+    if (lowerBody.contains('이미 친구') || lowerBody.contains('already friend')) {
+      return '이미 친구인 사용자입니다';
+    } else if (lowerBody.contains('존재하지 않는') || lowerBody.contains('not found')) {
+      return '존재하지 않는 사용자입니다';
+    } else if (lowerBody.contains('이미 요청') || lowerBody.contains('already requested')) {
+      return '이미 친구 요청을 보낸 사용자입니다';
+    } else if (lowerBody.contains('자기 자신') || lowerBody.contains('self')) {
+      return '자기 자신을 친구로 추가할 수 없습니다';
+    } else {
+      return '친구 추가에 실패했습니다: $responseBody';
     }
   }
 
@@ -286,21 +241,15 @@ class FriendApiService {
   /// 친구 요청 수락
   Future<void> acceptFriendRequest(String addId) async {
     if (addId.isEmpty) {
-      print('[ERROR] 친구 요청 수락 add_id가 비어있음! 요청 차단');
       throw Exception('친구 요청 정보가 올바르지 않습니다.');
     }
-
-    print('[DEBUG] 친구 요청 수락 시도 - addId: $addId');
 
     final res = await ApiHelper.post(
       '$baseUrl/accept',
       body: {'add_id': addId},
     );
 
-    print('[DEBUG] 친구 요청 수락 응답: ${res.statusCode} ${res.body}');
-
     if (res.statusCode != 200) {
-      print('[ERROR] 친구 요청 수락 실패: ${res.body}');
       throw Exception('친구 요청 수락 실패');
     }
   }
