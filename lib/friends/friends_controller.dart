@@ -144,7 +144,7 @@ class FriendsController extends ChangeNotifier {
     // 웹소켓 이벤트 리스너 설정
     debugPrint('🔌 웹소켓 메시지 스트림 리스너 등록 시작');
     debugPrint('🔍 웹소켓 연결 상태: ${_wsService.isConnected}');
-    debugPrint('🔍 메시지 스트림 사용 가능 여부: ${_wsService.messageStream != null}');
+    debugPrint('🔍 메시지 스트림 사용 가능 여부: ${_wsService.messageStream is String}');
     
     // 🔥 추가 스트림 구독 시도 (기존 구독이 있어도 추가로 구독)
     debugPrint('🔄 추가 스트림 구독 시도');
@@ -476,7 +476,13 @@ class FriendsController extends ChangeNotifier {
   void _initializeOnlineStatusFromServer() {
     debugPrint('🔄 서버 데이터 기반 온라인 상태 초기화 시작');
 
-    // 온라인 사용자 목록 초기화
+    // 🔥 웹소켓이 연결되어 있으면 실시간 데이터를 보존 (충돌 방지)
+    if (isWebSocketConnected) {
+      debugPrint('✅ 웹소켓 연결됨 - 실시간 데이터 보존, 서버 동기화 건너뜀');
+      return;
+    }
+
+    // 웹소켓 연결 안됨일 때만 서버 데이터로 초기화
     onlineUsers.clear();
 
     for (int i = 0; i < friends.length; i++) {
@@ -632,18 +638,22 @@ class FriendsController extends ChangeNotifier {
       debugPrint('⚠️ 현재 친구 목록 (${friends.length}명): ${friends.map((f) => '${f.userId}(${f.userName})').join(', ')}');
       debugPrint('⚠️ 온라인 사용자 목록: ${onlineUsers.join(', ')}');
       
-      // 🔥 친구가 목록에 없으면 친구 목록 새로고침
-      debugPrint('🔄 친구 목록 새로고침 필요 - 친구 목록 갤러리 로드');
-      Future.microtask(() async {
-        try {
-          final newFriends = await repository.getMyFriends();
-          friends = newFriends;
-          notifyListeners();
-          debugPrint('✅ 친구 목록 새로고침 완료');
-        } catch (e) {
-          debugPrint('❌ 친구 목록 새로고침 실패: $e');
-        }
-      });
+      // 🔥 웹소켓 연결 중에는 친구 목록 새로고침 제약 (실시간 데이터 보존)
+      if (isWebSocketConnected) {
+        debugPrint('❌ 웹소켓 연결 중 - 친구 목록 새로고침 제외 (실시간 데이터 보존)');
+      } else {
+        debugPrint('🔄 폴링 모드 - 친구 목록 새로고침 시작');
+        Future.microtask(() async {
+          try {
+            final newFriends = await repository.getMyFriends();
+            friends = newFriends;
+            notifyListeners();
+            debugPrint('✅ 친구 목록 새로고침 완료');
+          } catch (e) {
+            debugPrint('❌ 친구 목록 새로고침 실패: $e');
+          }
+        });
+      }
     }
 
     // 🔥 즉시 UI 업데이트 (실시간 반영)
@@ -662,14 +672,8 @@ class FriendsController extends ChangeNotifier {
     _forceUIUpdate();
     debugPrint('🔥🔥🔥 _forceUIUpdate 완료! 🔥🔥🔥');
     
-    // 🔥 실시간 웹소켓 상태 우선 유지를 위해 서버 동기화 지연 (웹소켓 상태 보호)
-    Future.delayed(const Duration(seconds: 2), () async {
-      debugPrint('🔥 2초 후 서버 동기화 시작 (웹소켓 상태 우선 후)');
-      await _refreshFriendStatusFromAPI();
-    });
-    
-    // 🔥 폴백 확인 예약 (3초 후 상태 재확인)
-    _scheduleFallbackCheck(userId, isOnline);
+    // 🔥 실시간 웹소켓 데이터 보존 - 서버 동기화 및 폴백 체크 제거
+    debugPrint('🔥 실시간 웹소켓 상태 보존 - 추가 동기화 없음');
     
     _showFriendStatusNotification(userId, isOnline);
   }
@@ -786,18 +790,22 @@ class FriendsController extends ChangeNotifier {
       debugPrint('⚠️ 현재 친구 목록 (${friends.length}명): ${friends.map((f) => '${f.userId}(${f.userName})').join(', ')}');
       debugPrint('⚠️ 온라인 사용자 목록: ${onlineUsers.join(', ')}');
 
-      // 🔥 친구가 목록에 없으면 친구 목록 새로고침
-      debugPrint('🔄 친구 목록 새로고침 필요 - 친구 목록 갤러리 로드');
-      Future.microtask(() async {
-        try {
-          final newFriends = await repository.getMyFriends();
-          friends = newFriends;
-          notifyListeners();
-          debugPrint('✅ 친구 목록 새로고침 완료');
-        } catch (e) {
-          debugPrint('❌ 친구 목록 새로고침 실패: $e');
-        }
-      });
+      // 🔥 웹소켓 연결 중에는 친구 목록 새로고침 제약 (실시간 데이터 보존)
+      if (isWebSocketConnected) {
+        debugPrint('❌ 웹소켓 연결 중 - 친구 목록 새로고침 제외 (실시간 데이터 보존)');
+      } else {
+        debugPrint('🔄 폴링 모드 - 친구 목록 새로고침 시작');
+        Future.microtask(() async {
+          try {
+            final newFriends = await repository.getMyFriends();
+            friends = newFriends;
+            notifyListeners();
+            debugPrint('✅ 친구 목록 새로고침 완료');
+          } catch (e) {
+            debugPrint('❌ 친구 목록 새로고침 실패: $e');
+          }
+        });
+      }
     }
 
     // 🔥 즉시 UI 업데이트 (지연 제거)
