@@ -27,11 +27,28 @@ class ApiConfig {
   static String get websocketUrl => 'ws://$baseWsHost:$websocketPort/friend/ws';
   static String get websocketBase => 'ws://$baseWsHost:$websocketPort';
   
-  // 🔥 WebSocket 관련 상수들
-  static const Duration heartbeatInterval = Duration(seconds: 10); // 60초 → 10초로 변경
-  static const Duration reconnectDelay = Duration(seconds: 3); // 5초 → 3초로 변경
-  static const Duration connectionTimeout = Duration(seconds: 10);
-  static const int maxReconnectAttempts = 5;
+  // 🔥 WebSocket 관련 상수들 (네트워크 부하 감소를 위해 조정)
+  static const Duration heartbeatInterval = Duration(seconds: 30); // 4초 → 30초로 변경
+  static const Duration reconnectDelay = Duration(seconds: 1); // 1초 유지
+  static const Duration connectionTimeout = Duration(seconds: 10); // 10초 유지
+  static const int maxReconnectAttempts = 5; // 5회 유지
+  
+  // 🔥 플랫폼별 최적화 설정 (네트워크 부하 감소를 위해 조정)
+  static const Map<String, Duration> platformHeartbeatIntervals = {
+    'android': Duration(seconds: 30),
+    'ios': Duration(seconds: 30),
+    'windows': Duration(seconds: 30),
+    'macos': Duration(seconds: 30),
+    'linux': Duration(seconds: 30),
+  };
+  
+  static const Map<String, Duration> platformConnectionTimeouts = {
+    'android': Duration(seconds: 12),
+    'ios': Duration(seconds: 8),
+    'windows': Duration(seconds: 10),
+    'macos': Duration(seconds: 9),
+    'linux': Duration(seconds: 11),
+  };
   
   // 🛠️ Development/Production 환경 구분 (선택사항)
   static bool get isDevelopment => true; // 환경에 따라 설정

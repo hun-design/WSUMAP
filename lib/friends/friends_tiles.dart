@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -8,7 +9,7 @@ import 'package:flutter_application_1/generated/app_localizations.dart';
 
 /// 친구 타일 관련 위젯들
 class FriendsTiles {
-  /// 친구 타일 - 클릭 시 상세 정보 다이얼로그 표시
+  /// 친구 타일 - 클릭 시 상세 정보 다이얼로그 표시 (실시간 상태 동기화 개선)
   static Widget buildFriendTile(
     BuildContext context,
     Friend friend,
@@ -23,14 +24,22 @@ class FriendsTiles {
           orElse: () => friend, // 찾지 못하면 원본 사용
         );
 
-        // 🔥 실시간 상태 변경 감지를 위한 디버깅
-        debugPrint('🔄 친구 타일 업데이트: ${currentFriend.userName} - 온라인: ${currentFriend.isLogin}');
+        // 🔥 실시간 상태 변경 감지를 위한 디버깅 (조건부 출력)
+        if (kDebugMode && currentFriend.isLogin != friend.isLogin) {
+          debugPrint('🔄 친구 타일 상태 변경: ${currentFriend.userName} - ${friend.isLogin ? '오프라인' : '온라인'} → ${currentFriend.isLogin ? '온라인' : '오프라인'}');
+        }
+
+        // 🔥 웹소켓 연결 상태도 확인하여 실시간 업데이트 표시
+        final isRealTime = friendsController.isRealTimeEnabled;
+        final connectionStatus = friendsController.connectionStatus;
 
         return _buildFriendTileContent(
           context,
           currentFriend,
           onShowDetails,
           onDelete,
+          isRealTime: isRealTime,
+          connectionStatus: connectionStatus,
         );
       },
     );
@@ -41,8 +50,10 @@ class FriendsTiles {
     BuildContext context,
     Friend friend,
     VoidCallback onShowDetails,
-    VoidCallback onDelete,
-  ) {
+    VoidCallback onDelete, {
+    bool isRealTime = false,
+    String connectionStatus = '폴링 모드',
+  }) {
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
@@ -149,6 +160,18 @@ class FriendsTiles {
                               fontWeight: FontWeight.w500,
                             ),
                           ),
+                          // 🔥 실시간 연결 상태 표시
+                          if (isRealTime) ...[
+                            const SizedBox(width: 4),
+                            Container(
+                              width: 4,
+                              height: 4,
+                              decoration: const BoxDecoration(
+                                color: Colors.green,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ],

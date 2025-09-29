@@ -246,19 +246,26 @@ class _FriendsScreenState extends State<FriendsScreen>
               Container(
                 margin: const EdgeInsets.only(right: 8),
                 child: IconButton(
-                  onPressed: () {
+                  onPressed: controller.isRefreshing ? null : () {
                     HapticFeedback.lightImpact();
-                    controller.loadAll();
+                    controller.refreshWithAnimation();
                   },
-                  icon: AnimatedRotation(
-                    turns: controller.isLoading ? 1 : 0,
-                    duration: const Duration(milliseconds: 500),
-                    child: const Icon(
-                      Icons.refresh,
-                      color: Color(0xFF1E3A8A),
-                      size: 24,
-                    ),
-                  ),
+                  icon: controller.isRefreshing
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Color(0xFF1E3A8A),
+                            ),
+                          ),
+                        )
+                      : const Icon(
+                          Icons.refresh,
+                          color: Color(0xFF1E3A8A),
+                          size: 24,
+                        ),
                 ),
               ),
               AnimatedScale(

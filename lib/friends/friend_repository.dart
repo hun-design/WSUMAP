@@ -37,4 +37,18 @@ class FriendRepository {
   /// 보낸 친구 요청 취소
   Future<void> cancelSentRequest(String friendId) =>
       apiService.cancelSentFriendRequest(friendId);
+
+  /// 🔥 친구 상태 새로고침 (서버의 /myfriend API 사용)
+  Future<List<Friend>> refreshFriendStatus() async {
+    print('[DEBUG] 🔄 친구 상태 새로고침 시작');
+    try {
+      // /myfriend API를 사용하여 최신 친구 상태 조회
+      final friends = await apiService.fetchMyFriends();
+      print('[DEBUG] ✅ 친구 상태 새로고침 완료: ${friends.length}명');
+      return friends;
+    } catch (e) {
+      print('[ERROR] ❌ 친구 상태 새로고침 실패: $e');
+      rethrow;
+    }
+  }
 }

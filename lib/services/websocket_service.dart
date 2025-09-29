@@ -1,6 +1,7 @@
 // lib/services/websocket_service.dart
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/status.dart' as status;
@@ -22,7 +23,6 @@ class WebSocketService {
   bool _shouldReconnect = true;
   int _reconnectAttempts = 0;
 static const int _maxReconnectAttempts = ApiConfig.maxReconnectAttempts;
-static const Duration _heartbeatInterval = ApiConfig.heartbeatInterval;
 static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
 
   // 이벤트 스트림 컨트롤러들
@@ -38,27 +38,9 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
   Stream<bool> get connectionStream => _connectionController.stream;
   Stream<List<String>> get onlineUsersStream => _onlineUsersController.stream;
 
-  /// 연결 상태 확인
+  /// 연결 상태 확인 (단순화)
   bool get isConnected {
-    // 🔥 더 안정적인 연결 상태 확인
-    final hasChannel = _channel != null;
-    final hasSubscription = _subscription != null;
-    final channelReady = _channel?.ready != null;
-    
-    // 모든 조건이 만족되어야 연결됨으로 간주
-    final status = _isConnected && hasChannel && hasSubscription && channelReady;
-
-    // 🔥 디버그 로그를 조건부로 출력 (너무 많은 로그 방지)
-    if (!status || _isConnecting) {
-      debugPrint('🔍 연결 상태 확인:');
-      debugPrint('🔍 _isConnected: $_isConnected');
-      debugPrint('🔍 hasChannel: $hasChannel');
-      debugPrint('🔍 hasSubscription: $hasSubscription');
-      debugPrint('🔍 channelReady: $channelReady');
-      debugPrint('🔍 최종 상태: $status');
-    }
-
-    return status;
+    return _isConnected && _channel != null && _subscription != null;
   }
 
   /// 연결 상태 스트림
@@ -109,13 +91,13 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     _shouldReconnect = true;
     _reconnectAttempts = 0;
 
-    // 🔥 연결 타임아웃 설정
+    // 🔥 플랫폼별 최적화된 연결 타임아웃 설정
     try {
       await _doConnect().timeout(
-        const Duration(seconds: 15),
+        _platformConnectionTimeout,
         onTimeout: () {
-          debugPrint('⏰ 웹소켓 연결 타임아웃 (15초)');
-          throw TimeoutException('웹소켓 연결 타임아웃', const Duration(seconds: 15));
+          debugPrint('⏰ 웹소켓 연결 타임아웃 (${_platformConnectionTimeout.inSeconds}초)');
+          throw TimeoutException('웹소켓 연결 타임아웃', _platformConnectionTimeout);
         },
       );
     } catch (e) {
@@ -186,6 +168,9 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
       'userId': _userId,
       'timestamp': DateTime.now().toIso8601String(),
     });
+
+    // 🔥 연결 직후 서버에서 자동으로 친구 상태 정보를 전송해주기를 기다림
+    debugPrint('📤 웹소켓 연결 완료 - 서버에서 친구 상태 정보 전송 대기');
 
     // 서버가 메시지를 처리할 시간 확보
     await Future.delayed(const Duration(milliseconds: 200));
@@ -300,41 +285,40 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     }
   }
 
-  // 메시지 처리
+  // 메시지 처리 (최적화된 버전)
   void _handleMessage(dynamic message) {
     try {
       final data = jsonDecode(message.toString());
-      debugPrint('📨 웹소켓 메시지 수신: ${data['type']}');
-      debugPrint('📨 메시지 내용: $data');
-      debugPrint('📨 메시지 타입: ${data['type']}');
-      debugPrint('📨 전체 메시지: $message');
-      debugPrint('📨 현재 연결된 사용자: $_userId');
+      final messageType = data['type'] as String?;
+      
+      if (messageType == null) {
+        debugPrint('⚠️ 메시지 타입이 없음: $data');
+        return;
+      }
+      
+      // 중요한 메시지만 로그 출력
+      if (kDebugMode && _shouldLogMessage(messageType)) {
+        debugPrint('📨 웹소켓 메시지: $messageType');
+      }
 
-      switch (data['type']) {
-        // 🔥 서버에서 처리하는 메시지들만 유지
+      switch (messageType) {
         case 'registered':
-          debugPrint('📨 처리 중: registered 메시지');
           _handleRegistered(data);
           break;
 
-        case 'online_users_update':
-          debugPrint('📨 처리 중: online_users_update 메시지');
-          _handleOnlineUsersUpdate(data);
-          break;
-
         case 'friend_logged_in':
-          debugPrint('📨 처리 중: friend_logged_in 메시지');
-          debugPrint('📨 친구 로그인 사용자 ID: ${data['userId']}');
-          _handleFriendLoggedIn(data);
+          // 더 이상 사용되지 않음 - friend_status_change로 통합됨
           break;
 
         case 'friend_logged_out':
-          debugPrint('📨 처리 중: friend_logged_out 메시지');
-          debugPrint('📨 친구 로그아웃 사용자 ID: ${data['userId']}');
-          _handleFriendLoggedOut(data);
+          // 더 이상 사용되지 않음 - friend_status_change로 통합됨
           break;
 
-        // 🔥 친구 요청 관련 메시지들 추가
+        case 'friend_status_change':
+          _handleFriendStatusChange(data);
+          _handleFriendStatusChangeMessage(data);
+          break;
+
         case 'new_friend_request':
           _handleNewFriendRequest(data);
           break;
@@ -351,170 +335,317 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
           _handleFriendDeleted(data);
           break;
 
-        // 🔥 친구 상태 요청 응답 처리
         case 'friend_status_response':
-          debugPrint('📨 친구 상태 응답 수신');
           _handleFriendStatusResponse(data);
           break;
 
-        // 🔥 위치 공유 상태 변경 처리 추가
+        case 'friend_list_with_status':
+          _handleFriendListWithStatus(data);
+          break;
+
         case 'friend_location_share_status_change':
           _handleFriendLocationShareStatusChange(data);
           break;
 
-        case 'heartbeat_response':
-          debugPrint('❤️ 하트비트 응답 수신');
+        case 'request_friend_status':
+          _handleRequestFriendStatus(data);
           break;
 
-        // 🔥 서버에서 로그아웃 확인 메시지 처리
+        case 'online_users_update':
+          _handleOnlineUsersUpdate(data);
+          _handleOnlineUsersUpdateMessage(data);
+          break;
+
+        case 'Login_Status':
+          _handleLoginStatusChange(data);
+          // 🔥 Login_Status 메시지는 변환되어 스트림에서 처리되므로 여기서는 리턴하지 않음
+          break;
+
+        case 'heartbeat_response':
+          // 하트비트 응답은 특별한 처리 없음
+          break;
+
         case 'logout_confirmed':
-          debugPrint('✅ 서버에서 로그아웃 확인됨');
+          // 로그아웃 확인은 특별한 처리 없음
+          break;
+
+        case 'friend_location_update':
+          _handleFriendLocationUpdate(data);
           break;
 
         default:
-          debugPrint('⚠️ 알 수 없는 메시지 타입: ${data['type']}');
+          if (kDebugMode) {
+            debugPrint('⚠️ 알 수 없는 메시지 타입: $messageType');
+          }
       }
 
       // 모든 메시지를 스트림으로 전달
-      debugPrint('📨 메시지 스트림으로 전달: ${data['type']}');
-      debugPrint('📨 전달할 메시지 내용: $data');
+      debugPrint('📡 메시지를 스트림으로 전달: $data');
       _messageController.add(data);
-      debugPrint('📨 메시지 스트림 전달 완료');
+      debugPrint('✅ 메시지 스트림 전달 완료');
     } catch (e) {
       debugPrint('❌ 메시지 파싱 오류: $e');
     }
   }
 
-  // 🔥 새로 추가: 친구 로그아웃 처리 메서드
-  void _handleFriendLoggedOut(Map<String, dynamic> data) {
-    final loggedOutUserId = data['userId'];
-    debugPrint('👋 웹소켓 서비스: 친구 로그아웃 감지: $loggedOutUserId');
-    debugPrint('👋 웹소켓 서비스: 친구 로그아웃 메시지 전체: $data');
-    debugPrint('👋 웹소켓 서비스: 메시지 타입 확인: ${data['type']}');
-    debugPrint('👋 웹소켓 서비스: 사용자 ID 타입: ${loggedOutUserId.runtimeType}');
-    debugPrint('👋 웹소켓 서비스: 현재 연결된 사용자 ID: $_userId');
-
-    // 🔥 메시지 중복 전송 방지 - _handleMessage에서 이미 전송됨
-    // _messageController.add(data); // 제거
-
-    // 🔥 추가 디버깅: 온라인 사용자 목록에서 제거
-    debugPrint('🔥 웹소켓 서비스: 친구 로그아웃으로 인한 온라인 사용자 목록 업데이트');
-    debugPrint('🔥 웹소켓 서비스: 메시지 스트림으로 전달됨 - FriendsController에서 처리 예정');
-  }
-
-  // 🔥 새로 추가: 친구 로그인 처리 메서드
-  void _handleFriendLoggedIn(Map<String, dynamic> data) {
-    final loggedInUserId = data['userId'];
-    debugPrint('👋 웹소켓 서비스: 친구 로그인 감지: $loggedInUserId');
-    debugPrint('👋 웹소켓 서비스: 친구 로그인 메시지 전체: $data');
-    debugPrint('👋 웹소켓 서비스: 메시지 타입 확인: ${data['type']}');
-    debugPrint('👋 웹소켓 서비스: 사용자 ID 타입: ${loggedInUserId.runtimeType}');
-    debugPrint('👋 웹소켓 서비스: 현재 연결된 사용자 ID: $_userId');
-
-    // 🔥 메시지 중복 전송 방지 - _handleMessage에서 이미 전송됨
-    // _messageController.add(data); // 제거
-
-    // 🔥 추가 디버깅: 온라인 사용자 목록에 추가
-    debugPrint('🔥 웹소켓 서비스: 친구 로그인으로 인한 온라인 사용자 목록 업데이트');
-    debugPrint('🔥 웹소켓 서비스: 메시지 스트림으로 전달됨 - FriendsController에서 처리 예정');
+  // 🔥 친구 상태 변경 처리 메서드
+  void _handleFriendStatusChange(Map<String, dynamic> data) {
+    final userId = data['userId'];
+    final isOnline = data['isOnline'] ?? false;
+    if (kDebugMode) {
+      debugPrint('📶 친구 상태 변경: $userId - ${isOnline ? '온라인' : '오프라인'}');
+    }
   }
 
   // 🔥 새로 추가: 위치 공유 상태 변경 처리 메서드
   void _handleFriendLocationShareStatusChange(Map<String, dynamic> data) {
     final userId = data['userId'];
     final isLocationPublic = data['isLocationPublic'] ?? false;
-    debugPrint('📍 위치 공유 상태 변경: $userId - ${isLocationPublic ? '공유' : '비공유'}');
-
-    // 🔥 메시지 중복 전송 방지 - _handleMessage에서 이미 전송됨
-    // _messageController.add(data); // 제거
-
-    // 위치 공유 상태 변경 알림 표시 (나중에 구현)
-    // NotificationService.showLocationShareStatusChangeNotification(
-    //   userId,
-    //   isLocationPublic,
-    //   data['message'] ?? '친구의 위치 공유 상태가 변경되었습니다.',
-    // );
+    if (kDebugMode) {
+      debugPrint('📍 위치 공유 상태 변경: $userId - ${isLocationPublic ? '공유' : '비공유'}');
+    }
   }
 
   // 🔥 새로 추가: 새로운 친구 요청 처리
   void _handleNewFriendRequest(Map<String, dynamic> data) {
-    final fromUserId = data['fromUserId'];
     final fromUserName = data['fromUserName'];
-    debugPrint('📨 새로운 친구 요청: $fromUserName ($fromUserId)');
-    debugPrint('📨 친구 요청 메시지 전체: $data');
-
-    // 🔥 메시지 중복 전송 방지 - _handleMessage에서 이미 전송됨
-    // _messageController.add(data); // 제거
+    if (kDebugMode) {
+      debugPrint('📨 새로운 친구 요청: $fromUserName');
+    }
   }
 
   // 🔥 새로 추가: 친구 요청 수락 처리
   void _handleFriendRequestAccepted(Map<String, dynamic> data) {
-    final fromUserId = data['fromUserId'];
     final fromUserName = data['fromUserName'];
-    debugPrint('✅ 친구 요청 수락: $fromUserName ($fromUserId)');
-    debugPrint('✅ 친구 요청 수락 메시지 전체: $data');
-
-    // 🔥 메시지 중복 전송 방지 - _handleMessage에서 이미 전송됨
-    // _messageController.add(data); // 제거
+    if (kDebugMode) {
+      debugPrint('✅ 친구 요청 수락: $fromUserName');
+    }
   }
 
   // 🔥 새로 추가: 친구 요청 거절 처리
   void _handleFriendRequestRejected(Map<String, dynamic> data) {
-    final fromUserId = data['fromUserId'];
     final fromUserName = data['fromUserName'];
-    debugPrint('❌ 친구 요청 거절: $fromUserName ($fromUserId)');
-    debugPrint('❌ 친구 요청 거절 메시지 전체: $data');
-
-    // 🔥 메시지 중복 전송 방지 - _handleMessage에서 이미 전송됨
-    // _messageController.add(data); // 제거
+    if (kDebugMode) {
+      debugPrint('❌ 친구 요청 거절: $fromUserName');
+    }
   }
 
   // 🔥 새로 추가: 친구 삭제 처리
   void _handleFriendDeleted(Map<String, dynamic> data) {
-    final deletedUserId = data['deletedUserId'];
     final deletedUserName = data['deletedUserName'];
-    debugPrint('🗑️ 친구 삭제: $deletedUserName ($deletedUserId)');
-    debugPrint('🗑️ 친구 삭제 메시지 전체: $data');
-
-    // 🔥 메시지 중복 전송 방지 - _handleMessage에서 이미 전송됨
-    // _messageController.add(data); // 제거
+    if (kDebugMode) {
+      debugPrint('🗑️ 친구 삭제: $deletedUserName');
+    }
   }
 
   // 🔥 새로 추가: 친구 상태 응답 처리
   void _handleFriendStatusResponse(Map<String, dynamic> data) {
-    debugPrint('📨 친구 상태 응답 처리 시작');
-    debugPrint('📨 친구 상태 응답 데이터: $data');
-
-    // 서버에서 받은 친구 상태 정보를 처리
-    if (data['friends'] != null && data['friends'] is List) {
+    if (kDebugMode && data['friends'] != null && data['friends'] is List) {
       final friendsData = data['friends'] as List;
-      debugPrint('📨 서버에서 받은 친구 상태 수: ${friendsData.length}');
-      
-      // 각 친구의 상태를 로그로 출력
-      for (var friendData in friendsData) {
-        if (friendData is Map) {
-          final userId = friendData['userId']?.toString() ?? '';
-          final isOnline = friendData['isOnline'] ?? false;
-          debugPrint('📨 친구 상태: $userId - ${isOnline ? '온라인' : '오프라인'}');
-        }
-      }
+      debugPrint('📨 친구 상태 응답: ${friendsData.length}명');
     }
+  }
 
-    // 🔥 메시지 중복 전송 방지 - _handleMessage에서 이미 전송됨
-    // _messageController.add(data); // 제거
+  // 🔥 새로 추가: 친구 목록과 상태 정보 응답 처리
+  void _handleFriendListWithStatus(Map<String, dynamic> data) {
+    if (kDebugMode && data['friends'] != null && data['friends'] is List) {
+      final friendsData = data['friends'] as List;
+      debugPrint('📨 친구 목록 응답: ${friendsData.length}명');
+    }
+  }
+
+  // 🔥 친구 위치 업데이트 처리
+  void _handleFriendLocationUpdate(Map<String, dynamic> data) {
+    final userId = data['userId'];
+    if (kDebugMode) {
+      debugPrint('📍 친구 위치 업데이트: $userId');
+    }
+  }
+
+  // 🔥 새로 추가: 친구 상태 동기화 요청 처리
+  void _handleRequestFriendStatus(Map<String, dynamic> data) {
+    final userId = data['userId'];
+    final timestamp = data['timestamp'];
+    
+    if (kDebugMode) {
+      debugPrint('📨 친구 상태 동기화 요청: $userId');
+      debugPrint('📨 타임스탬프: $timestamp');
+    }
+    
+    // 서버에 친구 상태 동기화 요청 전달
+    _sendMessage({
+      'type': 'sync_friend_status',
+      'userId': userId,
+      'timestamp': DateTime.now().toIso8601String(),
+    });
+  }
+
+  // 더 이상 사용되지 않는 메시지 핸들러들 제거됨 (통합된 알림으로 대체)
+
+  void _handleFriendStatusChangeMessage(Map<String, dynamic> data) {
+    final userId = data['userId'];
+    final isOnline = data['isOnline'] ?? false;
+    final message = data['message'];
+    final timestamp = data['timestamp'];
+    
+    if (kDebugMode) {
+      debugPrint('📶 친구 상태 변경 알림: $userId - ${isOnline ? '온라인' : '오프라인'}');
+      debugPrint('📶 메시지: $message');
+      debugPrint('📶 타임스탬프: $timestamp');
+    }
+  }
+
+  void _handleOnlineUsersUpdateMessage(Map<String, dynamic> data) {
+    final onlineUsers = data['onlineUsers'];
+    final timestamp = data['timestamp'];
+    
+    if (kDebugMode) {
+      debugPrint('👥 온라인 사용자 목록 업데이트 알림');
+      debugPrint('👥 온라인 사용자 수: ${onlineUsers is List ? onlineUsers.length : 'N/A'}');
+      debugPrint('👥 타임스탬프: $timestamp');
+    }
+    
+    // 기존 온라인 사용자 업데이트 로직과 통합
+    _handleOnlineUsersUpdate(data);
   }
 
 
   // 🔥 등록 확인 메시지 처리
   void _handleRegistered(Map<String, dynamic> data) {
-    debugPrint('✅ 웹소켓 등록 확인됨');
+    if (kDebugMode) {
+      debugPrint('✅ 웹소켓 등록 확인됨');
+    }
 
-    // 등록 후 온라인 사용자 목록 다시 요청
-    _sendMessage({
-      'type': 'get_online_users',
-      'userId': _userId,
+    // 등록 후 서버에서 자동으로 온라인 사용자 목록을 전송해주기를 기다림
+    debugPrint('📤 등록 완료 - 서버에서 온라인 사용자 목록 전송 대기');
+  }
+
+  // 🔥 Login_Status 메시지 처리 (서버에서 보내는 친구 로그인/로그아웃 알림)
+  void _handleLoginStatusChange(Map<String, dynamic> data) {
+    final userId = data['userId'];
+    final statusRaw = data['status'];
+    final isOnline = statusRaw == true || statusRaw == "true" || statusRaw == 1 || statusRaw == "online";
+    final message = data['message'];
+    final timestamp = data['timestamp'];
+    
+    debugPrint('🔥🔥🔥 Login_Status 핸들러 실행 🔥🔥🔥');
+    debugPrint('📨 원본 데이터: $data');
+    debugPrint('📨 친구 ID: $userId');
+    debugPrint('📨 원본 status 값: $statusRaw');
+    debugPrint('📨 변환된 온라인 상태: $isOnline');
+    debugPrint('📨 메시지: $message');
+    debugPrint('📨 타임스탬프: $timestamp');
+    
+    // 기존 friend_status_change와 동일한 데이터 형식으로 변환하여 전달
+    final friendStatusMessage = {
+      'type': 'friend_status_change',
+      'userId': userId,
+      'isOnline': isOnline,
+      'message': message,
+      'timestamp': timestamp,
+    };
+    
+    debugPrint('📨 변환된 메시지: $friendStatusMessage');
+    
+    // 변환된 메시지를 스트림으로 전달하여 FriendsController에서 처리하도록 함
+    debugPrint('📡 변환된 메시지 스트림 컨트롤러에 추가 시도');
+    debugPrint('📡 스트림 컨트롤러 상태: ${_messageController.isClosed ? "CLOSED" : "OPEN"}');
+    debugPrint('📡 스트림 컨트롤러 구독자 수: ${_messageController.hasListener ? "있음" : "없음"}');
+    
+    try {
+      _messageController.add(friendStatusMessage);
+      debugPrint('✅ Login_Status 메시지 스트림으로 전파 완료');
+      
+      // 🔥 실시간 상태 직접 전달 (스트림 실패 시 대비책)
+      debugPrint('🔥 실시간 상태 직접 전달 시작');
+      _notifyRealTimeStatusChange(userId, isOnline, message);
+    } catch (e) {
+      debugPrint('❌ 스트림 추가 실패: $e');
+      
+      // 🔥 스트림 실패 시에도 실시간 상태 전달
+      debugPrint('🔥 스트림 실패에도 불구하고 실시간 상태 전달');
+      _notifyRealTimeStatusChange(userId, isOnline, message);
+    }
+  }
+
+  // 🔥 실시간 상태 변경 직접 전달 메서드 (스트림 실패 시 대비책)
+  void _notifyRealTimeStatusChange(String userId, bool isOnline, String message) {
+    debugPrint('🔥 실시간 상태 직접 전달: $userId = $isOnline');
+    debugPrint('📱 메시지: $message');
+    
+    // 🔥 글로벌 상태 변경 이벤트 발생 (static 방식)
+    // 이를 통해 다른 곳에서 구독할 수 있도록 함
+    _broadcastRealTimeStatusChange(userId, isOnline, message);
+  }
+
+  // 🔥 글로벌 상태 변경 브로드캐스트
+  void _broadcastRealTimeStatusChange(String userId, bool isOnline, String message) {
+    // 🔥 이벤트 스트림을 통해 전달
+    final statusEvent = {
+      'type': 'real_time_status_change',
+      'userId': userId,
+      'isOnline': isOnline,
+      'message': message,
       'timestamp': DateTime.now().toIso8601String(),
-    });
+      'source': 'direct_websocket',
+    };
+    
+    debugPrint('📡 실시간 상태 이벤트 브로드캐스트: $statusEvent');
+    
+    try {
+      _messageController.add(statusEvent);
+      debugPrint('✅ 실시간 상태 이벤트 브로드캐스트 완료');
+    } catch (e) {
+      debugPrint('❌ 실시간 상태 이벤트 브로드캐스트 실패: $e');
+    }
+  }
+
+  // 🔥 로그 출력 여부 결정 메서드
+  bool _shouldLogMessage(String messageType) {
+    // 중요한 메시지만 로그 출력
+    const importantMessages = {
+      'friend_logged_in',
+      'friend_logged_out',
+      'friend_status_change',
+      'friend_location_update',
+      'new_friend_request',
+      'friend_request_accepted',
+      'friend_request_rejected',
+      'friend_deleted',
+    };
+    return importantMessages.contains(messageType);
+  }
+
+  // 🔥 플랫폼별 최적화된 연결 타임아웃 (크로스 플랫폼 최적화)
+  Duration get _platformConnectionTimeout {
+    if (Platform.isAndroid) {
+      return const Duration(seconds: 12); // 안드로이드 최적화
+    } else if (Platform.isIOS) {
+      return const Duration(seconds: 8); // iOS 최적화
+    } else if (Platform.isWindows) {
+      return const Duration(seconds: 10); // Windows 최적화
+    } else if (Platform.isMacOS) {
+      return const Duration(seconds: 9); // macOS 최적화
+    } else if (Platform.isLinux) {
+      return const Duration(seconds: 11); // Linux 최적화
+    }
+    return const Duration(seconds: 10); // 기본값
+  }
+
+  // 🔥 플랫폼별 최적화된 하트비트 간격 (네트워크 부하 감소를 위해 조정)
+  Duration get _platformHeartbeatInterval {
+    if (Platform.isAndroid) {
+      return const Duration(seconds: 30); // 안드로이드: 500ms → 30초
+    } else if (Platform.isIOS) {
+      return const Duration(seconds: 30); // iOS: 800ms → 30초
+    } else if (Platform.isWindows) {
+      return const Duration(seconds: 30); // Windows: 300ms → 30초
+    } else if (Platform.isMacOS) {
+      return const Duration(seconds: 30); // macOS: 600ms → 30초
+    } else if (Platform.isLinux) {
+      return const Duration(seconds: 30); // Linux: 400ms → 30초
+    }
+    return const Duration(seconds: 30); // 기본값: 500ms → 30초
   }
 
 
@@ -665,20 +796,27 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     }
   }
 
-  // 💓 하트비트 시작
+  // 💓 하트비트 시작 (플랫폼별 최적화)
   void _startHeartbeat() {
     _heartbeatTimer?.cancel();
-    debugPrint('💓 하트비트 시작 - 간격: ${_heartbeatInterval.inSeconds}초');
-    _heartbeatTimer = Timer.periodic(_heartbeatInterval, (timer) {
+    final heartbeatInterval = _platformHeartbeatInterval;
+    if (kDebugMode) {
+      debugPrint('💓 하트비트 시작 - 간격: ${heartbeatInterval.inSeconds}초 (${Platform.operatingSystem})');
+    }
+    _heartbeatTimer = Timer.periodic(heartbeatInterval, (timer) {
       if (_isConnected) {
-        debugPrint('💓 하트비트 전송');
+        if (kDebugMode) {
+          debugPrint('💓 하트비트 전송');
+        }
         _sendMessage({
           'type': 'heartbeat',
           'userId': _userId,
           'timestamp': DateTime.now().toIso8601String(),
         });
       } else {
-        debugPrint('💓 웹소켓 연결 안됨 - 하트비트 타이머 중지');
+        if (kDebugMode) {
+          debugPrint('💓 웹소켓 연결 안됨 - 하트비트 타이머 중지');
+        }
         timer.cancel();
       }
     });
@@ -833,19 +971,11 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     }
   }
 
-  // 🔥 실시간 친구 상태 요청
-  void requestFriendStatus() {
-    if (_isConnected && _channel != null) {
-      debugPrint('🔍 실시간 친구 상태 요청');
-      _sendMessage({
-        'type': 'get_friend_status',
-        'userId': _userId,
-        'timestamp': DateTime.now().toIso8601String(),
-      });
-    } else {
-      debugPrint('❌ 웹소켓 연결되지 않음 - 친구 상태 요청 실패');
-    }
-  }
+  // 🔥 실시간 친구 상태 요청 (서버에서 지원하지 않으므로 제거)
+  // void requestFriendStatus() {
+  //   // 서버에서 get_friend_status 메서드를 지원하지 않음
+  //   debugPrint('⚠️ get_friend_status 메서드는 서버에서 지원하지 않음');
+  // }
 
   /// 🔥 웹소켓 메시지 전송 (공개 메서드)
   void sendMessage(Map<String, dynamic> message) {

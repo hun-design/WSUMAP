@@ -114,10 +114,16 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         ..addListener(() => setState(() {}));
       _controller.setLocationController(_locationController);
 
+      debugPrint('🔥🔥🔥 MapScreen에서 FriendsController 생성 🔥🔥🔥');
+      debugPrint('🔍 사용자 ID: ${userAuth.userId}');
+      
       _friendsController = FriendsController(
         FriendRepository(FriendApiService()),
         userAuth.userId ?? '',
       );
+      
+      debugPrint('✅ MapScreen FriendsController 생성 완료');
+      
       _friendsController.addListener(_onFriendsControllerChanged);
 
       _navigationManager = NavigationStateManager();
