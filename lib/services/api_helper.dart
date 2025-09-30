@@ -11,9 +11,23 @@ class ApiHelper {
   static final Map<String, http.Response> _responseCache = {};
   static final Map<String, DateTime> _cacheTimestamps = {};
   static const Duration _cacheExpiry = Duration(minutes: 2); // 2분 캐시
+  
+  // 🔥 캐시 초기화 콜백 등록 (정적 초기화 블록)
+  static bool _isCallbackRegistered = false;
+  
+  static void _ensureCallbackRegistered() {
+    if (!_isCallbackRegistered) {
+      JwtService.registerCacheClearCallback(clearCache);
+      _isCallbackRegistered = true;
+      debugPrint('✅ ApiHelper 캐시 초기화 콜백 등록 완료');
+    }
+  }
 
   /// 🔥 JWT 토큰이 포함된 헤더로 GET 요청 (캐시 최적화)
   static Future<http.Response> get(String url, {Map<String, String>? additionalHeaders}) async {
+    // 🔥 콜백 등록 확인 (최초 1회만)
+    _ensureCallbackRegistered();
+    
     // 🔥 캐시 확인 (GET 요청만 캐시)
     final cacheKey = url;
     if (_responseCache.containsKey(cacheKey)) {
@@ -68,6 +82,9 @@ class ApiHelper {
     Map<String, String>? headers,
     Object? body,
   }) async {
+    // 🔥 콜백 등록 확인 (최초 1회만)
+    _ensureCallbackRegistered();
+    
     final authHeaders = await JwtService.getAuthHeaders();
     if (headers != null) {
       authHeaders.addAll(headers);
@@ -127,6 +144,9 @@ class ApiHelper {
     Map<String, String>? headers,
     Object? body,
   }) async {
+    // 🔥 콜백 등록 확인 (최초 1회만)
+    _ensureCallbackRegistered();
+    
     final authHeaders = await JwtService.getAuthHeaders();
     if (headers != null) {
       authHeaders.addAll(headers);
@@ -170,12 +190,15 @@ class ApiHelper {
     }
   }
 
-  /// 🔥 JWT 토큰이 포함된 헤더로 DELETE 요청 (크로스 플랫폼 최적화)
+  /// 🔥 JWT 토큰이 포함된 헤더로 DELETE 요청 (크로스 플랫포 최적화)
   static Future<http.Response> delete(
     String url, {
     Map<String, String>? headers,
     Object? body,
   }) async {
+    // 🔥 콜백 등록 확인 (최초 1회만)
+    _ensureCallbackRegistered();
+    
     final authHeaders = await JwtService.getAuthHeaders();
     if (headers != null) {
       authHeaders.addAll(headers);
@@ -236,11 +259,12 @@ class ApiHelper {
     return request;
   }
 
-  /// 🔥 캐시 정리 (메모리 관리)
+  /// 🔥 캐시 정리 (메모리 관리) - 사용자 변경 시 필수!
   static void clearCache() {
+    final previousSize = _responseCache.length;
     _responseCache.clear();
     _cacheTimestamps.clear();
-    debugPrint('🗑️ API 캐시 완전 정리됨');
+    debugPrint('🗑️ API 캐시 완전 정리됨 (기존 캐시: $previousSize개)');
   }
 
   /// 🔥 만료된 캐시만 정리

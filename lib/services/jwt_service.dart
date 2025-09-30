@@ -48,6 +48,9 @@ class JwtService {
       
       // 캐시 업데이트
       _cachedToken = token;
+      
+      // 🔥 새로운 토큰 저장 시 기존 캐시 무효화 (사용자가 변경된 경우 대비)
+      _clearApiCache();
     } catch (e) {
       debugPrint('❌ JWT 토큰 저장 실패: $e');
     }
@@ -103,6 +106,9 @@ class JwtService {
       _cachedToken = null;
       _cachedExpiry = null;
       
+      // 🔥 토큰 삭제 시 API 캐시도 함께 무효화 (로그아웃 대비)
+      _clearApiCache();
+      
       debugPrint('🔐 JWT 토큰 삭제 완료');
     } catch (e) {
       debugPrint('❌ JWT 토큰 삭제 실패: $e');
@@ -113,6 +119,28 @@ class JwtService {
   static Future<bool> isTokenValid() async {
     final token = await getToken();
     return token != null;
+  }
+
+  /// 🔥 API 캐시 무효화 (사용자 변경 시 필수)
+  static void _clearApiCache() {
+    try {
+      // ApiHelper의 캐시 초기화를 위해 동적으로 import
+      // (순환 참조 방지를 위해 리플렉션 대신 콜백 사용)
+      if (_onCacheClearCallback != null) {
+        _onCacheClearCallback!();
+        debugPrint('🗑️ JWT 토큰 변경에 따른 API 캐시 무효화 완료');
+      }
+    } catch (e) {
+      debugPrint('⚠️ API 캐시 무효화 실패: $e');
+    }
+  }
+  
+  /// 🔥 캐시 초기화 콜백 등록 (ApiHelper에서 설정)
+  static void Function()? _onCacheClearCallback;
+  
+  static void registerCacheClearCallback(void Function() callback) {
+    _onCacheClearCallback = callback;
+    debugPrint('✅ API 캐시 초기화 콜백 등록 완료');
   }
 
   /// 🔥 Authorization 헤더 생성 (크로스 플랫폼 최적화)

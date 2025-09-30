@@ -31,6 +31,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_application_1/map/building_data.dart';
 import 'package:flutter_application_1/models/building.dart';
 import 'package:flutter_application_1/inside/building_map_page.dart';
+import 'package:flutter_application_1/services/api_helper.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -161,12 +162,16 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       debugPrint('🔄 사용자 변경 감지: $_lastUserId → $currentUserId');
       debugPrint('🔄 FriendsController 재생성 시작');
       
-      // 기존 FriendsController 정리
+      // 🔥 1. API 캐시 완전 초기화 (이전 사용자의 데이터 제거)
+      ApiHelper.clearCache();
+      debugPrint('🗑️ 사용자 변경에 따른 API 캐시 초기화 완료');
+      
+      // 🔥 2. 기존 FriendsController 정리
       _friendsController.removeListener(_onFriendsControllerChanged);
       _friendsController.clearAllData(); // 즉시 데이터 초기화
       _friendsController.dispose();
       
-      // 새로운 FriendsController 생성
+      // 🔥 3. 새로운 FriendsController 생성
       _friendsController = FriendsController(
         FriendRepository(FriendApiService()),
         currentUserId,

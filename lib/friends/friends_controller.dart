@@ -67,6 +67,10 @@ class FriendsController extends ChangeNotifier {
     }
     
     if (!_isGuestUser()) {
+      // 🔥 기존 웹소켓 연결 종료 (사용자 변경 대비)
+      _disconnectWebSocket();
+      
+      // 🔥 새로운 사용자로 웹소켓 연결
       _startStreamSubscription();
       _initializeWebSocket();
     }
@@ -124,10 +128,27 @@ class FriendsController extends ChangeNotifier {
     Future.delayed(const Duration(seconds: 1), _startStreamSubscription);
   }
 
+  // 🔥 웹소켓 연결 해제 (사용자 변경 시 호출)
+  void _disconnectWebSocket() {
+    try {
+      if (_wsService.isConnected) {
+        if (kDebugMode) {
+          debugPrint('🔄 사용자 변경 감지 - 기존 웹소켓 연결 해제 중...');
+        }
+        _wsService.disconnect();
+        isWebSocketConnected = false;
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('⚠️ 웹소켓 연결 해제 중 오류: $e');
+      }
+    }
+  }
+  
   // 웹소켓 초기화
   Future<void> _initializeWebSocket() async {
     if (kDebugMode) {
-      debugPrint('웹소켓 초기화 시작');
+      debugPrint('웹소켓 초기화 시작 - 사용자 ID: $myId');
     }
 
     if (_isGuestUser()) {
@@ -137,11 +158,13 @@ class FriendsController extends ChangeNotifier {
       return;
     }
 
+    // 🔥 항상 새로운 연결 시도 (사용자 변경 대비)
     if (_wsService.isConnected) {
       if (kDebugMode) {
-        debugPrint('웹소켓이 이미 연결됨');
+        debugPrint('🔄 기존 웹소켓 연결 해제 후 재연결');
       }
-      return;
+      await _wsService.disconnect();
+      await Future.delayed(const Duration(milliseconds: 500));
     }
 
     try {
@@ -1275,6 +1298,10 @@ class FriendsController extends ChangeNotifier {
       debugPrint('FriendsController 데이터 초기화 시작');
     }
     
+    // 🔥 1. 웹소켓 연결 해제 (사용자 변경 대비)
+    _disconnectWebSocket();
+    
+    // 🔥 2. 데이터 초기화
     _clearAllData();
     
     isLoading = false;

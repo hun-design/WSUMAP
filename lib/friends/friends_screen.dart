@@ -11,6 +11,7 @@ import 'package:flutter_application_1/friends/friends_tiles.dart';
 import 'package:flutter_application_1/friends/friends_utils.dart';
 import 'package:flutter_application_1/generated/app_localizations.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
+import 'package:flutter_application_1/services/api_helper.dart';
 
 class FriendsScreen extends StatefulWidget {
   final String userId;
@@ -59,11 +60,18 @@ class _FriendsScreenState extends State<FriendsScreen>
     if (oldWidget.userId != widget.userId) {
       debugPrint('🔄 FriendsScreen 사용자 변경 감지: ${oldWidget.userId} → ${widget.userId}');
       
-      // 기존 컨트롤러 정리
+      // 🔥 1. API 캐시 완전 초기화 (이전 사용자의 데이터 제거)
+      ApiHelper.clearCache();
+      debugPrint('🗑️ 사용자 변경에 따른 API 캐시 초기화 완료');
+      
+      // 🔥 2. 사용자 목록 캐시 초기화
+      _clearCachedUserList();
+      
+      // 🔥 3. 기존 컨트롤러 정리
       controller.clearAllData(); // 즉시 데이터 초기화
       controller.dispose();
       
-      // 새로운 컨트롤러 생성
+      // 🔥 4. 새로운 컨트롤러 생성
       controller = FriendsController(FriendRepository(FriendApiService()), widget.userId)
         ..addListener(() {
           if (mounted) {
@@ -72,7 +80,7 @@ class _FriendsScreenState extends State<FriendsScreen>
         })
         ..loadAll();
       
-      debugPrint('✅ FriendsScreen FriendsController 재생성 완료');
+      debugPrint('✅ FriendsScreen FriendsController 재생성 완료 - 새로운 사용자: ${widget.userId}');
     }
   }
 
