@@ -335,145 +335,132 @@ class InquiryService {
   }
 
   /// 문의 목록 조회
+  /// 🔥 서버 라우트: GET /inquiry/my (authMiddleware)
   static Future<List<InquiryItem>> getInquiries() async {
     try {
       debugPrint('=== 문의 목록 조회 시작 ===');
       debugPrint('API 기본 URL: ${ApiConfig.baseHost}:3001');
 
-      final List<String> possibleUrls = [
-        '${ApiConfig.baseHost}:3001/inquiry/my', // 🔥 서버 라우트: router.get('/my', authMiddleware, inquiryController.getInquiry)
-        '${ApiConfig.baseHost}:3001/inquiry', // 대안 경로
-        '${ApiConfig.baseHost}:3001/user/inquiry', // 대안 경로
-      ];
+      // 🔥 서버 라우트에 맞게 단일 경로 사용
+      final url = '${ApiConfig.baseHost}:3001/inquiry/my';
+      debugPrint('URL: $url');
 
-      for (int i = 0; i < possibleUrls.length; i++) {
-        final url = possibleUrls[i];
-        debugPrint('URL 시도 ${i + 1}: $url');
+      final response = await ApiHelper.get(url);
 
-        try {
-          final response = await ApiHelper.get(url);
+      debugPrint('응답 상태: ${response.statusCode}');
+      debugPrint('응답 내용: ${response.body}');
 
-          debugPrint('응답 상태: ${response.statusCode}');
-          debugPrint('응답 내용: ${response.body}');
-
-          if (response.statusCode == 200) {
-            debugPrint('✅ 200 응답 받음');
-            
-            // 🔥 서버 응답 구조에 맞게 파싱: {"success": true, "data": [...]}
-            final Map<String, dynamic> responseData = jsonDecode(response.body);
-            debugPrint('📊 서버 응답 구조: $responseData');
-            
-            if (responseData['success'] != true) {
-              debugPrint('❌ 서버에서 실패 응답: ${responseData['message'] ?? '알 수 없는 오류'}');
-              return [];
-            }
-            
-            final List<dynamic> data = responseData['data'] ?? [];
-            debugPrint('파싱된 데이터 개수: ${data.length}');
-            debugPrint('데이터 내용: $data');
-
-            // 서버에서 빈 배열이 반환되는 경우 빈 리스트 반환
-            if (data.isEmpty) {
-              debugPrint('⚠️ 서버에서 빈 배열이 반환되었습니다. 빈 리스트를 반환합니다.');
-              return [];
-            }
-
-            // 데이터가 있는 경우 파싱
-            final List<InquiryItem> inquiries = data.map((item) {
-              debugPrint('=== 개별 문의 파싱 시작 ===');
-              debugPrint('원본 데이터: $item');
-
-              // 서버 상태값을 한국어로 변환
-              String status = item['Status']?.toString() ?? 'pending';
-              String displayStatus = _convertStatusToKorean(status);
-              debugPrint('상태 변환: $status → $displayStatus');
-
-              // 날짜 포맷팅 (시간 정보 포함, 18시간 보정)
-              String createdAt = '';
-              if (item['Created_At'] != null) {
-                try {
-                  DateTime date = DateTime.parse(item['Created_At']);
-                  
-                  // 🔥 18시간을 더해서 정확한 시간으로 보정
-                  DateTime correctedTime = date.add(const Duration(hours: 18));
-                  
-                  debugPrint('📅 서버 날짜 파싱: ${item['Created_At']}');
-                  debugPrint('   원본 시간: $date');
-                  debugPrint('   보정된 시간: $correctedTime');
-                  
-                  createdAt = correctedTime.toIso8601String();
-                  
-                  debugPrint('   최종 저장: $createdAt');
-                } catch (e) {
-                  debugPrint('❌ 날짜 파싱 실패: ${item['Created_At']}, 오류: $e');
-                  createdAt = item['Created_At'].toString();
-                }
-              }
-
-              // 답변일 포맷팅 (시간 정보 포함, 18시간 보정)
-              String? answeredAt;
-              if (item['Answered_At'] != null) {
-                try {
-                  DateTime date = DateTime.parse(item['Answered_At']);
-                  
-                  // 🔥 18시간을 더해서 정확한 시간으로 보정
-                  DateTime correctedTime = date.add(const Duration(hours: 18));
-                  
-                  debugPrint('📅 답변일 파싱: ${item['Answered_At']}');
-                  debugPrint('   원본 시간: $date');
-                  debugPrint('   보정된 시간: $correctedTime');
-                  
-                  answeredAt = correctedTime.toIso8601String();
-                  
-                  debugPrint('   최종 저장: $answeredAt');
-                } catch (e) {
-                  debugPrint('❌ 답변일 파싱 실패: ${item['Answered_At']}, 오류: $e');
-                  answeredAt = item['Answered_At'].toString();
-                }
-              }
-
-              final inquiryItem = InquiryItem(
-                id: item['Inquiry_Code']?.toString() ?? '',
-                category: item['Category']?.toString() ?? '',
-                title: item['Title']?.toString() ?? '',
-                content: item['Content']?.toString() ?? '',
-                status: displayStatus,
-                createdAt: createdAt,
-                hasImage:
-                    item['Image_Path'] != null &&
-                    item['Image_Path'].toString().isNotEmpty,
-                inquiryCode: item['Inquiry_Code']?.toString() ?? '',
-                answer: item['Answer']?.toString(),
-                answeredAt: answeredAt,
-                imagePath: item['Image_Path']?.toString(),
-              );
-
-              debugPrint(
-                '파싱된 문의: ${inquiryItem.title} (${inquiryItem.status})',
-              );
-              return inquiryItem;
-            }).toList();
-
-            debugPrint('✅ 문의 목록 조회 성공: ${inquiries.length}개');
-            return inquiries;
-          } else if (response.statusCode == 404) {
-            debugPrint('⚠️ 404 응답: 문의를 찾을 수 없습니다.');
-            debugPrint('응답 내용: ${response.body}');
-            
-            // 서버에서 문의가 없을 때 404를 반환하므로 빈 리스트 반환
-            return [];
-          } else {
-            debugPrint('❌ 문의 목록 조회 실패: ${response.statusCode}');
-            debugPrint('응답 내용: ${response.body}');
-          }
-        } catch (e) {
-          debugPrint('❌ URL 시도 ${i + 1} 실패: $e');
+      if (response.statusCode == 200) {
+        debugPrint('✅ 200 응답 받음');
+        
+        // 🔥 서버 응답 구조에 맞게 파싱: {"success": true, "data": [...]}
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
+        debugPrint('📊 서버 응답 구조: $responseData');
+        
+        if (responseData['success'] != true) {
+          debugPrint('❌ 서버에서 실패 응답: ${responseData['message'] ?? '알 수 없는 오류'}');
+          return [];
         }
-      }
+        
+        final List<dynamic> data = responseData['data'] ?? [];
+        debugPrint('파싱된 데이터 개수: ${data.length}');
+        debugPrint('데이터 내용: $data');
 
-      // 모든 URL 시도가 실패한 경우 빈 리스트 반환 (테스트 데이터 비활성화)
-      debugPrint('⚠️ 모든 API URL 시도가 실패했습니다. 빈 리스트를 반환합니다.');
-      return [];
+        // 서버에서 빈 배열이 반환되는 경우 빈 리스트 반환
+        if (data.isEmpty) {
+          debugPrint('⚠️ 서버에서 빈 배열이 반환되었습니다. 빈 리스트를 반환합니다.');
+          return [];
+        }
+
+        // 데이터가 있는 경우 파싱
+        final List<InquiryItem> inquiries = data.map((item) {
+          debugPrint('=== 개별 문의 파싱 시작 ===');
+          debugPrint('원본 데이터: $item');
+
+          // 서버 상태값을 한국어로 변환
+          String status = item['Status']?.toString() ?? 'pending';
+          String displayStatus = _convertStatusToKorean(status);
+          debugPrint('상태 변환: $status → $displayStatus');
+
+          // 날짜 포맷팅 (시간 정보 포함, 18시간 보정)
+          String createdAt = '';
+          if (item['Created_At'] != null) {
+            try {
+              DateTime date = DateTime.parse(item['Created_At']);
+              
+              // 🔥 18시간을 더해서 정확한 시간으로 보정
+              DateTime correctedTime = date.add(const Duration(hours: 18));
+              
+              debugPrint('📅 서버 날짜 파싱: ${item['Created_At']}');
+              debugPrint('   원본 시간: $date');
+              debugPrint('   보정된 시간: $correctedTime');
+              
+              createdAt = correctedTime.toIso8601String();
+              
+              debugPrint('   최종 저장: $createdAt');
+            } catch (e) {
+              debugPrint('❌ 날짜 파싱 실패: ${item['Created_At']}, 오류: $e');
+              createdAt = item['Created_At'].toString();
+            }
+          }
+
+          // 답변일 포맷팅 (시간 정보 포함, 18시간 보정)
+          String? answeredAt;
+          if (item['Answered_At'] != null) {
+            try {
+              DateTime date = DateTime.parse(item['Answered_At']);
+              
+              // 🔥 18시간을 더해서 정확한 시간으로 보정
+              DateTime correctedTime = date.add(const Duration(hours: 18));
+              
+              debugPrint('📅 답변일 파싱: ${item['Answered_At']}');
+              debugPrint('   원본 시간: $date');
+              debugPrint('   보정된 시간: $correctedTime');
+              
+              answeredAt = correctedTime.toIso8601String();
+              
+              debugPrint('   최종 저장: $answeredAt');
+            } catch (e) {
+              debugPrint('❌ 답변일 파싱 실패: ${item['Answered_At']}, 오류: $e');
+              answeredAt = item['Answered_At'].toString();
+            }
+          }
+
+          final inquiryItem = InquiryItem(
+            id: item['Inquiry_Code']?.toString() ?? '',
+            category: item['Category']?.toString() ?? '',
+            title: item['Title']?.toString() ?? '',
+            content: item['Content']?.toString() ?? '',
+            status: displayStatus,
+            createdAt: createdAt,
+            hasImage:
+                item['Image_Path'] != null &&
+                item['Image_Path'].toString().isNotEmpty,
+            inquiryCode: item['Inquiry_Code']?.toString() ?? '',
+            answer: item['Answer']?.toString(),
+            answeredAt: answeredAt,
+            imagePath: item['Image_Path']?.toString(),
+          );
+
+          debugPrint(
+            '파싱된 문의: ${inquiryItem.title} (${inquiryItem.status})',
+          );
+          return inquiryItem;
+        }).toList();
+
+        debugPrint('✅ 문의 목록 조회 성공: ${inquiries.length}개');
+        return inquiries;
+      } else if (response.statusCode == 404) {
+        debugPrint('⚠️ 404 응답: 문의를 찾을 수 없습니다.');
+        debugPrint('응답 내용: ${response.body}');
+        
+        // 서버에서 문의가 없을 때 404를 반환하므로 빈 리스트 반환
+        return [];
+      } else {
+        debugPrint('❌ 문의 목록 조회 실패: ${response.statusCode}');
+        debugPrint('응답 내용: ${response.body}');
+        return [];
+      }
     } catch (e) {
       debugPrint('❌ 문의 목록 조회 오류: $e');
       return [];
@@ -493,40 +480,29 @@ class InquiryService {
   }
 
   /// 문의 삭제
+  /// 🔥 서버 라우트: DELETE /inquiry/my (authMiddleware)
   static Future<bool> deleteInquiry(String userId, String inquiryCode) async {
     try {
       debugPrint('=== 문의 삭제 시작 ===');
       debugPrint('사용자 ID: $userId');
       debugPrint('문의 코드: $inquiryCode');
 
-      final List<String> possibleUrls = [
-        '${ApiConfig.baseHost}:3001/user/inquiry/$userId',
-        '${ApiConfig.baseHost}:3001/inquiry/$userId',
-      ];
+      // 🔥 서버 라우트에 맞게 단일 경로 사용
+      final url = '${ApiConfig.baseHost}:3001/inquiry/my';
+      debugPrint('URL: $url');
 
-      for (int i = 0; i < possibleUrls.length; i++) {
-        final url = possibleUrls[i];
-        debugPrint('URL 시도 ${i + 1}: $url');
+      final response = await ApiHelper.delete(url, body: {'inquiry_code': inquiryCode});
 
-        try {
-          final response = await ApiHelper.delete(url, body: {'inquiry_code': inquiryCode});
+      debugPrint('응답 상태: ${response.statusCode}');
+      debugPrint('응답 내용: ${response.body}');
 
-          debugPrint('응답 상태: ${response.statusCode}');
-          debugPrint('응답 내용: ${response.body}');
-
-          if (response.statusCode == 200) {
-            debugPrint('✅ 문의 삭제 성공');
-            return true;
-          } else {
-            debugPrint('❌ 문의 삭제 실패: ${response.statusCode}');
-          }
-        } catch (e) {
-          debugPrint('❌ URL 시도 ${i + 1} 실패: $e');
-        }
+      if (response.statusCode == 200) {
+        debugPrint('✅ 문의 삭제 성공');
+        return true;
+      } else {
+        debugPrint('❌ 문의 삭제 실패: ${response.statusCode}');
+        return false;
       }
-
-      debugPrint('❌ 모든 URL 시도 실패');
-      return false;
     } catch (e) {
       debugPrint('❌ 문의 삭제 오류: $e');
       return false;
