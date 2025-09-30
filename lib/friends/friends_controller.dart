@@ -158,10 +158,18 @@ class FriendsController extends ChangeNotifier {
       return;
     }
 
-    // 🔥 항상 새로운 연결 시도 (사용자 변경 대비)
-    if (_wsService.isConnected) {
+    // 🔥 같은 사용자로 이미 연결되어 있으면 재연결하지 않음
+    if (_wsService.isConnected && _wsService.currentUserId == myId) {
       if (kDebugMode) {
-        debugPrint('🔄 기존 웹소켓 연결 해제 후 재연결');
+        debugPrint('✅ 이미 같은 사용자로 연결되어 있음 - 재연결 건너뛰기');
+      }
+      return;
+    }
+
+    // 🔥 다른 사용자로 연결되어 있으면 기존 연결 해제
+    if (_wsService.isConnected && _wsService.currentUserId != myId) {
+      if (kDebugMode) {
+        debugPrint('🔄 다른 사용자로 연결됨 - 기존 웹소켓 연결 해제 후 재연결');
       }
       await _wsService.disconnect();
       await Future.delayed(const Duration(milliseconds: 500));
@@ -318,6 +326,9 @@ class FriendsController extends ChangeNotifier {
         _requestFriendStatusSync();
         await _refreshFriendStatusFromAPI();
         await _immediateSync();
+        
+        // 🔥 강제 온라인 상태 유지 모드 활성화
+        _forceOnlineStatusMaintenance();
       }
 
       notifyListeners();
@@ -420,6 +431,100 @@ class FriendsController extends ChangeNotifier {
       }
     }
   }
+  
+  // 🔥 강제 온라인 상태 유지 메서드 (서버 오프라인 처리 우회)
+  void _forceOnlineStatusMaintenance() {
+    if (kDebugMode) {
+      debugPrint('🛡️ 온라인 상태 강제 유지 모드 활성화');
+    }
+    
+    // 🔥 현재 사용자가 온라인 사용자 목록에 없으면 추가
+    if (!onlineUsers.contains(myId)) {
+      onlineUsers.add(myId);
+      if (kDebugMode) {
+        debugPrint('🛡️ 현재 사용자를 온라인 목록에 강제 추가: $myId');
+      }
+    }
+    
+    // 🔥 더 빈번한 온라인 상태 확인 (15초마다)
+    Timer.periodic(const Duration(seconds: 15), (timer) {
+      if (!isWebSocketConnected || _isGuestUser()) {
+        timer.cancel();
+        return;
+      }
+      
+      // 🔥 현재 사용자가 온라인 목록에 없으면 강제로 추가
+      if (!onlineUsers.contains(myId)) {
+        onlineUsers.add(myId);
+        if (kDebugMode) {
+          debugPrint('🛡️ 현재 사용자를 온라인 목록에 재추가: $myId');
+        }
+      }
+      
+      // 🔥 WebSocket 연결 상태 강제 확인
+      _verifyWebSocketConnection();
+      
+      // 🔥 서버 데이터 새로고침
+      _refreshFriendStatusFromAPI();
+      if (kDebugMode) {
+        debugPrint('🛡️ 강제 온라인 상태 유지를 위한 서버 데이터 새로고침');
+      }
+    });
+    
+    // 🔥 추가: 5초마다 온라인 상태 강제 확인
+    Timer.periodic(const Duration(seconds: 5), (timer) {
+      if (!isWebSocketConnected || _isGuestUser()) {
+        timer.cancel();
+        return;
+      }
+      
+      // 🔥 현재 사용자 온라인 상태 강제 확인
+      _enforceCurrentUserOnline();
+    });
+  }
+  
+  // 🔥 WebSocket 연결 상태 강제 확인
+  void _verifyWebSocketConnection() {
+    try {
+      if (_wsService.isConnected) {
+        // 🔥 연결이 유지되고 있으면 하트비트 전송
+        _wsService.sendHeartbeat();
+        if (kDebugMode) {
+          debugPrint('🛡️ WebSocket 연결 상태 확인 및 하트비트 전송');
+        }
+      } else {
+        // 🔥 연결이 끊어졌으면 재연결 시도
+        if (kDebugMode) {
+          debugPrint('🛡️ WebSocket 연결 끊김 감지 - 재연결 시도');
+        }
+        _initializeWithWebSocket();
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('🛡️ WebSocket 연결 확인 중 오류: $e');
+      }
+    }
+  }
+  
+  // 🔥 현재 사용자 온라인 상태 강제 확인
+  void _enforceCurrentUserOnline() {
+    // 🔥 현재 사용자가 온라인 목록에 없으면 즉시 추가
+    if (!onlineUsers.contains(myId)) {
+      onlineUsers.add(myId);
+      if (kDebugMode) {
+        debugPrint('🛡️ 현재 사용자 온라인 상태 강제 복구: $myId');
+      }
+    }
+    
+    // 🔥 현재 사용자가 온라인 목록에 없으면 강제로 추가
+    if (!onlineUsers.contains(myId)) {
+      onlineUsers.add(myId);
+      if (kDebugMode) {
+        debugPrint('🛡️ 현재 사용자 온라인 상태 강제 유지: $myId');
+      }
+      notifyListeners();
+    }
+  }
 
   // 친구 상태 변경 처리 (개선된 버전)
   void _handleFriendStatusChange(Map<String, dynamic> message) {
@@ -429,6 +534,35 @@ class FriendsController extends ChangeNotifier {
         debugPrint('❌ 친구 상태 변경 메시지에 userId가 없음: $message');
       }
       return;
+    }
+
+    // 🔥 현재 사용자의 오프라인 상태 변경은 완전 무시 (강제 온라인 유지)
+    if (userId == myId) {
+      if (message['isOnline'] == false) {
+        if (kDebugMode) {
+          debugPrint('🛡️ 현재 사용자의 오프라인 상태 변경 완전 무시: $userId');
+        }
+        
+        // 🔥 현재 사용자를 온라인 목록에 강제로 추가
+        if (!onlineUsers.contains(myId)) {
+          onlineUsers.add(myId);
+          if (kDebugMode) {
+            debugPrint('🛡️ 현재 사용자를 온라인 목록에 강제 재추가: $myId');
+          }
+        }
+        
+        // 🔥 현재 사용자의 친구 상태도 온라인으로 강제 설정
+        _enforceCurrentUserOnline();
+        return;
+      } else if (message['isOnline'] == true) {
+        // 🔥 온라인 상태는 허용하되, 이미 온라인 목록에 추가
+        if (!onlineUsers.contains(myId)) {
+          onlineUsers.add(myId);
+          if (kDebugMode) {
+            debugPrint('🛡️ 현재 사용자를 온라인 목록에 추가: $myId');
+          }
+        }
+      }
     }
 
     // 🔥 다양한 상태 필드명 지원
@@ -444,6 +578,20 @@ class FriendsController extends ChangeNotifier {
     if (kDebugMode) {
       debugPrint('📶 친구 상태 변경: $userId = ${isOnline ? '온라인' : '오프라인'}');
       debugPrint('📶 원본 값: $isOnlineRaw → 정규화: $isOnline');
+      debugPrint('📶 메시지 출처: ${message['source'] ?? 'unknown'}');
+    }
+
+    // 🔥 중복 처리 방지: 같은 상태로 변경되는 경우 무시
+    final friend = friends.firstWhere(
+      (f) => f.userId == userId,
+      orElse: () => Friend(userId: userId, userName: '알 수 없음', profileImage: '', phone: '', isLogin: false, lastLocation: '', isLocationPublic: false),
+    );
+    
+    if (friend.isLogin == isOnline) {
+      if (kDebugMode) {
+        debugPrint('⚠️ 친구 상태가 이미 동일함 - 처리 무시: $userId = ${isOnline ? '온라인' : '오프라인'}');
+      }
+      return;
     }
 
     // 🔥 상태 업데이트 (원자적 처리)
@@ -466,16 +614,25 @@ class FriendsController extends ChangeNotifier {
     return false;
   }
 
-  // 🔥 원자적 친구 상태 업데이트
+  // 🔥 원자적 친구 상태 업데이트 (개선된 버전)
   void _updateFriendStatusAtomically(String userId, bool isOnline) {
+    if (kDebugMode) {
+      debugPrint('🔄 친구 상태 원자적 업데이트 시작: $userId = ${isOnline ? '온라인' : '오프라인'}');
+    }
+    
     // 1. 온라인 사용자 목록 업데이트
     _updateOnlineList(userId, isOnline);
     
     // 2. 친구 목록에서 상태 업데이트
     _updateFriendInList(userId, isOnline);
     
-    // 3. UI 업데이트
-    notifyListeners();
+    // 3. UI 업데이트 (마이크로태스크로 지연하여 안정성 확보)
+    Future.microtask(() {
+      notifyListeners();
+      if (kDebugMode) {
+        debugPrint('✅ 친구 상태 원자적 업데이트 완료: $userId');
+      }
+    });
   }
 
   // 온라인 사용자 목록 업데이트 헬퍼 (개선된 버전)
@@ -489,6 +646,10 @@ class FriendsController extends ChangeNotifier {
       onlineUsers.remove(userId);
       if (kDebugMode) {
         debugPrint('❌ 온라인 사용자 제거: $userId');
+      }
+    } else {
+      if (kDebugMode) {
+        debugPrint('ℹ️ 온라인 사용자 목록 변경 없음: $userId = ${isOnline ? '온라인' : '오프라인'}');
       }
     }
   }
@@ -682,6 +843,9 @@ class FriendsController extends ChangeNotifier {
     if (kDebugMode) {
       debugPrint('친구 상태 알림: $message');
     }
+    
+    // 🔥 실제 알림 표시 로직은 필요시 여기에 추가
+    // 예: Flutter의 showNotification 또는 다른 알림 시스템 사용
   }
 
   // 비즈니스 로직 메서드들

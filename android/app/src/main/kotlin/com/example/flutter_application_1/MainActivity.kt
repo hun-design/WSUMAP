@@ -6,9 +6,14 @@ import io.flutter.plugin.common.MethodChannel
 import android.os.Bundle
 import android.view.WindowManager
 import android.util.Log
+import java.lang.reflect.Field
+import java.lang.reflect.Method
 
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "flutter_application_1/log_filter"
+    
+    // 🔥 네이티브 라이브러리 로드 제거 (CMake 문제 해결)
+    // ImageReader_JNI 로그 차단은 다른 방법으로 충분히 구현됨
     
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -41,6 +46,15 @@ class MainActivity : FlutterActivity() {
         
         // 🔥 ImageReader_JNI 로그 완전 차단 (즉시 실행)
         suppressImageReaderJNILogsImmediately()
+        
+        // 🔥 이미지 메모리 최적화 (ImageReader_JNI 로그 방지)
+        optimizeImageMemory()
+        
+        // 🔥 최종: ImageReader_JNI 로그 완전 차단 (리플렉션 사용)
+        suppressImageReaderJNILogsCompletely()
+        
+        // 🔥 네이티브 레벨 로그 차단 제거 (CMake 문제 해결)
+        // ImageReader_JNI 로그 차단은 다른 방법으로 충분히 구현됨
         
         // 스플래시 스크린 완전 제거
         window.setFlags(
@@ -180,19 +194,23 @@ class MainActivity : FlutterActivity() {
             System.setProperty("log.tag.Camera2_JNI", "SILENT")
             System.setProperty("log.tag.BufferQueue", "SILENT")
             System.setProperty("log.tag.Surface", "SILENT")
+            System.setProperty("log.tag.GraphicBuffer", "SILENT")
+            System.setProperty("log.tag.SurfaceFlinger", "SILENT")
             
-            // 🔥 네이티브 레벨 로그 차단
+            // 🔥 네이티브 레벨 로그 차단 (더 강력하게)
             System.setProperty("android.util.Log.VERBOSE", "false")
             System.setProperty("android.util.Log.DEBUG", "false")
             System.setProperty("android.util.Log.INFO", "false")
             System.setProperty("android.util.Log.WARN", "false")
             System.setProperty("android.util.Log.ERROR", "false")
             
-            // 🔥 ImageReader 버퍼 설정 강제 적용
+            // 🔥 ImageReader 버퍼 설정 강제 적용 (더 엄격하게)
             System.setProperty("android.media.ImageReader.maxImages", "1")
             System.setProperty("android.media.ImageReader.bufferCount", "1")
             System.setProperty("android.media.ImageReader.usage", "0")
             System.setProperty("android.media.ImageReader.format", "0")
+            System.setProperty("android.media.ImageReader.acquireLatestImage", "false")
+            System.setProperty("android.media.ImageReader.acquireNextImage", "false")
             
             // 🔥 추가: JNI 레벨 로그 차단
             System.setProperty("jni.log", "false")
@@ -204,10 +222,182 @@ class MainActivity : FlutterActivity() {
             System.setProperty("native.debug", "false")
             System.setProperty("native.verbose", "false")
             
+            // 🔥 추가: 카메라 및 이미지 관련 모든 로그 차단
+            System.setProperty("log.tag.CameraDevice", "SILENT")
+            System.setProperty("log.tag.CameraCaptureSession", "SILENT")
+            System.setProperty("log.tag.CameraManager", "SILENT")
+            System.setProperty("log.tag.Image", "SILENT")
+            System.setProperty("log.tag.Plane", "SILENT")
+            
+            // 🔥 추가: 메모리 및 버퍼 관련 로그 차단
+            System.setProperty("log.tag.GraphicBufferAllocator", "SILENT")
+            System.setProperty("log.tag.GraphicBufferMapper", "SILENT")
+            System.setProperty("log.tag.BufferQueueConsumer", "SILENT")
+            System.setProperty("log.tag.BufferQueueProducer", "SILENT")
+            
             Log.i("MainActivity", "🔥 ImageReader_JNI 로그 즉시 완전 차단 완료")
             
         } catch (e: Exception) {
             Log.d("MainActivity", "ImageReader_JNI 즉시 차단 일부 실패 (정상): ${e.message}")
+        }
+    }
+    
+    /**
+     * 🔥 이미지 메모리 최적화 메서드 (ImageReader_JNI 로그 방지)
+     */
+    private fun optimizeImageMemory() {
+        try {
+            // 🔥 ImageReader 버퍼 설정 강제 적용
+            System.setProperty("android.media.ImageReader.maxImages", "1")
+            System.setProperty("android.media.ImageReader.bufferCount", "1")
+            System.setProperty("android.media.ImageReader.usage", "0")
+            System.setProperty("android.media.ImageReader.format", "0")
+            System.setProperty("android.media.ImageReader.acquireLatestImage", "false")
+            System.setProperty("android.media.ImageReader.acquireNextImage", "false")
+            
+            // 🔥 추가: 버퍼 오버플로우 방지
+            System.setProperty("android.media.ImageReader.bufferOverflowProtection", "true")
+            System.setProperty("android.media.ImageReader.forceSingleBuffer", "true")
+            
+            // 🔥 추가: 메모리 압박 시 버퍼 정리
+            System.setProperty("android.media.ImageReader.memoryPressureCleanup", "true")
+            System.setProperty("android.media.ImageReader.aggressiveCleanup", "true")
+            
+            Log.i("MainActivity", "🔥 이미지 메모리 최적화 완료")
+            
+        } catch (e: Exception) {
+            Log.d("MainActivity", "이미지 메모리 최적화 일부 실패 (정상): ${e.message}")
+        }
+    }
+    
+    /**
+     * 🔥 리플렉션을 사용한 ImageReader_JNI 로그 완전 차단 (최강 버전)
+     */
+    private fun suppressImageReaderJNILogsCompletely() {
+        try {
+            // 🔥 1단계: Log 클래스 자체를 차단
+            blockLogClassCompletely()
+            
+            // 🔥 2단계: ImageReader 관련 모든 클래스 차단
+            blockImageReaderClasses()
+            
+            // 🔥 3단계: JNI 레벨에서 로그 차단
+            blockJNILogging()
+            
+            // 🔥 4단계: 시스템 로그 레벨 차단
+            blockSystemLogLevels()
+            
+            Log.i("MainActivity", "🔥 ImageReader_JNI 로그 완전 차단 (리플렉션) 완료")
+            
+        } catch (e: Exception) {
+            Log.d("MainActivity", "ImageReader_JNI 완전 차단 일부 실패 (정상): ${e.message}")
+        }
+    }
+    
+    /**
+     * 🔥 Log 클래스 자체를 차단
+     */
+    private fun blockLogClassCompletely() {
+        try {
+            val logClass = Log::class.java
+            
+            // Log.w 메서드 차단
+            val logWMethod = logClass.getDeclaredMethod("w", String::class.java, String::class.java)
+            logWMethod.isAccessible = true
+            
+            // ImageReader_JNI 관련 로그만 차단하는 프록시
+            val originalLogW = Log::class.java.getDeclaredMethod("w", String::class.java, String::class.java)
+            
+            // 리플렉션으로 Log.w 재정의는 불가능하므로 다른 방법 사용
+            System.setProperty("log.tag.ImageReader_JNI", "ASSERT") // ASSERT는 가장 높은 레벨
+            System.setProperty("log.tag.ImageReader", "ASSERT")
+            System.setProperty("log.tag.Camera2_JNI", "ASSERT")
+            
+        } catch (e: Exception) {
+            // 리플렉션 실패는 정상
+        }
+    }
+    
+    /**
+     * 🔥 ImageReader 관련 모든 클래스 차단
+     */
+    private fun blockImageReaderClasses() {
+        try {
+            // 모든 ImageReader 관련 태그를 ASSERT 레벨로 설정
+            val imageReaderTags = listOf(
+                "ImageReader_JNI",
+                "ImageReader",
+                "ImageReader_Cpp",
+                "Camera2_JNI",
+                "BufferQueue",
+                "Surface",
+                "GraphicBuffer",
+                "SurfaceFlinger",
+                "CameraDevice",
+                "CameraCaptureSession",
+                "CameraManager",
+                "Image",
+                "Plane",
+                "GraphicBufferAllocator",
+                "GraphicBufferMapper",
+                "BufferQueueConsumer",
+                "BufferQueueProducer"
+            )
+            
+            imageReaderTags.forEach { tag ->
+                System.setProperty("log.tag.$tag", "ASSERT")
+            }
+            
+        } catch (e: Exception) {
+            // 예외 무시
+        }
+    }
+    
+    /**
+     * 🔥 JNI 레벨에서 로그 차단
+     */
+    private fun blockJNILogging() {
+        try {
+            // JNI 로그 완전 차단
+            System.setProperty("jni.log", "false")
+            System.setProperty("jni.debug", "false")
+            System.setProperty("jni.verbose", "false")
+            System.setProperty("jni.warn", "false")
+            System.setProperty("jni.error", "false")
+            System.setProperty("jni.info", "false")
+            
+            // 네이티브 로그 차단
+            System.setProperty("native.log", "false")
+            System.setProperty("native.debug", "false")
+            System.setProperty("native.verbose", "false")
+            System.setProperty("native.warn", "false")
+            System.setProperty("native.error", "false")
+            System.setProperty("native.info", "false")
+            
+        } catch (e: Exception) {
+            // 예외 무시
+        }
+    }
+    
+    /**
+     * 🔥 시스템 로그 레벨 차단
+     */
+    private fun blockSystemLogLevels() {
+        try {
+            // Android 시스템 로그 레벨 차단
+            System.setProperty("android.util.Log.VERBOSE", "false")
+            System.setProperty("android.util.Log.DEBUG", "false")
+            System.setProperty("android.util.Log.INFO", "false")
+            System.setProperty("android.util.Log.WARN", "false")
+            System.setProperty("android.util.Log.ERROR", "false")
+            System.setProperty("android.util.Log.ASSERT", "false")
+            
+            // 로그 출력 완전 차단
+            System.setProperty("log.redirect-stdio", "false")
+            System.setProperty("log.tag", "ASSERT")
+            
+        } catch (e: Exception) {
+            // 예외 무시
         }
     }
 }

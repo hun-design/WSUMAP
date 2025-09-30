@@ -22,8 +22,6 @@ class _InquiryPageState extends State<InquiryPage>
   final GlobalKey<_MyInquiriesTabState> _myInquiriesTabKey =
       GlobalKey<_MyInquiriesTabState>();
   
-  // 🔥 위젯 생명주기 관리
-  bool _isDisposed = false;
 
   @override
   void initState() {
@@ -33,7 +31,6 @@ class _InquiryPageState extends State<InquiryPage>
 
   @override
   void dispose() {
-    _isDisposed = true;
     _tabController.dispose();
     super.dispose();
   }
@@ -125,9 +122,6 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
 
   // 🔥 제출 상태 관리 추가
   bool _isSubmitting = false;
-  
-  // 🔥 위젯 생명주기 관리
-  bool _isDisposed = false;
 
   // 🔥 문의 유형 매핑 (한국어 코드 ↔ 다국어 텍스트)
   late Map<String, String> _inquiryTypeMapping;
@@ -144,7 +138,6 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
 @override
 void didChangeDependencies() {
   super.didChangeDependencies();
-  if (_isDisposed) return;
 
   final l10n = AppLocalizations.of(context)!;
 
@@ -177,7 +170,6 @@ void didChangeDependencies() {
 
   @override
   void dispose() {
-    _isDisposed = true;
     _titleController.dispose();
     _contentController.dispose();
     super.dispose();
@@ -401,7 +393,6 @@ void didChangeDependencies() {
               );
             }).toList(),
             onChanged: (String? newValue) {
-              if (_isDisposed) return;
               
               debugPrint('=== 드롭다운 선택 변경 ===');
               debugPrint('선택된 값: $newValue');
@@ -616,6 +607,20 @@ void didChangeDependencies() {
                           width: double.infinity,
                           height: 120,
                           fit: BoxFit.cover,
+                          // 🔥 ImageReader_JNI 로그 방지를 위한 최적화
+                          filterQuality: FilterQuality.low, // 최저 품질로 버퍼 사용량 최소화
+                          isAntiAlias: false, // 안티앨리어싱 비활성화로 버퍼 절약
+                          cacheWidth: 400, // 적절한 해상도로 캐시
+                          cacheHeight: 120,
+                          // 🔥 추가: 메모리 효율적인 로딩
+                          frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                            if (wasSynchronouslyLoaded) return child;
+                            return AnimatedOpacity(
+                              opacity: frame == null ? 0 : 1,
+                              duration: const Duration(milliseconds: 150),
+                              child: child,
+                            );
+                          },
                         ),
                       ),
                       Positioned(
@@ -874,9 +879,9 @@ void didChangeDependencies() {
     try {
       final XFile? image = await _picker.pickImage(
         source: source,
-        maxWidth: 1024,
-        maxHeight: 1024,
-        imageQuality: 80,
+        maxWidth: 800, // 🔥 해상도를 낮춰서 버퍼 사용량 감소
+        maxHeight: 800,
+        imageQuality: 70, // 🔥 품질을 낮춰서 버퍼 사용량 감소
       );
 
       if (image != null) {
@@ -894,7 +899,6 @@ void didChangeDependencies() {
 
 
   Future<void> _submitInquiry() async {
-  if (_isDisposed) return;
   
   final l10n = AppLocalizations.of(context)!;
   if (!_formKey.currentState!.validate()) {
@@ -1000,9 +1004,6 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
   List<InquiryItem> _inquiries = [];
   bool _isLoading = false;
   
-  // 🔥 위젯 생명주기 관리
-  bool _isDisposed = false;
-
   @override
   void initState() {
     super.initState();
@@ -1011,7 +1012,6 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
   
   @override
   void dispose() {
-    _isDisposed = true;
     super.dispose();
   }
 
@@ -1126,7 +1126,6 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
 
     Future<void> _loadInquiries() async {
     final l10n = AppLocalizations.of(context)!;
-    if (_isDisposed) return;
 
   setState(() {
     _isLoading = true;
@@ -1158,7 +1157,7 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
       }
     }
 
-    if (!_isDisposed) {
+    {
       setState(() {
         // 🔥 최신순으로 정렬 (Created_At 기준 내림차순, 초단위까지 정확하게)
         // String을 DateTime으로 변환하여 정확한 시간 비교 (년월일시분초마이크로초)
@@ -1194,7 +1193,7 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
   } catch (e, stackTrace) {
     debugPrint('문의 목록 로드 중 오류: $e');
     debugPrint(stackTrace.toString());
-    if (!_isDisposed) {
+    {
               ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${l10n.inquiry_load_failed}: $e'),
@@ -1204,7 +1203,7 @@ class _MyInquiriesTabState extends State<MyInquiriesTab> {
         );
     }
   } finally {
-    if (!_isDisposed) {
+    {
       setState(() {
         _isLoading = false;
       });

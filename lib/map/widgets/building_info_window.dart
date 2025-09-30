@@ -154,12 +154,22 @@ class _BuildingInfoWindowState extends State<BuildingInfoWindow> {
                   width: 120,
                   height: 120,
                   fit: BoxFit.cover,
-                  // 🎯 ImageReader_JNI 로그 방지를 위한 캐시 및 버퍼 최적화
+                  // 🔥 ImageReader_JNI 로그 완전 방지를 위한 강화된 최적화
                   cacheWidth: 120, // 정확한 해상도로 캐시하여 메모리 절약
                   cacheHeight: 120,
-                  filterQuality: FilterQuality.medium, // 고품질 필터 비활성화로 성능 향상
+                  filterQuality: FilterQuality.low, // 최저 품질로 버퍼 사용량 최소화
+                  isAntiAlias: false, // 안티앨리어싱 비활성화로 버퍼 절약
                   headers: {
-                    'Cache-Control': 'max-age=3600', // 1시간 캐시 설정
+                    'Cache-Control': 'max-age=7200', // 2시간 캐시 설정으로 재로딩 방지
+                  },
+                  // 🔥 추가: 메모리 효율적인 로딩
+                  frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                    if (wasSynchronouslyLoaded) return child;
+                    return AnimatedOpacity(
+                      opacity: frame == null ? 0 : 1,
+                      duration: const Duration(milliseconds: 200),
+                      child: child,
+                    );
                   },
                   loadingBuilder: (context, child, loadingProgress) {
                     if (loadingProgress == null) return child;

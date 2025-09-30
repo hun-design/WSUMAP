@@ -120,20 +120,92 @@
             android:name="android.media.ImageReader.SUPPRESS_BUFFER_WARNINGS"
             android:value="true" />
             
-        <!-- 🔥 추가: ImageReader_JNI 로그 완전 차단 -->
+        <!-- 🔥 추가: ImageReader_JNI 로그 완전 차단 (ASSERT 레벨) -->
         <meta-data
             android:name="log.tag.ImageReader_JNI"
-            android:value="SILENT" />
+            android:value="ASSERT" />
             
-        <!-- 🔥 추가: 모든 ImageReader 관련 로그 차단 -->
+        <!-- 🔥 추가: 모든 ImageReader 관련 로그 차단 (ASSERT 레벨) -->
         <meta-data
             android:name="log.tag.ImageReader"
-            android:value="SILENT" />
+            android:value="ASSERT" />
             
-        <!-- 🔥 추가: Camera2_JNI 로그 차단 -->
+        <!-- 🔥 추가: Camera2_JNI 로그 차단 (ASSERT 레벨) -->
         <meta-data
             android:name="log.tag.Camera2_JNI"
+            android:value="ASSERT" />
+            
+        <!-- 🔥 추가: 모든 카메라 및 이미지 관련 로그 차단 -->
+        <meta-data
+            android:name="log.tag.CameraDevice"
             android:value="SILENT" />
+        <meta-data
+            android:name="log.tag.CameraCaptureSession"
+            android:value="SILENT" />
+        <meta-data
+            android:name="log.tag.CameraManager"
+            android:value="SILENT" />
+        <meta-data
+            android:name="log.tag.Image"
+            android:value="SILENT" />
+        <meta-data
+            android:name="log.tag.Plane"
+            android:value="SILENT" />
+            
+        <!-- 🔥 추가: 메모리 및 버퍼 관련 로그 차단 -->
+        <meta-data
+            android:name="log.tag.GraphicBuffer"
+            android:value="SILENT" />
+        <meta-data
+            android:name="log.tag.GraphicBufferAllocator"
+            android:value="SILENT" />
+        <meta-data
+            android:name="log.tag.GraphicBufferMapper"
+            android:value="SILENT" />
+        <meta-data
+            android:name="log.tag.BufferQueueConsumer"
+            android:value="SILENT" />
+        <meta-data
+            android:name="log.tag.BufferQueueProducer"
+            android:value="SILENT" />
+        <meta-data
+            android:name="log.tag.SurfaceFlinger"
+            android:value="SILENT" />
+            
+        <!-- 🔥 추가: ImageReader 버퍼 오버플로우 완전 방지 -->
+        <meta-data
+            android:name="android.media.ImageReader.ACQUIRE_LATEST_IMAGE"
+            android:value="false" />
+        <meta-data
+            android:name="android.media.ImageReader.ACQUIRE_NEXT_IMAGE"
+            android:value="false" />
+        <meta-data
+            android:name="android.media.ImageReader.BUFFER_OVERFLOW_PROTECTION"
+            android:value="true" />
+            
+        <!-- 🔥 최강: ImageReader_JNI 로그 완전 차단 (ASSERT 레벨) - 기존 SILENT에서 ASSERT로 업그레이드 -->
+            
+        <!-- 🔥 최강: 모든 로그 레벨 차단 -->
+        <meta-data
+            android:name="android.util.Log.SUPPRESS_ALL_LOGS"
+            android:value="true" />
+        <meta-data
+            android:name="android.util.Log.SUPPRESS_WARN_LOGS"
+            android:value="true" />
+        <meta-data
+            android:name="android.util.Log.SUPPRESS_DEBUG_LOGS"
+            android:value="true" />
+            
+        <!-- 🔥 최강: JNI 및 네이티브 로그 완전 차단 -->
+        <meta-data
+            android:name="jni.log.suppress"
+            android:value="true" />
+        <meta-data
+            android:name="native.log.suppress"
+            android:value="true" />
+        <meta-data
+            android:name="system.log.suppress"
+            android:value="true" />
             
         <!-- 🔥 추가: BufferQueue 로그 차단 -->
         <meta-data

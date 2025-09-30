@@ -27,27 +27,27 @@ class ApiConfig {
   static String get websocketUrl => 'ws://$baseWsHost:$websocketPort/friend/ws';
   static String get websocketBase => 'ws://$baseWsHost:$websocketPort';
   
-  // 🔥 WebSocket 관련 상수들 (네트워크 부하 감소를 위해 조정)
-  static const Duration heartbeatInterval = Duration(seconds: 30); // 4초 → 30초로 변경
-  static const Duration reconnectDelay = Duration(seconds: 1); // 1초 유지
-  static const Duration connectionTimeout = Duration(seconds: 10); // 10초 유지
+  // 🔥 WebSocket 관련 상수들 (연결 안정성 개선)
+  static const Duration heartbeatInterval = Duration(seconds: 25); // 더 빈번한 하트비트로 연결 안정성 확보
+  static const Duration reconnectDelay = Duration(seconds: 2); // 재연결 간격 증가
+  static const Duration connectionTimeout = Duration(seconds: 12); // 연결 타임아웃 증가
   static const int maxReconnectAttempts = 5; // 5회 유지
   
-  // 🔥 플랫폼별 최적화 설정 (네트워크 부하 감소를 위해 조정)
+  // 🔥 플랫폼별 최적화 설정 (연결 안정성 개선)
   static const Map<String, Duration> platformHeartbeatIntervals = {
-    'android': Duration(seconds: 30),
-    'ios': Duration(seconds: 30),
-    'windows': Duration(seconds: 30),
-    'macos': Duration(seconds: 30),
-    'linux': Duration(seconds: 30),
+    'android': Duration(seconds: 25), // 안드로이드: 더 빈번한 하트비트로 연결 안정성 확보
+    'ios': Duration(seconds: 25), // iOS: 더 빈번한 하트비트로 연결 안정성 확보
+    'windows': Duration(seconds: 20), // Windows: 네트워크 최적화
+    'macos': Duration(seconds: 20), // macOS: 네트워크 최적화
+    'linux': Duration(seconds: 20), // Linux: 네트워크 최적화
   };
   
   static const Map<String, Duration> platformConnectionTimeouts = {
-    'android': Duration(seconds: 12),
-    'ios': Duration(seconds: 8),
-    'windows': Duration(seconds: 10),
-    'macos': Duration(seconds: 9),
-    'linux': Duration(seconds: 11),
+    'android': Duration(seconds: 15), // 안드로이드: 네트워크 지연 고려
+    'ios': Duration(seconds: 12), // iOS: 빠른 연결
+    'windows': Duration(seconds: 12), // Windows: 중간값
+    'macos': Duration(seconds: 10), // macOS: 최적화
+    'linux': Duration(seconds: 14), // Linux: 네트워크 다양성 고려
   };
   
   // 🛠️ Development/Production 환경 구분 (선택사항)

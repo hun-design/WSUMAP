@@ -22,6 +22,12 @@ class WebSocketService {
   bool _isConnecting = false; // 🔥 동시 연결 시도 방지
   bool _shouldReconnect = true;
   int _reconnectAttempts = 0;
+  
+  // 🔥 연결 안정성 개선을 위한 추가 변수들
+  DateTime? _lastHeartbeatReceived;
+  DateTime? _lastHeartbeatSent;
+  Timer? _connectionHealthTimer;
+  int _consecutiveHeartbeatFailures = 0;
 static const int _maxReconnectAttempts = ApiConfig.maxReconnectAttempts;
 static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
 
@@ -38,10 +44,19 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
   Stream<bool> get connectionStream => _connectionController.stream;
   Stream<List<String>> get onlineUsersStream => _onlineUsersController.stream;
 
-  /// 연결 상태 확인 (단순화)
+  /// 연결 상태 확인 (개선된 버전)
   bool get isConnected {
-    return _isConnected && _channel != null && _subscription != null;
+    return _isConnected && 
+           _channel != null && 
+           _subscription != null &&
+           _userId != null &&
+           !_userId!.startsWith('guest_') &&
+           _lastHeartbeatReceived != null &&
+           DateTime.now().difference(_lastHeartbeatReceived!).inSeconds < 120; // 🔥 2분 내 하트비트 응답 필요
   }
+
+  /// 현재 연결된 사용자 ID
+  String? get currentUserId => _userId;
 
   /// 연결 상태 스트림
   Stream<bool> get connectionStatus => _connectionController.stream;
@@ -185,9 +200,12 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     // 🔥 연결 상태를 마지막에 설정하여 완전히 준비된 후에만 연결됨으로 표시
     _isConnected = true;
     _reconnectAttempts = 0;
-    _connectionController.add(true);
-
-    debugPrint('✅ 웹소켓 연결 성공 - 상태: $_isConnected');
+    
+    // 🔥 연결 상태 스트림 업데이트를 마이크로태스크로 지연하여 안정성 확보
+    Future.microtask(() {
+      _connectionController.add(true);
+      debugPrint('✅ 웹소켓 연결 성공 - 상태: $_isConnected');
+    });
 
     // 하트비트 시작
     _startHeartbeat();
@@ -362,8 +380,9 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
           return; // 🔥 중복 스트림 전달 방지
 
         case 'heartbeat_response':
-          // 하트비트 응답은 특별한 처리 없음
-          break;
+          _handleHeartbeatResponse(data);
+          // 하트비트 응답은 스트림으로 전달하지 않음 (내부 처리용)
+          return;
 
         case 'logout_confirmed':
           // 로그아웃 확인은 특별한 처리 없음
@@ -575,6 +594,35 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     return false;
   }
 
+  // 🔥 하트비트 응답 처리 메서드 추가 (개선된 버전)
+  void _handleHeartbeatResponse(Map<String, dynamic> data) {
+    if (kDebugMode) {
+      debugPrint('💓 하트비트 응답 수신: ${data['timestamp']}');
+    }
+    
+    // 🔥 하트비트 응답 시간 기록
+    _lastHeartbeatReceived = DateTime.now();
+    _consecutiveHeartbeatFailures = 0;
+    
+    // 하트비트 응답을 받으면 연결 상태를 확실히 유지
+    if (!_isConnected) {
+      _isConnected = true;
+      _reconnectAttempts = 0; // 성공적인 응답이므로 재연결 시도 횟수 리셋
+      
+      // 🔥 연결 상태 스트림 업데이트를 마이크로태스크로 지연하여 안정성 확보
+      Future.microtask(() {
+        _connectionController.add(true);
+        if (kDebugMode) {
+          debugPrint('✅ 하트비트 응답으로 연결 상태 복구');
+        }
+      });
+    }
+    
+    if (kDebugMode) {
+      debugPrint('💓 연결 상태: 건강함, 연속 실패 횟수: $_consecutiveHeartbeatFailures');
+    }
+  }
+
   // 🔥 실시간 상태 변경 직접 전달 메서드 (제거됨 - 중복 처리 방지)
   // void _notifyRealTimeStatusChange(String userId, bool isOnline, String message) {
   //   // 이 메서드는 더 이상 사용되지 않음
@@ -603,36 +651,16 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     return importantMessages.contains(messageType);
   }
 
-  // 🔥 플랫폼별 최적화된 연결 타임아웃 (크로스 플랫폼 최적화)
+  // 🔥 플랫폼별 최적화된 연결 타임아웃 (API 설정 사용)
   Duration get _platformConnectionTimeout {
-    if (Platform.isAndroid) {
-      return const Duration(seconds: 12); // 안드로이드: 네트워크 지연 고려
-    } else if (Platform.isIOS) {
-      return const Duration(seconds: 8); // iOS: 빠른 연결
-    } else if (Platform.isWindows) {
-      return const Duration(seconds: 10); // Windows: 중간값
-    } else if (Platform.isMacOS) {
-      return const Duration(seconds: 9); // macOS: 최적화
-    } else if (Platform.isLinux) {
-      return const Duration(seconds: 11); // Linux: 네트워크 다양성 고려
-    }
-    return const Duration(seconds: 10); // 기본값
+    final platform = Platform.operatingSystem;
+    return ApiConfig.platformConnectionTimeouts[platform] ?? ApiConfig.connectionTimeout;
   }
 
-  // 🔥 플랫폼별 최적화된 하트비트 간격 (네트워크 부하 감소를 위해 조정)
+  // 🔥 플랫폼별 최적화된 하트비트 간격 (API 설정 사용)
   Duration get _platformHeartbeatInterval {
-    if (Platform.isAndroid) {
-      return const Duration(seconds: 30); // 안드로이드: 배터리 최적화
-    } else if (Platform.isIOS) {
-      return const Duration(seconds: 30); // iOS: 배터리 최적화
-    } else if (Platform.isWindows) {
-      return const Duration(seconds: 30); // Windows: 네트워크 최적화
-    } else if (Platform.isMacOS) {
-      return const Duration(seconds: 30); // macOS: 네트워크 최적화
-    } else if (Platform.isLinux) {
-      return const Duration(seconds: 30); // Linux: 네트워크 최적화
-    }
-    return const Duration(seconds: 30); // 기본값: 네트워크 최적화
+    final platform = Platform.operatingSystem;
+    return ApiConfig.platformHeartbeatIntervals[platform] ?? ApiConfig.heartbeatInterval;
   }
 
 
@@ -791,15 +819,9 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
       debugPrint('💓 하트비트 시작 - 간격: ${heartbeatInterval.inSeconds}초 (${Platform.operatingSystem})');
     }
     _heartbeatTimer = Timer.periodic(heartbeatInterval, (timer) {
-      if (_isConnected) {
-        if (kDebugMode) {
-          debugPrint('💓 하트비트 전송');
-        }
-        _sendMessage({
-          'type': 'heartbeat',
-          'userId': _userId,
-          'timestamp': DateTime.now().toIso8601String(),
-        });
+      // 🔥 연결 상태를 더 정확하게 체크
+      if (_isConnected && _channel != null && _subscription != null) {
+        sendHeartbeat();
       } else {
         if (kDebugMode) {
           debugPrint('💓 웹소켓 연결 안됨 - 하트비트 타이머 중지');
@@ -807,31 +829,109 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
         timer.cancel();
       }
     });
+    
+    // 🔥 연결 건강 상태 모니터링 타이머 시작
+    _startConnectionHealthMonitoring();
+  }
+  
+  // 🔥 하트비트 전송 메서드 (개선된 버전)
+  void sendHeartbeat() {
+    if (kDebugMode) {
+      debugPrint('💓 하트비트 전송');
+    }
+    
+    _lastHeartbeatSent = DateTime.now();
+    _sendMessage({
+      'type': 'heartbeat',
+      'userId': _userId,
+      'timestamp': DateTime.now().toIso8601String(),
+    });
+  }
+  
+  // 🔥 연결 건강 상태 모니터링 시작
+  void _startConnectionHealthMonitoring() {
+    _connectionHealthTimer?.cancel();
+    
+    // 🔥 10초마다 연결 상태 체크 (더 빈번한 체크)
+    _connectionHealthTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      _checkConnectionHealth();
+    });
+  }
+  
+  // 🔥 연결 건강 상태 체크
+  void _checkConnectionHealth() {
+    if (!_isConnected || _userId == null) return;
+    
+    final now = DateTime.now();
+    bool shouldReconnect = false;
+    
+    // 🔥 하트비트 응답이 40초 이상 없으면 연결 불건강으로 판단 (더 엄격하게)
+    if (_lastHeartbeatReceived != null) {
+      final timeSinceLastResponse = now.difference(_lastHeartbeatReceived!);
+      if (timeSinceLastResponse.inSeconds > 40) {
+        _consecutiveHeartbeatFailures++;
+        
+        if (kDebugMode) {
+          debugPrint('⚠️ 하트비트 응답 없음: ${timeSinceLastResponse.inSeconds}초, 실패 횟수: $_consecutiveHeartbeatFailures');
+        }
+        
+        // 🔥 2회 연속 실패하면 재연결 시도 (더 빠른 대응)
+        if (_consecutiveHeartbeatFailures >= 2) {
+          shouldReconnect = true;
+          if (kDebugMode) {
+            debugPrint('🔄 하트비트 실패로 인한 재연결 시도');
+          }
+        }
+      }
+    }
+    
+    // 🔥 하트비트 전송이 60초 이상 없으면 연결 문제로 판단 (더 엄격하게)
+    if (_lastHeartbeatSent != null) {
+      final timeSinceLastSent = now.difference(_lastHeartbeatSent!);
+      if (timeSinceLastSent.inSeconds > 60) {
+        shouldReconnect = true;
+        if (kDebugMode) {
+          debugPrint('🔄 하트비트 전송 지연으로 인한 재연결 시도');
+        }
+      }
+    }
+    
+    if (shouldReconnect && _shouldReconnect) {
+      _scheduleReconnect();
+    }
   }
 
-  // ❌ 오류 처리
+  // ❌ 오류 처리 (개선된 버전)
   void _handleError(error) {
     debugPrint('❌ 웹소켓 오류: $error');
     _isConnected = false;
-    _connectionController.add(false);
+    
+    // 🔥 연결 상태 스트림 업데이트를 마이크로태스크로 지연하여 안정성 확보
+    Future.microtask(() {
+      _connectionController.add(false);
+    });
 
     if (_shouldReconnect) {
       _scheduleReconnect();
     }
   }
 
-  // 🔌 연결 해제 처리
+  // 🔌 연결 해제 처리 (개선된 버전)
   void _handleDisconnection() {
     debugPrint('🔌 웹소켓 연결 해제됨');
     _isConnected = false;
-    _connectionController.add(false);
+    
+    // 🔥 연결 상태 스트림 업데이트를 마이크로태스크로 지연하여 안정성 확보
+    Future.microtask(() {
+      _connectionController.add(false);
+    });
 
     if (_shouldReconnect) {
       _scheduleReconnect();
     }
   }
 
-  // 🔄 재연결 스케줄링
+  // 🔄 재연결 스케줄링 (개선된 버전)
   void _scheduleReconnect() {
     // 🔥 이미 재연결 타이머가 실행 중이면 중복 방지
     if (_reconnectTimer != null) {
@@ -848,7 +948,7 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
 
     _reconnectAttempts++;
     
-    // 🔥 지수 백오프 적용 (1초, 2초, 4초, 8초, 16초)
+    // 🔥 지수 백오프 적용 (2초, 4초, 8초, 16초, 32초) - 더 안정적인 간격
     final delay = Duration(
       seconds: _reconnectDelay.inSeconds * (1 << (_reconnectAttempts - 1)),
     );
@@ -861,15 +961,15 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
       // 🔥 타이머 실행 후 즉시 null로 설정하여 중복 방지
       _reconnectTimer = null;
 
-      // 🔥 재연결 조건 재확인
-      if (_shouldReconnect && !_isConnected && !_isConnecting) {
+      // 🔥 재연결 조건 재확인 (더 엄격한 조건)
+      if (_shouldReconnect && !_isConnected && !_isConnecting && _userId != null) {
         debugPrint('🔄 재연결 시도 시작...');
         try {
           await _doConnect();
         } catch (e) {
           debugPrint('❌ 재연결 실패: $e');
           // 재연결 실패 시 다음 시도 예약
-          if (_shouldReconnect) {
+          if (_shouldReconnect && _reconnectAttempts < _maxReconnectAttempts) {
             _scheduleReconnect();
           }
         }
@@ -891,8 +991,15 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     // 🔥 타이머들 정리
     _heartbeatTimer?.cancel();
     _reconnectTimer?.cancel();
+    _connectionHealthTimer?.cancel();
     _heartbeatTimer = null;
     _reconnectTimer = null;
+    _connectionHealthTimer = null;
+    
+    // 🔥 연결 상태 변수들 초기화
+    _lastHeartbeatReceived = null;
+    _lastHeartbeatSent = null;
+    _consecutiveHeartbeatFailures = 0;
 
     // 🔥 구독 정리
     try {
@@ -912,10 +1019,11 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     }
     _channel = null;
 
-    // 🔥 연결 상태 스트림 업데이트
-    _connectionController.add(false);
-    
-    debugPrint('✅ 웹소켓 연결 해제 완료');
+    // 🔥 연결 상태 스트림 업데이트를 마이크로태스크로 지연하여 안정성 확보
+    Future.microtask(() {
+      _connectionController.add(false);
+      debugPrint('✅ 웹소켓 연결 해제 완료');
+    });
   }
 
   // 🧹 리소스 정리

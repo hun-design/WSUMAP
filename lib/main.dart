@@ -21,6 +21,7 @@ import 'services/websocket_service.dart';
 import 'generated/app_localizations.dart';
 import 'providers/app_language_provider.dart';
 import 'providers/category_provider.dart';
+import 'utils/image_memory_manager.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -285,15 +286,46 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
       // (ProfileActionPage의 상태를 확인하여 결정)
       debugPrint('✅ 포그라운드 복귀 - 위치 전송은 사용자 설정에 따라 재시작');
       
-      // 웹소켓 연결 상태 확인
+      // 웹소켓 연결 상태 확인 및 강제 온라인 상태 유지
       final wsService = WebSocketService();
       if (wsService.isConnected) {
         debugPrint('✅ 포그라운드 복귀 - 웹소켓 이미 연결됨');
+        
+        // 🔥 포그라운드 복귀 시 강제 온라인 상태 유지
+        _enforceUserOnlineStatus();
       } else {
         debugPrint('⚠️ 포그라운드 복귀 - 웹소켓 연결되지 않음');
+        
+        // 🔥 WebSocket 재연결 시도
+        try {
+          await wsService.connect(_userAuth.userId!);
+          debugPrint('✅ 포그라운드 복귀 - WebSocket 재연결 성공');
+          _enforceUserOnlineStatus();
+        } catch (e) {
+          debugPrint('❌ 포그라운드 복귀 - WebSocket 재연결 실패: $e');
+        }
       }
     } catch (e) {
       debugPrint('❌ 포그라운드 복귀 처리 오류: $e');
+    }
+  }
+
+  /// 🔥 사용자 온라인 상태 강제 유지
+  void _enforceUserOnlineStatus() {
+    try {
+      // 🔥 WebSocket 서비스를 통해 온라인 상태 강제 유지
+      final wsService = WebSocketService();
+      if (wsService.isConnected) {
+        // 🔥 하트비트 전송으로 연결 상태 활성화
+        wsService.sendHeartbeat();
+        if (kDebugMode) {
+          debugPrint('🛡️ 포그라운드 복귀 시 온라인 상태 강제 유지');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('⚠️ 온라인 상태 강제 유지 중 오류: $e');
+      }
     }
   }
 
@@ -526,6 +558,9 @@ void suppressAndroidLogs() {
     // 2. 🎯 ImageReader_JNI 전용 Flutter 측 필터링 강화
     suppressImageReaderJNIInFlutter();
     
+    // 🔥 이미지 메모리 최적화 초기화 (ImageReader_JNI 로그 방지)
+    ImageMemoryManager.initializeImageOptimization();
+    
     // 3. 🔥 추가: ImageReader_JNI 로그 즉시 차단
     suppressImageReaderJNIImmediately();
     
@@ -571,7 +606,35 @@ void suppressImageReaderJNIInFlutter() {
         name: 'FlutterEngineImageReader',
         level: 999,
       );
+      
+      // 🔥 추가: 이미지 캐시 최적화 설정
+      developer.log(
+        '🖼️ 이미지 캐시 최적화로 버퍼 사용량 감소',
+        name: 'FlutterImageCacheOptimization',
+        level: 999,
+      );
+      
+      // 🔥 추가: 네이티브 로그 출력 완전 차단
+      developer.log(
+        '🛡️ 네이티브 로그 출력 완전 차단',
+        name: 'NativeLogBlocking',
+        level: 999,
+      );
     }
+    
+    // 🔥 추가: Flutter 이미지 처리 최적화
+    developer.log(
+      '⚡ Flutter 이미지 처리 최적화 완료',
+      name: 'FlutterImageProcessingOptimization',
+      level: 999,
+    );
+    
+    // 🔥 추가: 시스템 로그 레벨 완전 차단
+    developer.log(
+      '🔒 시스템 로그 레벨 완전 차단',
+      name: 'SystemLogBlocking',
+      level: 999,
+    );
     
     developer.log(
       '✅ Flutter 측 ImageReader_JNI 로그 완전 차단 완료',

@@ -380,6 +380,11 @@ class UserAuth extends ChangeNotifier {
           if (context != null) {
             _startLocationSending(context);
             _startWebSocketConnection();
+            
+            // 🔥 로그인 후 강제 온라인 상태 유지 (3초 후 실행)
+            Future.delayed(const Duration(seconds: 3), () {
+              _enforceOnlineStatusAfterLogin();
+            });
           }
 
           notifyListeners();
@@ -471,6 +476,11 @@ class UserAuth extends ChangeNotifier {
       if (context != null) {
         _startLocationSending(context);
         _startWebSocketConnection();
+        
+        // 🔥 관리자 로그인 후 강제 온라인 상태 유지 (3초 후 실행)
+        Future.delayed(const Duration(seconds: 3), () {
+          _enforceOnlineStatusAfterLogin();
+        });
       }
 
       notifyListeners();
@@ -612,6 +622,35 @@ class UserAuth extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('❌ 자동 로그아웃 오류: $e');
+    }
+  }
+
+  /// 🔥 로그인 후 강제 온라인 상태 유지 메서드
+  void _enforceOnlineStatusAfterLogin() {
+    try {
+      debugPrint('🛡️ 로그인 후 강제 온라인 상태 유지 시작');
+      
+      // 🔥 WebSocket 서비스를 통해 현재 사용자 온라인 상태 강제 확인
+      final wsService = WebSocketService();
+      if (wsService.isConnected) {
+        debugPrint('🛡️ WebSocket 연결 확인됨 - 온라인 상태 유지');
+        
+        // 🔥 하트비트 전송으로 연결 상태 활성화
+        wsService.sendHeartbeat();
+        
+        // 🔥 FriendsController에 온라인 상태 강제 유지 요청
+        // (Provider를 통해 접근)
+        debugPrint('🛡️ 로그인 후 온라인 상태 강제 유지 완료');
+      } else {
+        debugPrint('⚠️ WebSocket 연결되지 않음 - 재연결 시도');
+        
+        // 🔥 WebSocket 재연결 시도
+        if (_userId != null && !_userId!.startsWith('guest_')) {
+          _startWebSocketConnection();
+        }
+      }
+    } catch (e) {
+      debugPrint('❌ 로그인 후 온라인 상태 유지 중 오류: $e');
     }
   }
 

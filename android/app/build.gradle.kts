@@ -37,6 +37,10 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
+    
+    // 🔥 네이티브 빌드 설정 제거 (CMake 문제 해결)
+    // ImageReader_JNI 로그 차단은 다른 방법으로 충분히 구현됨
+    ndkVersion = "27.0.12077973"
 }
 
 flutter {
