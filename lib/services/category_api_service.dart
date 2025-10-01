@@ -348,68 +348,6 @@ class CategoryApiService {
     return await _checkConnection();
   }
 
-  // 기존 API 호환용 빈 메서드
-  static Future<List<CategoryBuilding>> getCategoryBuildings(String category) async {
-    debugPrint('⚠️ getCategoryBuildings는 더 이상 사용되지 않습니다. getCategoryBuildingNames를 사용하세요.');
-    return [];
-  }
-
-  static Future<List<CategoryLocation>> getBuildingFloorCategories(
-    String building,
-    String floor,
-  ) async {
-    try {
-      final response = await ApiHelper.get('$baseUrl/${Uri.encodeComponent(building)}/${Uri.encodeComponent(floor)}');
-
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data.map((json) => CategoryLocation.fromJson(json)).toList();
-      } else {
-        throw Exception('건물 층별 카테고리를 불러올 수 없습니다: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('건물 층별 카테고리 조회 실패: $e');
-    }
-  }
-
-  static Future<bool> addCategory(
-    String building,
-    String floor,
-    String category,
-    double x,
-    double y,
-  ) async {
-    try {
-      final response = await ApiHelper.post(
-        '$baseUrl/${Uri.encodeComponent(building)}/${Uri.encodeComponent(floor)}',
-        body: {
-          'category': category,
-          'x': x,
-          'y': y,
-        },
-      );
-
-      return response.statusCode == 201;
-    } catch (e) {
-      throw Exception('카테고리 추가 중 오류: $e');
-    }
-  }
-
-  static Future<bool> deleteCategory(String building, String floor) async {
-    try {
-      final response = await ApiHelper.delete('$baseUrl/${Uri.encodeComponent(building)}/${Uri.encodeComponent(floor)}');
-
-      if (response.statusCode == 200) {
-        return true;
-      } else if (response.statusCode == 404) {
-        throw Exception('존재하지 않는 건물/층입니다.');
-      } else {
-        throw Exception('카테고리 삭제 실패: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('카테고리 삭제 중 오류: $e');
-    }
-  }
 
   /// 디버그 정보 출력
   static void printDebugInfo() {

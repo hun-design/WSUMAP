@@ -67,49 +67,6 @@ class CategoryLocation {
   }
 }
 
-class CategoryBuilding {
-  final String buildingName;
-  final CategoryLocation location;
-  final String? categoryName;
-
-  CategoryBuilding({
-    required this.buildingName,
-    required this.location,
-    this.categoryName,
-  });
-
-  factory CategoryBuilding.fromJson(Map<String, dynamic> json) {
-    print('🔍 CategoryBuilding.fromJson 호출: $json');
-    
-    // Location 파싱 체크
-    if (json['Location'] == null) {
-      print('🚨 Location이 null입니다!');
-      throw Exception('Location 데이터가 없습니다');
-    }
-    
-    final building = CategoryBuilding(
-      buildingName: json['Building_Name']?.toString() ?? '',
-      location: CategoryLocation.fromJson(json['Location']),
-      categoryName: json['Category_Name']?.toString(),
-    );
-    
-    print('✅ CategoryBuilding 생성: ${building.buildingName}, 위치: ${building.location}');
-    return building;
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'Building_Name': buildingName,
-      'Location': location.toJson(),
-      'Category_Name': categoryName,
-    };
-  }
-
-  @override
-  String toString() {
-    return 'CategoryBuilding(buildingName: $buildingName, location: $location, categoryName: $categoryName)';
-  }
-}
 
 // 카테고리 마커 정보를 위한 클래스
 class CategoryMarker {
@@ -123,13 +80,6 @@ class CategoryMarker {
     required this.location,
   });
 
-  factory CategoryMarker.fromCategoryBuilding(CategoryBuilding building, String category) {
-    return CategoryMarker(
-      buildingName: building.buildingName,
-      categoryName: category,
-      location: building.location,
-    );
-  }
 
   @override
   String toString() {
