@@ -2,28 +2,20 @@
 import 'dart:convert';
 import 'friend.dart';
 import 'package:flutter_application_1/config/api_config.dart';
-import 'package:flutter_application_1/services/auth_service.dart';
 import 'package:flutter_application_1/services/api_helper.dart';
 
 class FriendApiService {
   static String get baseUrl => ApiConfig.friendBase;
 
-  /// 🔥 사용자 존재 여부 확인
-  Future<bool> checkUserExists(String userId) async {
-    try {
-      print('[DEBUG] 사용자 존재 여부 확인: $userId');
-      
-      final authService = AuthService();
-      return await authService.checkUserExists(userId);
-    } catch (e) {
-      print('[ERROR] 사용자 존재 여부 확인 실패: $e');
-      return false;
-    }
-  }
 
   /// 내 친구 목록 조회
   Future<List<Friend>> fetchMyFriends() async {
-    final res = await ApiHelper.get('$baseUrl/myfriend');
+    // 🔥 캐시 우회를 위해 타임스탬프 파라미터 추가
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final url = '$baseUrl/myfriend?t=$timestamp';
+    print('[🔥 DEBUG] 친구 목록 API URL: $url');
+    
+    final res = await ApiHelper.get(url);
     print('[친구 목록 응답] ${res.body}');
 
     if (res.body.isEmpty || res.body.trim() == '{}') {
@@ -50,26 +42,6 @@ class FriendApiService {
     }
   }
 
-  /// 친구 상세 정보 조회
-  Future<Friend?> fetchFriendInfo(String friendId) async {
-    final res = await ApiHelper.get('$baseUrl/info/$friendId');
-    print('[친구 정보 응답] ${res.body}');
-
-    if (res.statusCode != 200) {
-      print('[ERROR] 친구 정보 조회 실패: ${res.body}');
-      return null;
-    }
-
-    try {
-      final Map<String, dynamic> data = jsonDecode(res.body);
-      print('[친구 정보 파싱 데이터] $data');
-      return Friend.fromJson(data);
-    } catch (e, stack) {
-      print('[ERROR] 친구 정보 파싱 실패: $e');
-      print(stack);
-      return null;
-    }
-  }
 
   /// 친구 추가 요청
   Future<void> addFriend(String addId) async {
@@ -146,31 +118,59 @@ class FriendApiService {
 
   /// 받은 친구 요청 목록 조회
   Future<List<FriendRequest>> fetchFriendRequests() async {
-    final res = await ApiHelper.get('$baseUrl/request_list');
-    print('[친구 요청 응답] ${res.body}');
-
-    if (res.body.isEmpty || res.body.trim() == '{}') {
-      print('[WARN] 친구 요청 응답이 비었거나 빈 객체임');
-      return [];
-    }
-
     try {
-      // 🔥 서버 응답 구조에 맞게 파싱: {"success": true, "data": [...]}
-      final Map<String, dynamic> responseData = jsonDecode(res.body);
-      print('[친구 요청 파싱 데이터] $responseData');
+      print('[🔥 DEBUG] ===== 받은 친구 요청 목록 조회 시작 =====');
+      
+      // 🔥 캐시 우회를 위해 타임스탬프 파라미터 추가
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final url = '$baseUrl/request_list?t=$timestamp';
+      print('[🔥 DEBUG] 친구 요청 API URL: $url');
+      
+      final res = await ApiHelper.get(url);
+      print('[🔥 DEBUG] 친구 요청 API 응답 상태: ${res.statusCode}');
+      print('[🔥 DEBUG] 친구 요청 API 응답 본문: ${res.body}');
 
-      if (responseData['success'] == true && responseData['data'] != null) {
-        final List<dynamic> dataList = responseData['data'];
-        return dataList
-            .map((e) => FriendRequest.fromJson(e as Map<String, dynamic>))
-            .where((req) => req.fromUserId.isNotEmpty)
-            .toList();
-      } else {
-        print('[ERROR] 서버 응답 구조가 올바르지 않음: $responseData');
+      if (res.statusCode != 200) {
+        print('[🔥 ERROR] 친구 요청 API 호출 실패: ${res.statusCode}');
+        return [];
+      }
+
+      if (res.body.isEmpty || res.body.trim() == '{}') {
+        print('[🔥 WARN] 친구 요청 응답이 비었거나 빈 객체임');
+        return [];
+      }
+
+      try {
+        // 🔥 서버 응답 구조에 맞게 파싱: {"success": true, "data": [...]}
+        final Map<String, dynamic> responseData = jsonDecode(res.body);
+        print('[🔥 DEBUG] 친구 요청 파싱 데이터: $responseData');
+
+        if (responseData['success'] == true && responseData['data'] != null) {
+          final List<dynamic> dataList = responseData['data'];
+          print('[🔥 DEBUG] 친구 요청 데이터 리스트 길이: ${dataList.length}');
+          
+          final friendRequests = dataList
+              .map((e) => FriendRequest.fromJson(e as Map<String, dynamic>))
+              .where((req) => req.fromUserId.isNotEmpty)
+              .toList();
+              
+          print('[🔥 DEBUG] 파싱된 친구 요청 개수: ${friendRequests.length}');
+          for (final request in friendRequests) {
+            print('[🔥 DEBUG]   - ${request.fromUserName}(${request.fromUserId})');
+          }
+          
+          return friendRequests;
+        } else {
+          print('[🔥 ERROR] 서버 응답 구조가 올바르지 않음: $responseData');
+          return [];
+        }
+      } catch (e, stack) {
+        print('[🔥 ERROR] 친구 요청 파싱 실패: $e');
+        print(stack);
         return [];
       }
     } catch (e, stack) {
-      print('[ERROR] 친구 요청 파싱 실패: $e');
+      print('[🔥 ERROR] 친구 요청 API 호출 중 오류: $e');
       print(stack);
       return [];
     }
@@ -187,7 +187,11 @@ class FriendApiService {
       ];
 
       // 🔥 서버 로그에서 확인된 올바른 경로만 사용
-      final url = possibleUrls.first;
+      final selectedBaseUrl = possibleUrls.first;
+      
+      // 🔥 캐시 우회를 위해 타임스탬프 파라미터 추가
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final url = '$selectedBaseUrl?t=$timestamp';
       print('[DEBUG] 보낸 친구 요청 조회 URL: $url');
 
       final res = await ApiHelper.get(url);

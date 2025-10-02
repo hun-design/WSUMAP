@@ -3,11 +3,13 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'friend.dart';
 import 'friend_repository.dart';
 import '../services/websocket_service.dart';
 import '../services/notification_service.dart';
 import '../services/performance_monitor.dart';
+import '../services/api_helper.dart';
 
 class FriendsController extends ChangeNotifier {
   final FriendRepository repository;
@@ -20,7 +22,6 @@ class FriendsController extends ChangeNotifier {
   List<SentFriendRequest> sentFriendRequests = [];
   List<String> onlineUsers = [];
   bool isLoading = false;
-  bool isRefreshing = false;
   String? errorMessage;
   bool isWebSocketConnected = false;
   
@@ -37,8 +38,32 @@ class FriendsController extends ChangeNotifier {
   DateTime? _lastUpdate;
   bool _isRealTimeEnabled = true;
 
+  // 친구 요청 알림 콜백
+  Function(String)? _onFriendRequestNotification;
+  
+  // 🔥 친구 요청 수락 알림 콜백 (새로 추가)
+  Function(String)? _onFriendRequestAcceptedNotification;
+  
+  // 🔥 친구 요청 취소 알림 콜백 (새로 추가)
+  Function(String)? _onFriendRequestCancelledNotification;
+
   FriendsController(this.repository, this.myId) {
     _initializeController();
+  }
+
+  // 친구 요청 알림 콜백 설정
+  void setOnFriendRequestNotification(Function(String)? callback) {
+    _onFriendRequestNotification = callback;
+  }
+  
+  // 🔥 친구 요청 수락 알림 콜백 설정 (새로 추가)
+  void setOnFriendRequestAcceptedNotification(Function(String)? callback) {
+    _onFriendRequestAcceptedNotification = callback;
+  }
+  
+  // 🔥 친구 요청 취소 알림 콜백 설정 (새로 추가)
+  void setOnFriendRequestCancelledNotification(Function(String)? callback) {
+    _onFriendRequestCancelledNotification = callback;
   }
 
   // 게터들
@@ -209,18 +234,264 @@ class FriendsController extends ChangeNotifier {
     }
   }
 
+  // 새 친구 요청 알림 처리
+  void _handleNewFriendRequest(Map<String, dynamic> message) {
+    try {
+      final fromUserName = message['fromUserName'] as String?;
+      final fromUserId = message['fromUserId'] as String?;
+      
+      if (kDebugMode) {
+        debugPrint('🔥 새 친구 요청 알림 수신: $fromUserName($fromUserId)');
+        debugPrint('🔥 메시지 전체 내용: $message');
+      }
+      
+      // 🔥 햅틱 피드백으로 사용자에게 알림
+      HapticFeedback.mediumImpact();
+      
+      // 🔥 알림 콜백 호출
+      if (_onFriendRequestNotification != null && fromUserName != null) {
+        _onFriendRequestNotification!(fromUserName);
+      }
+      
+      // 🔥 친구 요청 목록 즉시 새로고침 (강화된 버전)
+      _immediateFriendRequestUpdate();
+      
+      // 🔥 추가로 전체 데이터도 새로고침 (확실한 동기화)
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (kDebugMode) {
+          debugPrint('🔥 추가 전체 데이터 새로고침 실행');
+        }
+        loadAll();
+      });
+      
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('🔥 친구 요청 알림 처리 중 오류: $e');
+      }
+    }
+  }
+  
+  // 🔥 친구 요청 목록 즉시 업데이트 (강화된 버전)
+  Future<void> _immediateFriendRequestUpdate() async {
+    try {
+      if (kDebugMode) {
+        debugPrint('🔥 친구 요청 목록 즉시 업데이트 시작');
+      }
+      
+      // 🔥 API 캐시 초기화 후 친구 요청 목록 새로고침
+      await _clearApiCache();
+      final newFriendRequests = await repository.getFriendRequests();
+      
+      // 🔥 받은 요청 목록 업데이트
+      friendRequests = newFriendRequests;
+      
+      if (kDebugMode) {
+        debugPrint('🔥 친구 요청 목록 즉시 업데이트 완료: ${friendRequests.length}개');
+        for (final request in friendRequests) {
+          debugPrint('  - ${request.fromUserName}(${request.fromUserId})');
+        }
+      }
+      
+      // 🔥 UI 즉시 업데이트 (여러 번 호출하여 확실히 업데이트)
+      notifyListeners();
+      Future.microtask(() => notifyListeners());
+      Future.delayed(const Duration(milliseconds: 50), () => notifyListeners());
+      Future.delayed(const Duration(milliseconds: 100), () => notifyListeners());
+      
+      // 🔥 추가로 전체 데이터도 백그라운드에서 새로고침
+      Future.microtask(() => quickUpdate());
+      
+      // 🔥 추가로 전체 데이터 로드도 실행
+      Future.delayed(const Duration(milliseconds: 300), () => loadAll());
+      
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('🔥 친구 요청 목록 즉시 업데이트 실패: $e');
+      }
+      
+      // 🔥 실패 시 기존 방법으로 폴백
+      Future.microtask(() => quickUpdate());
+      Future.delayed(const Duration(milliseconds: 500), () => loadAll());
+    }
+  }
+  
+  // 🔥 친구 요청 수락 알림 처리 (새로 추가)
+  void _handleFriendRequestAccepted(Map<String, dynamic> message) {
+    try {
+      final acceptedByUserName = message['acceptedByUserName'] as String?;
+      final acceptedByUserId = message['acceptedByUserId'] as String?;
+      
+      if (kDebugMode) {
+        debugPrint('🔥 친구 요청 수락 알림 수신: $acceptedByUserName($acceptedByUserId)이 내 요청을 수락함');
+      }
+      
+      // 🔥 햅틱 피드백으로 사용자에게 알림
+      HapticFeedback.mediumImpact();
+      
+      // 🔥 친구 요청 수락 알림 콜백 호출
+      if (_onFriendRequestAcceptedNotification != null && acceptedByUserName != null) {
+        _onFriendRequestAcceptedNotification!(acceptedByUserName);
+      }
+      
+      // 🔥 친구 목록 즉시 업데이트 (새 친구 추가)
+      _immediateFriendListUpdate();
+      
+      // 🔥 보낸 요청 목록에서 해당 요청 제거
+      _removeFromSentRequests(acceptedByUserId);
+      
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('🔥 친구 요청 수락 알림 처리 중 오류: $e');
+      }
+    }
+  }
+
+  // 🔥 친구 요청 취소 알림 처리 (새로 추가)
+  void _handleFriendRequestCancelled(Map<String, dynamic> message) {
+    try {
+      final cancelledByUserName = message['cancelledByUserName'] as String?;
+      final cancelledByUserId = message['cancelledByUserId'] as String?;
+      
+      if (kDebugMode) {
+        debugPrint('🔥 친구 요청 취소 알림 수신: $cancelledByUserName($cancelledByUserId)이 내게 보낸 요청을 취소함');
+      }
+      
+      // 🔥 햅틱 피드백으로 사용자에게 알림
+      HapticFeedback.lightImpact();
+      
+      // 🔥 친구 요청 취소 알림 콜백 호출
+      if (_onFriendRequestCancelledNotification != null && cancelledByUserName != null) {
+        _onFriendRequestCancelledNotification!(cancelledByUserName);
+      }
+      
+      // 🔥 받은 요청 목록에서 해당 요청 즉시 제거
+      _removeFromReceivedRequests(cancelledByUserId);
+      
+      // 🔥 추가로 전체 데이터도 새로고침 (확실한 동기화)
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (kDebugMode) {
+          debugPrint('🔥 친구 요청 취소 후 전체 데이터 새로고침 실행');
+        }
+        loadAll();
+      });
+      
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('🔥 친구 요청 취소 알림 처리 중 오류: $e');
+      }
+    }
+  }
+  
+  // 🔥 친구 목록 즉시 업데이트 (개선된 버전)
+  Future<void> _immediateFriendListUpdate() async {
+    try {
+      if (kDebugMode) {
+        debugPrint('🔥 친구 목록 즉시 업데이트 시작');
+      }
+      
+      // 🔥 서버에서 최신 친구 목록 가져오기
+      final updatedFriends = await repository.refreshFriendStatus();
+      
+      // 🔥 기존 친구 목록과 비교하여 새 친구 찾기
+      final previousFriendIds = friends.map((f) => f.userId).toSet();
+      final newFriendIds = updatedFriends.map((f) => f.userId).toSet();
+      final addedFriendIds = newFriendIds.difference(previousFriendIds);
+      
+      // 🔥 친구 목록 업데이트
+      friends = updatedFriends;
+      
+      // 🔥 온라인 상태 업데이트
+      _updateFriendsOnlineStatus();
+      
+      // 🔥 UI 즉시 업데이트
+      notifyListeners();
+      
+      if (kDebugMode) {
+        debugPrint('🔥 친구 목록 즉시 업데이트 완료: ${friends.length}명');
+        if (addedFriendIds.isNotEmpty) {
+          debugPrint('🔥 새로 추가된 친구: ${addedFriendIds.join(', ')}');
+        }
+      }
+      
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('🔥 친구 목록 즉시 업데이트 실패: $e');
+      }
+      
+      // 🔥 실패 시 기존 데이터 새로고침
+      await quickUpdate();
+    }
+  }
+  
+  // 🔥 보낸 요청 목록에서 해당 요청 제거 (새로 추가)
+  void _removeFromSentRequests(String? userId) {
+    if (userId == null || userId.isEmpty) return;
+    
+    try {
+      final removedCount = sentFriendRequests.length;
+      sentFriendRequests.removeWhere((request) => request.toUserId == userId);
+      final newCount = sentFriendRequests.length;
+      
+      if (removedCount != newCount) {
+        if (kDebugMode) {
+          debugPrint('🔥 보낸 요청 목록에서 제거: $userId (${removedCount - newCount}개 제거됨)');
+        }
+        
+        // 🔥 UI 즉시 업데이트
+        notifyListeners();
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('🔥 보낸 요청 목록 제거 중 오류: $e');
+      }
+    }
+  }
+
+  // 🔥 받은 요청 목록에서 해당 요청 제거 (새로 추가)
+  void _removeFromReceivedRequests(String? userId) {
+    if (userId == null || userId.isEmpty) return;
+    
+    try {
+      final removedCount = friendRequests.length;
+      friendRequests.removeWhere((request) => request.fromUserId == userId);
+      final newCount = friendRequests.length;
+      
+      if (removedCount != newCount) {
+        if (kDebugMode) {
+          debugPrint('🔥 받은 요청 목록에서 제거: $userId (${removedCount - newCount}개 제거됨)');
+        }
+        
+        // 🔥 UI 즉시 업데이트
+        notifyListeners();
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('🔥 받은 요청 목록 제거 중 오류: $e');
+      }
+    }
+  }
+
   // 웹소켓 메시지 처리 (개선된 버전)
   void _handleWebSocketMessage(Map<String, dynamic> message) {
-    if (kDebugMode && _shouldLogMessage(message['type'])) {
-      debugPrint('웹소켓 메시지 수신: ${message['type']}');
+    final messageType = message['type'] as String?;
+    
+    if (kDebugMode) {
+      debugPrint('🔥 웹소켓 메시지 수신: $messageType');
+      debugPrint('🔥 메시지 내용: $message');
+      debugPrint('🔥 현재 사용자 ID: $myId');
+      debugPrint('🔥 WebSocket 연결 상태: $isWebSocketConnected');
     }
     
-    if (_isGuestUser()) return;
+    if (_isGuestUser()) {
+      if (kDebugMode) {
+        debugPrint('🔥 게스트 사용자 - 메시지 무시');
+      }
+      return;
+    }
 
-    final messageType = message['type'] as String?;
     if (messageType == null) {
       if (kDebugMode) {
-        debugPrint('유효하지 않은 웹소켓 메시지: type 필드 없음');
+        debugPrint('🔥 유효하지 않은 웹소켓 메시지: type 필드 없음');
       }
       return;
     }
@@ -228,16 +499,41 @@ class FriendsController extends ChangeNotifier {
     try {
       switch (messageType) {
         case 'new_friend_request':
+          if (kDebugMode) {
+            debugPrint('🔥 새 친구 요청 메시지 처리 시작');
+          }
+          _handleNewFriendRequest(message);
+          break;
         case 'friend_request_accepted':
+          if (kDebugMode) {
+            debugPrint('🔥 친구 요청 수락 메시지 처리 시작');
+          }
+          _handleFriendRequestAccepted(message);
+          break;
         case 'friend_request_rejected':
-        case 'friend_deleted':
+          if (kDebugMode) {
+            debugPrint('🔥 친구 요청 거절 메시지 처리');
+          }
           quickUpdate();
           break;
-
+        case 'friend_request_cancelled':
+          if (kDebugMode) {
+            debugPrint('🔥 친구 요청 취소 메시지 처리');
+          }
+          _handleFriendRequestCancelled(message);
+          break;
+        case 'friend_deleted':
+          if (kDebugMode) {
+            debugPrint('🔥 친구 삭제 메시지 처리');
+          }
+          quickUpdate();
+          break;
         case 'friend_status_change':
+          if (kDebugMode) {
+            debugPrint('🔥 친구 상태 변경 메시지 처리');
+          }
           _handleFriendStatusChange(message);
           break;
-
         case 'Login_Status':
           // 🔥 Login_Status 메시지는 이미 WebSocketService에서 friend_status_change로 변환되어 처리됨
           // 중복 처리 방지를 위해 여기서는 무시
@@ -259,7 +555,22 @@ class FriendsController extends ChangeNotifier {
           break;
 
         case 'online_users_update':
-          _handleOnlineUsersUpdateMessage(message);
+          final onlineUsersList = message['onlineUsers'];
+          if (onlineUsersList is List) {
+            final users = onlineUsersList
+                .map((user) {
+                  if (user is String) {
+                    return user;
+                  } else if (user is Map) {
+                    return user['userId']?.toString() ?? user['id']?.toString() ?? '';
+                  } else {
+                    return user.toString();
+                  }
+                })
+                .where((id) => id.isNotEmpty)
+                .toList();
+            _handleOnlineUsersUpdate(users);
+          }
           break;
 
         case 'location_share_status_change':
@@ -816,19 +1127,6 @@ class FriendsController extends ChangeNotifier {
     });
   }
 
-  // 로그 메시지 필터링
-  bool _shouldLogMessage(String messageType) {
-    const importantMessages = {
-      'friend_logged_in',
-      'friend_logged_out',
-      'friend_status_change',
-      'new_friend_request',
-      'friend_request_accepted',
-      'friend_request_rejected',
-      'friend_deleted',
-    };
-    return importantMessages.contains(messageType);
-  }
 
   // 친구 상태 알림 표시
   void _showFriendStatusNotification(String userId, bool isOnline) {
@@ -851,7 +1149,7 @@ class FriendsController extends ChangeNotifier {
   // 비즈니스 로직 메서드들
   Future<void> loadAll() async {
     if (kDebugMode) {
-      debugPrint('친구 데이터 새로고침');
+      debugPrint('🔥 친구 데이터 새로고침 시작');
     }
     
     isLoading = true;
@@ -860,6 +1158,9 @@ class FriendsController extends ChangeNotifier {
 
     try {
       if (_isGuestUser()) {
+        if (kDebugMode) {
+          debugPrint('🔥 게스트 사용자 - 데이터 초기화');
+        }
         friends = [];
         friendRequests = [];
         sentFriendRequests = [];
@@ -868,29 +1169,49 @@ class FriendsController extends ChangeNotifier {
         return;
       }
 
+      if (kDebugMode) {
+        debugPrint('🔥 서버에서 친구 데이터 로드 시작');
+      }
+
+      // 🔥 순차적으로 데이터 로드 (안정성 확보)
       friends = await repository.getMyFriends();
+      if (kDebugMode) {
+        debugPrint('🔥 친구 목록 로드 완료: ${friends.length}명');
+      }
+
       friendRequests = await repository.getFriendRequests();
+      if (kDebugMode) {
+        debugPrint('🔥 받은 요청 로드 완료: ${friendRequests.length}개');
+        for (final request in friendRequests) {
+          debugPrint('🔥   - ${request.fromUserName}(${request.fromUserId})');
+        }
+      }
+
       sentFriendRequests = await repository.getSentFriendRequests();
+      if (kDebugMode) {
+        debugPrint('🔥 보낸 요청 로드 완료: ${sentFriendRequests.length}개');
+      }
+
       _lastUpdate = DateTime.now();
-      
       _updateFriendsOnlineStatus();
 
       if (kDebugMode) {
-        debugPrint('친구 데이터 새로고침 완료');
-        debugPrint('친구: ${friends.length}명');
-        debugPrint('받은 요청: ${friendRequests.length}개');
-        debugPrint('보낸 요청: ${sentFriendRequests.length}개');
-        debugPrint('온라인 사용자: ${onlineUsers.length}명');
+        debugPrint('🔥 친구 데이터 새로고침 완료');
+        debugPrint('🔥 최종 결과:');
+        debugPrint('🔥   - 친구: ${friends.length}명');
+        debugPrint('🔥   - 받은 요청: ${friendRequests.length}개');
+        debugPrint('🔥   - 보낸 요청: ${sentFriendRequests.length}개');
+        debugPrint('🔥   - 온라인 사용자: ${onlineUsers.length}명');
       }
     } catch (e) {
       errorMessage = e.toString();
       if (kDebugMode) {
-        debugPrint('친구 데이터 새로고침 실패: $e');
+        debugPrint('🔥 친구 데이터 새로고침 실패: $e');
       }
     }
 
     isLoading = false;
-      notifyListeners();
+    notifyListeners();
   }
 
   Future<void> addFriend(String addId) async {
@@ -898,18 +1219,34 @@ class FriendsController extends ChangeNotifier {
     
     try {
       errorMessage = null;
-        notifyListeners();
+      notifyListeners();
 
+      if (kDebugMode) {
+        debugPrint('🔥 친구 요청 전송 시작: $addId');
+      }
+
+      // 🔥 서버에 친구 요청 전송
       await repository.requestFriend(addId);
       
+      // 🔥 보낸 요청 목록에 낙관적으로 추가
       _optimisticAddSentRequest(addId);
+      
+      // 🔥 백그라운드에서 동기화
       _syncSentRequestsInBackground();
 
-      debugPrint('친구 추가 요청 완료');
+      if (kDebugMode) {
+        debugPrint('🔥 친구 추가 요청 완료: $addId');
+      }
+      
       errorMessage = null;
       notifyListeners();
     } catch (e) {
+      if (kDebugMode) {
+        debugPrint('🔥 친구 요청 전송 실패: $e');
+      }
+      
       try {
+        // 🔥 실패 시 전체 데이터 새로고침
         final newFriends = await repository.getMyFriends();
         final newFriendRequests = await repository.getFriendRequests();
         final newSentFriendRequests = await repository.getSentFriendRequests();
@@ -919,9 +1256,13 @@ class FriendsController extends ChangeNotifier {
         sentFriendRequests = newSentFriendRequests;
 
         _updateFriendsOnlineStatus();
+        
+        if (kDebugMode) {
+          debugPrint('🔥 친구 목록 복구 완료');
+        }
       } catch (loadError) {
         if (kDebugMode) {
-          debugPrint('친구 목록 복구 실패: $loadError');
+          debugPrint('🔥 친구 목록 복구 실패: $loadError');
         }
       }
       rethrow;
@@ -964,26 +1305,44 @@ class FriendsController extends ChangeNotifier {
   Future<void> acceptRequest(String addId) async {
     FriendRequest? removedRequest;
     try {
+      // 🔥 수락할 요청 정보 저장
       removedRequest = friendRequests.firstWhere(
         (request) => request.fromUserId == addId,
         orElse: () => FriendRequest(fromUserId: '', fromUserName: '', createdAt: ''),
       );
       
+      final acceptedUserName = removedRequest.fromUserName;
+      
+      // 🔥 UI 즉시 업데이트 (낙관적 업데이트)
       friendRequests.removeWhere((request) => request.fromUserId == addId);
       notifyListeners();
       
+      // 🔥 서버에 수락 요청 전송
       await repository.acceptRequest(addId);
-      _syncFriendsInBackground();
       
-      debugPrint('친구 요청 수락 완료');
+      // 🔥 친구 목록 즉시 새로고침 (실시간 반영)
+      await _immediateFriendListUpdate();
+      
+      // 🔥 햅틱 피드백으로 사용자에게 알림
+      HapticFeedback.mediumImpact();
+      
+      if (kDebugMode) {
+        debugPrint('🔥 친구 요청 수락 완료: $acceptedUserName($addId)');
+      }
+      
     } catch (e) {
+      // 🔥 실패 시 원래 상태로 복구
       if (removedRequest != null && removedRequest.fromUserId.isNotEmpty) {
         friendRequests.add(removedRequest);
         notifyListeners();
       }
       
       errorMessage = e.toString();
-            notifyListeners();
+      notifyListeners();
+      
+      if (kDebugMode) {
+        debugPrint('🔥 친구 요청 수락 실패: $e');
+      }
       rethrow;
     }
   }
@@ -1014,18 +1373,6 @@ class FriendsController extends ChangeNotifier {
     }
   }
 
-  // 백그라운드 친구 목록 동기화
-  Future<void> _syncFriendsInBackground() async {
-    try {
-      final serverFriends = await repository.getMyFriends();
-      friends = serverFriends;
-      notifyListeners();
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('백그라운드 친구 목록 동기화 실패: $e');
-      }
-    }
-  }
 
   Future<void> deleteFriend(String addId) async {
     try {
@@ -1042,133 +1389,49 @@ class FriendsController extends ChangeNotifier {
 
   Future<void> cancelSentRequest(String friendId) async {
     try {
-      await repository.cancelSentRequest(friendId);
+      if (kDebugMode) {
+        debugPrint('🔥 친구 요청 취소 시작: $friendId');
+      }
+
+      // 🔥 취소할 요청 정보 저장
+      final cancelledRequest = sentFriendRequests.firstWhere(
+        (request) => request.toUserId == friendId,
+        orElse: () => SentFriendRequest(toUserId: '', toUserName: '', requestDate: ''),
+      );
+      
+      final cancelledUserName = cancelledRequest.toUserName;
+      
+      // 🔥 UI 즉시 업데이트 (낙관적 업데이트)
       sentFriendRequests.removeWhere((request) => request.toUserId == friendId);
-        notifyListeners();
-      await quickUpdate();
+      notifyListeners();
+
+      // 🔥 서버에 취소 요청 전송
+      await repository.cancelSentRequest(friendId);
+
+      // 🔥 햅틱 피드백으로 사용자에게 알림
+      HapticFeedback.lightImpact();
+
+      if (kDebugMode) {
+        debugPrint('🔥 친구 요청 취소 완료: $cancelledUserName($friendId)');
+      }
+
+      // 🔥 백그라운드에서 전체 데이터 새로고침
+      Future.microtask(() => quickUpdate());
+      
     } catch (e) {
+      if (kDebugMode) {
+        debugPrint('🔥 친구 요청 취소 실패: $e');
+      }
+      
       errorMessage = e.toString();
       notifyListeners();
       rethrow;
     }
   }
 
-  Future<Friend?> getFriendInfo(String friendId) async {
-    try {
-      isLoading = true;
-      errorMessage = null;
-      notifyListeners();
-      return await repository.getFriendInfo(friendId);
-    } catch (e) {
-      errorMessage = e.toString();
-      return null;
-    } finally {
-      isLoading = false;
-      notifyListeners();
-    }
-  }
 
   // 새로고침 메서드
-  Future<void> refreshWithAnimation() async {
-    if (kDebugMode) {
-      debugPrint('새로고침 버튼 클릭');
-    }
-    
-    isRefreshing = true;
-    notifyListeners();
 
-    try {
-      if (_isGuestUser()) return;
-
-      final actualWsConnected = _wsService.isConnected;
-      
-      if (_wsMessageSubscription == null || _wsMessageSubscription!.isPaused) {
-        _startStreamSubscription();
-      }
-      
-      if (!actualWsConnected) {
-        await _wsService.connect(myId);
-        await Future.delayed(const Duration(milliseconds: 500));
-        _startStreamSubscription();
-      }
-
-      await _enhancedFriendStatusSync();
-      await loadAll();
-      
-      _forceUIUpdate();
-      
-        if (kDebugMode) {
-        debugPrint('새로고침 버튼 동기화 완료');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('새로고침 버튼 작업 실패: $e');
-      }
-    } finally {
-      await Future.delayed(const Duration(milliseconds: 1500));
-      isRefreshing = false;
-      notifyListeners();
-    }
-  }
-
-  // 강화된 친구 상태 동기화
-  Future<void> _enhancedFriendStatusSync() async {
-    try {
-      final serverFriends = await repository.getMyFriends();
-      final actualWsConnected = _wsService.isConnected;
-      
-      if (actualWsConnected != isWebSocketConnected) {
-        isWebSocketConnected = actualWsConnected;
-      }
-      
-      final wsOnlineUsers = actualWsConnected ? onlineUsers : <String>[];
-      bool hasChanges = false;
-      
-      for (int i = 0; i < serverFriends.length; i++) {
-        final serverFriend = serverFriends[i];
-        final isOnlineInWebSocket = wsOnlineUsers.contains(serverFriend.userId);
-        
-        bool shouldBeOnline;
-        if (actualWsConnected) {
-          shouldBeOnline = isOnlineInWebSocket;
-          
-          if (serverFriend.isLogin && !isOnlineInWebSocket && !onlineUsers.contains(serverFriend.userId)) {
-            onlineUsers.add(serverFriend.userId);
-            shouldBeOnline = true;
-          }
-        } else {
-          shouldBeOnline = serverFriend.isLogin;
-        }
-        
-        if (serverFriend.isLogin != shouldBeOnline) {
-          serverFriends[i] = Friend(
-            userId: serverFriend.userId,
-            userName: serverFriend.userName,
-            profileImage: serverFriend.profileImage,
-            phone: serverFriend.phone,
-            isLogin: shouldBeOnline,
-            lastLocation: serverFriend.lastLocation,
-            isLocationPublic: serverFriend.isLocationPublic,
-          );
-          hasChanges = true;
-        }
-      }
-      
-      onlineUsers.clear();
-      onlineUsers.addAll(serverFriends.where((f) => f.isLogin).map((f) => f.userId));
-      
-      friends = serverFriends;
-      
-      if (hasChanges) {
-        notifyListeners();
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('강화된 친구 상태 동기화 실패: $e');
-      }
-      rethrow;
-    }
-  }
 
   // 즉시 동기화
   Future<void> _immediateSync() async {
@@ -1361,46 +1624,7 @@ class FriendsController extends ChangeNotifier {
     }
   }
 
-  // 온라인 사용자 업데이트 메시지 처리
-  void _handleOnlineUsersUpdateMessage(Map<String, dynamic> message) {
-    final onlineUsersList = message['onlineUsers'];
-    
-    if (onlineUsersList is List) {
-      final users = onlineUsersList
-          .map((user) {
-            if (user is String) {
-              return user;
-            } else if (user is Map) {
-              return user['userId']?.toString() ?? user['id']?.toString() ?? '';
-            } else {
-              return user.toString();
-            }
-          })
-          .where((id) => id.isNotEmpty)
-          .toList();
-      _handleOnlineUsersUpdate(users);
-    }
-  }
 
-  // 강제 UI 업데이트
-  void _forceUIUpdate() {
-    _lastUpdate = DateTime.now();
-    
-    final updatedFriends = friends.map((friend) => Friend(
-      userId: friend.userId,
-      userName: friend.userName,
-      profileImage: friend.profileImage,
-      phone: friend.phone,
-      isLogin: friend.isLogin,
-      lastLocation: friend.lastLocation,
-      isLocationPublic: friend.isLocationPublic,
-    )).toList();
-    
-    friends = updatedFriends;
-      notifyListeners();
-    
-    Future.microtask(() => notifyListeners());
-  }
 
   // 기타 메서드들
   void stopRealTimeUpdates() {
@@ -1469,7 +1693,6 @@ class FriendsController extends ChangeNotifier {
     _clearAllData();
     
     isLoading = false;
-    isRefreshing = false;
     errorMessage = null;
     isWebSocketConnected = false;
     
@@ -1504,6 +1727,110 @@ class FriendsController extends ChangeNotifier {
     onlineUsers.clear();
     _realTimeStatusCache.clear();
     _statusTimestamp.clear();
+  }
+
+  /// 🔄 모든 친구 데이터 새로고침 (새로고침 버튼용)
+  Future<void> refreshAllData() async {
+    if (kDebugMode) {
+      debugPrint('🔄 새로고침 버튼 클릭 - 모든 친구 데이터 새로고침 시작');
+    }
+    
+    isLoading = true;
+    errorMessage = null;
+    notifyListeners();
+
+    try {
+      if (_isGuestUser()) {
+        friends = [];
+        friendRequests = [];
+        sentFriendRequests = [];
+        isLoading = false;
+        notifyListeners();
+        return;
+      }
+
+      // 🔥 API 캐시 강제 무효화 (새로고침 시 최신 데이터 보장)
+      await _forceRefreshWithoutCache();
+
+      if (kDebugMode) {
+        debugPrint('✅ 새로고침 완료:');
+        debugPrint('  - 친구: ${friends.length}명');
+        debugPrint('  - 받은 요청: ${friendRequests.length}개');
+        debugPrint('  - 보낸 요청: ${sentFriendRequests.length}개');
+        debugPrint('  - 온라인 사용자: ${onlineUsers.length}명');
+        
+        // 🔥 받은 요청 상세 로그
+        if (friendRequests.isNotEmpty) {
+          debugPrint('🔥 받은 요청 상세:');
+          for (final request in friendRequests) {
+            debugPrint('  - ${request.fromUserName}(${request.fromUserId})');
+          }
+        }
+      }
+    } catch (e) {
+      errorMessage = e.toString();
+      if (kDebugMode) {
+        debugPrint('❌ 새로고침 실패: $e');
+      }
+    }
+
+    isLoading = false;
+    notifyListeners();
+    
+    // 🔥 추가 UI 업데이트 (확실히 업데이트되도록)
+    Future.microtask(() => notifyListeners());
+    Future.delayed(const Duration(milliseconds: 100), () => notifyListeners());
+  }
+
+  /// 🔥 캐시 무시하고 강제 새로고침
+  Future<void> _forceRefreshWithoutCache() async {
+    if (kDebugMode) {
+      debugPrint('🔥 캐시 무시 강제 새로고침 시작');
+    }
+
+    try {
+      // 🔥 1. API 캐시 완전 초기화
+      await _clearApiCache();
+      
+      // 🔥 2. 순차적으로 모든 데이터 새로 가져오기 (캐시 우회)
+      final newFriends = await repository.getMyFriends();
+      final newFriendRequests = await repository.getFriendRequests();
+      final newSentFriendRequests = await repository.getSentFriendRequests();
+
+      // 🔥 3. 데이터 업데이트
+      friends = newFriends;
+      friendRequests = newFriendRequests;
+      sentFriendRequests = newSentFriendRequests;
+      _lastUpdate = DateTime.now();
+      
+      // 🔥 4. 온라인 상태 업데이트
+      _updateFriendsOnlineStatus();
+
+      if (kDebugMode) {
+        debugPrint('🔥 캐시 무시 강제 새로고침 완료');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('🔥 캐시 무시 강제 새로고침 실패: $e');
+      }
+      rethrow;
+    }
+  }
+
+  /// 🔥 API 캐시 완전 초기화
+  Future<void> _clearApiCache() async {
+    try {
+      // ApiHelper 캐시 초기화
+      ApiHelper.clearCache();
+      
+      if (kDebugMode) {
+        debugPrint('🔥 API 캐시 초기화 완료');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('🔥 API 캐시 초기화 실패: $e');
+      }
+    }
   }
 
   @override

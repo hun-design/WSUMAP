@@ -338,15 +338,31 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
           break;
 
         case 'new_friend_request':
+          if (kDebugMode) {
+            debugPrint('🔥 새 친구 요청 WebSocket 메시지 처리');
+          }
           _handleNewFriendRequest(data);
           break;
 
         case 'friend_request_accepted':
+          if (kDebugMode) {
+            debugPrint('🔥 친구 요청 수락 WebSocket 메시지 처리');
+          }
           _handleFriendRequestAccepted(data);
           break;
 
         case 'friend_request_rejected':
+          if (kDebugMode) {
+            debugPrint('🔥 친구 요청 거절 WebSocket 메시지 처리');
+          }
           _handleFriendRequestRejected(data);
+          break;
+
+        case 'friend_request_cancelled':
+          if (kDebugMode) {
+            debugPrint('🔥 친구 요청 취소 WebSocket 메시지 처리');
+          }
+          _handleFriendRequestCancelled(data);
           break;
 
         case 'friend_deleted':
@@ -446,6 +462,14 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     final fromUserName = data['fromUserName'];
     if (kDebugMode) {
       debugPrint('❌ 친구 요청 거절: $fromUserName');
+    }
+  }
+
+  // 🔥 새로 추가: 친구 요청 취소 처리
+  void _handleFriendRequestCancelled(Map<String, dynamic> data) {
+    final cancelledByUserName = data['cancelledByUserName'];
+    if (kDebugMode) {
+      debugPrint('🚫 친구 요청 취소: $cancelledByUserName');
     }
   }
 

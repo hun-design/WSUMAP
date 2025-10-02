@@ -18,6 +18,11 @@ android {
         multiDexEnabled = true
     }
 
+    // 🔥 BuildConfig 기능 활성화 (ImageReader_JNI 로그 차단용)
+    buildFeatures {
+        buildConfig = true
+    }
+
     compileOptions {
         // 🔥 core library desugaring 활성화
         isCoreLibraryDesugaringEnabled = true
@@ -35,6 +40,40 @@ android {
             // R8 설정 추가
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            
+            // 🔥 ImageReader_JNI 로그 완전 차단을 위한 추가 설정
+            buildConfigField("boolean", "SUPPRESS_IMAGEREADER_LOGS", "true")
+            buildConfigField("boolean", "SUPPRESS_NATIVE_LOGS", "true")
+            buildConfigField("boolean", "SUPPRESS_JNI_LOGS", "true")
+        }
+        debug {
+            // 🔥 디버그 빌드에서도 ImageReader_JNI 로그 차단
+            buildConfigField("boolean", "SUPPRESS_IMAGEREADER_LOGS", "true")
+            buildConfigField("boolean", "SUPPRESS_NATIVE_LOGS", "true")
+            buildConfigField("boolean", "SUPPRESS_JNI_LOGS", "true")
+            
+            // 🔥 디버그 로그 레벨을 WARN으로 제한하여 ImageReader_JNI 로그 차단
+            ndk {
+                debugSymbolLevel = "NONE"
+            }
+        }
+    }
+    
+    // 🔥 추가: ImageReader_JNI 로그 차단을 위한 컴파일 옵션
+    compileOptions {
+        isCoreLibraryDesugaringEnabled = true
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+    
+    // 🔥 추가: 로그 차단을 위한 packaging 옵션
+    packagingOptions {
+        // 🔥 ImageReader_JNI 관련 네이티브 라이브러리 제외 (선택적)
+        jniLibs {
+            excludes += setOf(
+                "**/libcamera2_jni.so",
+                "**/libimagerreader_jni.so"
+            )
         }
     }
     

@@ -1,4 +1,5 @@
 // lib/friends/friends_screen.dart - 분할된 파일들을 사용하는 리팩토링된 메인 화면
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_application_1/friends/friend.dart';
@@ -47,6 +48,9 @@ class _FriendsScreenState extends State<FriendsScreen>
               setState(() {});
             }
           })
+          ..setOnFriendRequestNotification(_showFriendRequestToast)
+          ..setOnFriendRequestAcceptedNotification(_showFriendRequestAcceptedToast)
+          ..setOnFriendRequestCancelledNotification(_showFriendRequestCancelledToast)
           ..loadAll();
 
     debugPrint('🚀 친구 화면 초기화 완료 - 실시간 업데이트 활성화');
@@ -78,6 +82,9 @@ class _FriendsScreenState extends State<FriendsScreen>
             setState(() {});
           }
         })
+        ..setOnFriendRequestNotification(_showFriendRequestToast)
+        ..setOnFriendRequestAcceptedNotification(_showFriendRequestAcceptedToast)
+        ..setOnFriendRequestCancelledNotification(_showFriendRequestCancelledToast)
         ..loadAll();
       
       debugPrint('✅ FriendsScreen FriendsController 재생성 완료 - 새로운 사용자: ${widget.userId}');
@@ -113,6 +120,222 @@ class _FriendsScreenState extends State<FriendsScreen>
         break;
       default:
         break;
+    }
+  }
+
+  // 친구 요청 알림 토스트 표시 (개선된 버전)
+  void _showFriendRequestToast(String fromUserName) {
+    try {
+      if (!mounted) return;
+      
+      // 🔥 햅틱 피드백 추가
+      HapticFeedback.mediumImpact();
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.person_add,
+                  color: Colors.blue,
+                  size: 20,
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '새 친구 요청! 👋',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      '$fromUserName님이 친구 요청을 보냈습니다.',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.blue[600],
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          margin: EdgeInsets.all(16),
+          duration: Duration(seconds: 3),
+          action: SnackBarAction(
+            label: '확인',
+            textColor: Colors.white,
+            onPressed: () {
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            },
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint('토스트 표시 중 오류: $e');
+    }
+  }
+  
+  // 🔥 친구 요청 수락 알림 토스트 표시 (개선된 버전)
+  void _showFriendRequestAcceptedToast(String acceptedByUserName) {
+    try {
+      if (!mounted) return;
+      
+      // 🔥 강화된 햅틱 피드백
+      HapticFeedback.heavyImpact();
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.check_circle,
+                  color: Colors.green,
+                  size: 20,
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '친구 요청 수락됨! 🎉',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      '$acceptedByUserName님이 친구 요청을 수락했습니다.',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.green[600],
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          margin: EdgeInsets.all(16),
+          duration: Duration(seconds: 4),
+          action: SnackBarAction(
+            label: '확인',
+            textColor: Colors.white,
+            onPressed: () {
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            },
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint('친구 요청 수락 토스트 표시 중 오류: $e');
+    }
+  }
+
+  // 🔥 친구 요청 취소 알림 토스트 표시 (새로 추가)
+  void _showFriendRequestCancelledToast(String cancelledByUserName) {
+    try {
+      if (!mounted) return;
+      
+      // 🔥 햅틱 피드백
+      HapticFeedback.lightImpact();
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.cancel,
+                  color: Colors.orange,
+                  size: 20,
+                ),
+              ),
+              SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '친구 요청 취소됨',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      '$cancelledByUserName님이 친구 요청을 취소했습니다.',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.orange[600],
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          margin: EdgeInsets.all(16),
+          duration: Duration(seconds: 3),
+          action: SnackBarAction(
+            label: '확인',
+            textColor: Colors.white,
+            onPressed: () {
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            },
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint('친구 요청 취소 토스트 표시 중 오류: $e');
     }
   }
 
@@ -275,31 +498,32 @@ class _FriendsScreenState extends State<FriendsScreen>
                   ],
                 ),
               ),
-              // 새로고침 버튼과 추가 버튼
-              Container(
-                margin: const EdgeInsets.only(right: 8),
-                child: IconButton(
-                  onPressed: controller.isRefreshing ? null : () {
+              // 새로고침 버튼 (통합)
+              IconButton(
+                onPressed: controller.isLoading ? null : () async {
+                  try {
                     HapticFeedback.lightImpact();
-                    controller.refreshWithAnimation();
-                  },
-                  icon: controller.isRefreshing
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Color(0xFF1E3A8A),
-                            ),
+                    await controller.refreshAllData();
+                  } catch (e) {
+                    debugPrint('새로고침 중 오류: $e');
+                  }
+                },
+                icon: controller.isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Color(0xFF1E3A8A),
                           ),
-                        )
-                      : const Icon(
-                          Icons.refresh,
-                          color: Color(0xFF1E3A8A),
-                          size: 24,
                         ),
-                ),
+                      )
+                    : const Icon(
+                        Icons.refresh,
+                        color: Color(0xFF1E3A8A),
+                        size: 24,
+                      ),
               ),
               AnimatedScale(
                 scale: _isAddingFriend ? 0.95 : 1.0,
@@ -332,9 +556,9 @@ class _FriendsScreenState extends State<FriendsScreen>
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.green.withValues(alpha: 0.1),
+                color: Colors.green.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
+                border: Border.all(color: Colors.green.withOpacity(0.3)),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -434,7 +658,7 @@ class _FriendsScreenState extends State<FriendsScreen>
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
+                            color: Colors.black.withOpacity(0.05),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -587,18 +811,37 @@ class _FriendsScreenState extends State<FriendsScreen>
                             scrollController,
                             controller,
                             (String userId, String userName) async {
-                              // 요청 수락 로직
+                              // 🔥 친구 요청 수락 로직 (개선된 버전)
                               try {
+                                // 🔥 햅틱 피드백으로 사용자에게 알림
+                                HapticFeedback.lightImpact();
+                                
+                                if (kDebugMode) {
+                                  debugPrint('🔥 친구 요청 수락 시작: $userName($userId)');
+                                }
+                                
                                 await controller.acceptRequest(userId);
-                                // 모달 상태 즉시 업데이트
+                                
+                                // 🔥 모달 상태 즉시 업데이트
                                 setModalState(() {});
+                                
+                                // 🔥 성공 메시지 표시
                                 FriendsUtils.showSuccessMessage(
                                   context,
                                   AppLocalizations.of(
                                     context,
                                   )!.friendRequestAccepted(userName),
                                 );
+                                
+                                if (kDebugMode) {
+                                  debugPrint('🔥 친구 요청 수락 완료: $userName($userId)');
+                                }
+                                
                               } catch (e) {
+                                if (kDebugMode) {
+                                  debugPrint('🔥 친구 요청 수락 실패: $e');
+                                }
+                                
                                 FriendsUtils.showErrorMessage(
                                   context,
                                   AppLocalizations.of(
@@ -760,14 +1003,10 @@ class _FriendsScreenState extends State<FriendsScreen>
                           ],
                         ),
                       )
-                    : RefreshIndicator(
-                        color: const Color(0xFF1E3A8A),
-                        onRefresh: controller.loadAll,
-                        child: ListView(
-                          padding: const EdgeInsets.only(top: 16, bottom: 32),
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          children: [_buildFriendsContent()],
-                        ),
+                    : ListView(
+                        padding: const EdgeInsets.only(top: 16, bottom: 32),
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        children: [_buildFriendsContent()],
                       ),
               ),
             ],

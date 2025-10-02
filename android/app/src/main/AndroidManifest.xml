@@ -183,7 +183,7 @@
             android:name="android.media.ImageReader.BUFFER_OVERFLOW_PROTECTION"
             android:value="true" />
             
-        <!-- 🔥 최강: ImageReader_JNI 로그 완전 차단 (ASSERT 레벨) - 기존 SILENT에서 ASSERT로 업그레이드 -->
+        <!-- 🔥 최강: ImageReader_JNI 로그 평생 차단 (SILENT 레벨) -->
             
         <!-- 🔥 최강: 모든 로그 레벨 차단 -->
         <meta-data
@@ -194,6 +194,15 @@
             android:value="true" />
         <meta-data
             android:name="android.util.Log.SUPPRESS_DEBUG_LOGS"
+            android:value="true" />
+        <meta-data
+            android:name="android.util.Log.SUPPRESS_INFO_LOGS"
+            android:value="true" />
+        <meta-data
+            android:name="android.util.Log.SUPPRESS_ERROR_LOGS"
+            android:value="true" />
+        <meta-data
+            android:name="android.util.Log.SUPPRESS_VERBOSE_LOGS"
             android:value="true" />
             
         <!-- 🔥 최강: JNI 및 네이티브 로그 완전 차단 -->
@@ -206,26 +215,171 @@
         <meta-data
             android:name="system.log.suppress"
             android:value="true" />
+        <meta-data
+            android:name="libc.log.suppress"
+            android:value="true" />
+        <meta-data
+            android:name="syscall.log.suppress"
+            android:value="true" />
             
         <!-- 🔥 추가: BufferQueue 로그 차단 -->
         <meta-data
             android:name="log.tag.BufferQueue"
+            android:value="SILENT" />
+        <meta-data
+            android:name="log.tag.BufferQueueConsumer"
+            android:value="SILENT" />
+        <meta-data
+            android:name="log.tag.BufferQueueProducer"
             android:value="SILENT" />
             
         <!-- 🔥 추가: Surface 로그 차단 -->
         <meta-data
             android:name="log.tag.Surface"
             android:value="SILENT" />
+        <meta-data
+            android:name="log.tag.SurfaceFlinger"
+            android:value="SILENT" />
+        <meta-data
+            android:name="log.tag.SurfaceComposerClient"
+            android:value="SILENT" />
             
         <!-- 🔥 추가: JNI 로그 완전 차단 -->
         <meta-data
             android:name="jni.log"
+            android:value="false" />
+        <meta-data
+            android:name="jni.debug"
+            android:value="false" />
+        <meta-data
+            android:name="jni.verbose"
+            android:value="false" />
+        <meta-data
+            android:name="jni.warn"
             android:value="false" />
             
         <!-- 🔥 추가: 네이티브 로그 완전 차단 -->
         <meta-data
             android:name="native.log"
             android:value="false" />
+        <meta-data
+            android:name="native.debug"
+            android:value="false" />
+        <meta-data
+            android:name="native.verbose"
+            android:value="false" />
+        <meta-data
+            android:name="native.warn"
+            android:value="false" />
+            
+        <!-- 🔥 추가: libc 및 syscall 로그 차단 -->
+        <meta-data
+            android:name="libc.debug"
+            android:value="false" />
+        <meta-data
+            android:name="libc.verbose"
+            android:value="false" />
+        <meta-data
+            android:name="libc.warn"
+            android:value="false" />
+        <meta-data
+            android:name="syscall.debug"
+            android:value="false" />
+        <meta-data
+            android:name="syscall.verbose"
+            android:value="false" />
+        <meta-data
+            android:name="syscall.warn"
+            android:value="false" />
+            
+        <!-- 🔥 추가: 모든 ImageReader 관련 로그 평생 차단 -->
+        <meta-data
+            android:name="log.tag.ImageReaderNative"
+            android:value="SILENT" />
+        <meta-data
+            android:name="log.tag.ImageReaderImpl"
+            android:value="SILENT" />
+        <meta-data
+            android:name="log.tag.Camera2Impl"
+            android:value="SILENT" />
+        <meta-data
+            android:name="log.tag.CameraDeviceImpl"
+            android:value="SILENT" />
+        <meta-data
+            android:name="log.tag.CameraCaptureSessionImpl"
+            android:value="SILENT" />
+            
+        <!-- 🔥 추가: 로그 출력 완전 차단 -->
+        <meta-data
+            android:name="log.redirect-stdio"
+            android:value="false" />
+        <meta-data
+            android:name="log.redirect-stderr"
+            android:value="false" />
+        <meta-data
+            android:name="log.redirect-stdout"
+            android:value="false" />
+            
+        <!-- 🔥 최강: ImageReader_JNI 로그 평생 차단을 위한 최종 설정 -->
+        <meta-data
+            android:name="android.media.ImageReader.SUPPRESS_ALL_WARNINGS"
+            android:value="true" />
+        <meta-data
+            android:name="android.media.ImageReader.SUPPRESS_BUFFER_WARNINGS"
+            android:value="true" />
+        <meta-data
+            android:name="android.media.ImageReader.SUPPRESS_JNI_WARNINGS"
+            android:value="true" />
+        <meta-data
+            android:name="android.media.ImageReader.SUPPRESS_NATIVE_WARNINGS"
+            android:value="true" />
+            
+        <!-- 🔥 추가: ImageReader_JNI 로그 완전 차단 (최종 버전) -->
+        <meta-data
+            android:name="imagereader.suppress"
+            android:value="true" />
+        <meta-data
+            android:name="imagereader.block"
+            android:value="true" />
+        <meta-data
+            android:name="imagereader.disable"
+            android:value="true" />
+        <meta-data
+            android:name="imagereader.silent"
+            android:value="true" />
+            
+        <!-- 🔥 추가: 시스템 로그 완전 차단 (최종 버전) -->
+        <meta-data
+            android:name="log.tag.SYSTEM"
+            android:value="SILENT" />
+        <meta-data
+            android:name="log.tag.ANDROID"
+            android:value="SILENT" />
+        <meta-data
+            android:name="log.tag.FRAMEWORK"
+            android:value="SILENT" />
+            
+        <!-- 🔥 추가: 네이티브 로그 완전 차단 (최종 버전) -->
+        <meta-data
+            android:name="native.suppress"
+            android:value="true" />
+        <meta-data
+            android:name="native.block"
+            android:value="true" />
+        <meta-data
+            android:name="native.disable"
+            android:value="true" />
+            
+        <!-- 🔥 추가: JNI 로그 완전 차단 (최종 버전) -->
+        <meta-data
+            android:name="jni.suppress"
+            android:value="true" />
+        <meta-data
+            android:name="jni.block"
+            android:value="true" />
+        <meta-data
+            android:name="jni.disable"
+            android:value="true" />
 
         <!-- [공통] 메인 액티비티 설정 -->
         <activity

@@ -23,9 +23,6 @@ class FriendRepository {
       apiService.rejectFriendRequest(addId);
   Future<void> deleteFriend(String addId) =>
       apiService.deleteFriend(addId);
-  Future<Friend?> getFriendInfo(String friendId) async {
-    return await apiService.fetchFriendInfo(friendId);
-  }
 
   /// 내가 보낸 친구 요청 목록 조회
   Future<List<SentFriendRequest>> getSentFriendRequests() =>

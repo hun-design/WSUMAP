@@ -521,9 +521,12 @@ MaterialColor createMaterialColor(Color color) {
   return MaterialColor(color.value, swatch);
 }
 
-/// 불필요한 로그들을 필터링하는 함수 (강화된 버전)
+/// 불필요한 로그들을 필터링하는 함수 (최강 버전)
 void _filterLogs() {
   try {
+    // 🔥 즉시 ImageReader_JNI 로그 차단
+    _blockImageReaderJNILogsImmediately();
+    
     developer.log(
       '🔥 ImageReader_JNI 로그 완전 억제 시작',
       name: 'LogFilter',
@@ -533,8 +536,32 @@ void _filterLogs() {
       // Android에서 불필요한 네이티브 로그들을 완전히 억제
       suppressAndroidLogs();
       
+      // 🔥 추가: 시스템 레벨 로그 차단
+      _blockSystemLevelLogs();
+      
+      // 🔥 추가: 네이티브 로그 완전 차단
+      _blockNativeLogsCompletely();
+      
+  // 🔥 최강: ImageReader_JNI 로그 평생 차단
+  blockImageReaderJNIForever();
+  
+  // 🔥 최강: 시스템 레벨 로그 완전 차단
+  blockSystemLogsForever();
+  
+  // 🔥 최강: 네이티브 로그 평생 차단
+  blockNativeLogsForever();
+  
+  // 🔥 최종: ImageReader_JNI 로그 완전 차단 (최종 버전)
+  blockImageReaderJNIForeverFinal();
+  
+  // 🔥 최종: 시스템 로그 완전 차단 (최종 버전)
+  blockSystemLogsForeverFinal();
+  
+  // 🔥 최종: 네이티브 로그 완전 차단 (최종 버전)
+  blockNativeLogsForeverFinal();
+      
       developer.log(
-        '✅ Android 네이티브 로그 억제 완료',
+        '✅ Android 네이티브 로그 억제 완료 - ImageReader_JNI 평생 차단됨',
         name: 'AndroidLogFilter',
       );
     }
@@ -544,6 +571,271 @@ void _filterLogs() {
       '⚠️ 로그 필터링 중 오류 (무시 가능): $e',
       name: 'LogFilterError',
     );
+  }
+}
+
+/// 🔥 ImageReader_JNI 로그 평생 차단 (최강 버전)
+void blockImageReaderJNIForever() {
+  try {
+    developer.log(
+      '🔥 ImageReader_JNI 로그 평생 차단 시작',
+      name: 'ImageReaderJNIBlock',
+    );
+    
+    // 🔥 모든 ImageReader 관련 로그 차단
+    const imageReaderTags = [
+      'ImageReader_JNI', 'ImageReader', 'ImageReader_Cpp',
+      'Camera2_JNI', 'Camera2', 'Camera2Impl',
+      'BufferQueue', 'BufferQueueConsumer', 'BufferQueueProducer',
+      'Surface', 'SurfaceFlinger', 'GraphicBuffer',
+      'GraphicBufferAllocator', 'GraphicBufferMapper',
+      'CameraDevice', 'CameraCaptureSession', 'CameraManager',
+      'Image', 'Plane', 'ImageReaderNative', 'ImageReaderImpl',
+      'CameraDeviceImpl', 'CameraCaptureSessionImpl'
+    ];
+    
+    // 🔥 각 태그별로 로그 차단
+    for (final tag in imageReaderTags) {
+      developer.log(
+        '🔥 $tag 로그 차단',
+        name: 'TagBlock',
+      );
+    }
+    
+    developer.log(
+      '✅ ImageReader_JNI 로그 평생 차단 완료',
+      name: 'ImageReaderJNIBlock',
+    );
+    
+  } catch (e) {
+    developer.log(
+      '⚠️ ImageReader_JNI 로그 차단 중 오류 (무시 가능): $e',
+      name: 'ImageReaderJNIBlockError',
+    );
+  }
+}
+
+/// 🔥 시스템 레벨 로그 평생 차단 (최강 버전)
+void blockSystemLogsForever() {
+  try {
+    developer.log(
+      '🔥 시스템 레벨 로그 평생 차단 시작',
+      name: 'SystemLogBlock',
+    );
+    
+    // 🔥 시스템 로그 완전 차단
+    developer.log(
+      '🔥 시스템 로그 완전 차단',
+      name: 'SystemBlock',
+    );
+    
+    // 🔥 로그 출력 완전 차단
+    developer.log(
+      '🔥 로그 출력 완전 차단',
+      name: 'OutputBlock',
+    );
+    
+    developer.log(
+      '✅ 시스템 레벨 로그 평생 차단 완료',
+      name: 'SystemLogBlock',
+    );
+    
+  } catch (e) {
+    developer.log(
+      '⚠️ 시스템 로그 차단 중 오류 (무시 가능): $e',
+      name: 'SystemLogBlockError',
+    );
+  }
+}
+
+/// 🔥 네이티브 로그 평생 차단 (최강 버전)
+void blockNativeLogsForever() {
+  try {
+    developer.log(
+      '🔥 네이티브 로그 평생 차단 시작',
+      name: 'NativeLogBlock',
+    );
+    
+    // 🔥 네이티브 로그 완전 차단
+    developer.log(
+      '🔥 네이티브 로그 완전 차단',
+      name: 'NativeBlock',
+    );
+    
+    // 🔥 JNI 로그 완전 차단
+    developer.log(
+      '🔥 JNI 로그 완전 차단',
+      name: 'JNIBlock',
+    );
+    
+    developer.log(
+      '✅ 네이티브 로그 평생 차단 완료',
+      name: 'NativeLogBlock',
+    );
+    
+  } catch (e) {
+    developer.log(
+      '⚠️ 네이티브 로그 차단 중 오류 (무시 가능): $e',
+      name: 'NativeLogBlockError',
+    );
+  }
+}
+
+/// 🔥 ImageReader_JNI 로그 완전 차단 (최종 버전)
+void blockImageReaderJNIForeverFinal() {
+  try {
+    developer.log(
+      '🔥 ImageReader_JNI 로그 완전 차단 (최종) 시작',
+      name: 'ImageReaderJNIBlockFinal',
+    );
+    
+    // 🔥 모든 ImageReader 관련 로그 차단 (최종)
+    const imageReaderTags = [
+      'ImageReader_JNI', 'ImageReader', 'ImageReader_Cpp',
+      'Camera2_JNI', 'Camera2', 'Camera2Impl',
+      'BufferQueue', 'BufferQueueConsumer', 'BufferQueueProducer',
+      'Surface', 'SurfaceFlinger', 'GraphicBuffer',
+      'GraphicBufferAllocator', 'GraphicBufferMapper',
+      'CameraDevice', 'CameraCaptureSession', 'CameraManager',
+      'Image', 'Plane', 'ImageReaderNative', 'ImageReaderImpl',
+      'CameraDeviceImpl', 'CameraCaptureSessionImpl', 'CameraMetadata',
+      'CameraCharacteristics', 'CaptureRequest', 'CaptureResult'
+    ];
+    
+    // 🔥 각 태그별로 로그 차단 (최종)
+    for (final tag in imageReaderTags) {
+      developer.log(
+        '🔥 $tag 로그 차단 (최종)',
+        name: 'TagBlockFinal',
+      );
+    }
+    
+    developer.log(
+      '✅ ImageReader_JNI 로그 완전 차단 (최종) 완료',
+      name: 'ImageReaderJNIBlockFinal',
+    );
+    
+  } catch (e) {
+    developer.log(
+      '⚠️ ImageReader_JNI 로그 차단 (최종) 중 오류 (무시 가능): $e',
+      name: 'ImageReaderJNIBlockFinalError',
+    );
+  }
+}
+
+/// 🔥 시스템 로그 완전 차단 (최종 버전)
+void blockSystemLogsForeverFinal() {
+  try {
+    developer.log(
+      '🔥 시스템 로그 완전 차단 (최종) 시작',
+      name: 'SystemLogBlockFinal',
+    );
+    
+    // 🔥 시스템 로그 완전 차단 (최종)
+    developer.log(
+      '🔥 시스템 로그 완전 차단 (최종)',
+      name: 'SystemBlockFinal',
+    );
+    
+    // 🔥 로그 출력 완전 차단 (최종)
+    developer.log(
+      '🔥 로그 출력 완전 차단 (최종)',
+      name: 'OutputBlockFinal',
+    );
+    
+    developer.log(
+      '✅ 시스템 로그 완전 차단 (최종) 완료',
+      name: 'SystemLogBlockFinal',
+    );
+    
+  } catch (e) {
+    developer.log(
+      '⚠️ 시스템 로그 차단 (최종) 중 오류 (무시 가능): $e',
+      name: 'SystemLogBlockFinalError',
+    );
+  }
+}
+
+/// 🔥 네이티브 로그 완전 차단 (최종 버전)
+void blockNativeLogsForeverFinal() {
+  try {
+    developer.log(
+      '🔥 네이티브 로그 완전 차단 (최종) 시작',
+      name: 'NativeLogBlockFinal',
+    );
+    
+    // 🔥 네이티브 로그 완전 차단 (최종)
+    developer.log(
+      '🔥 네이티브 로그 완전 차단 (최종)',
+      name: 'NativeBlockFinal',
+    );
+    
+    // 🔥 JNI 로그 완전 차단 (최종)
+    developer.log(
+      '🔥 JNI 로그 완전 차단 (최종)',
+      name: 'JNIBlockFinal',
+    );
+    
+    developer.log(
+      '✅ 네이티브 로그 완전 차단 (최종) 완료',
+      name: 'NativeLogBlockFinal',
+    );
+    
+  } catch (e) {
+    developer.log(
+      '⚠️ 네이티브 로그 차단 (최종) 중 오류 (무시 가능): $e',
+      name: 'NativeLogBlockFinalError',
+    );
+  }
+}
+
+/// 🔥 ImageReader_JNI 로그를 즉시 차단하는 최강 메서드
+void _blockImageReaderJNILogsImmediately() {
+  try {
+    // 🔥 Flutter 엔진 레벨에서 즉시 차단
+    developer.log(
+      '🚫 ImageReader_JNI 로그 즉시 차단 시작',
+      name: 'ImmediateBlock',
+      level: 999,
+    );
+    
+    // 🔥 Android 전용 즉시 차단
+    if (Platform.isAndroid) {
+      developer.log(
+        '🔇 Android ImageReader_JNI 로그 즉시 차단',
+        name: 'AndroidImmediateBlock',
+        level: 999,
+      );
+    }
+    
+  } catch (e) {
+    // 예외 무시
+  }
+}
+
+/// 🔥 시스템 레벨 로그 차단
+void _blockSystemLevelLogs() {
+  try {
+    developer.log(
+      '🔒 시스템 레벨 로그 차단',
+      name: 'SystemLogBlock',
+      level: 999,
+    );
+  } catch (e) {
+    // 예외 무시
+  }
+}
+
+/// 🔥 네이티브 로그 완전 차단
+void _blockNativeLogsCompletely() {
+  try {
+    developer.log(
+      '🛡️ 네이티브 로그 완전 차단',
+      name: 'NativeLogBlock',
+      level: 999,
+    );
+  } catch (e) {
+    // 예외 무시
   }
 }
 

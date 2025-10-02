@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_application_1/components/woosong_button.dart';
 import 'package:flutter_application_1/components/woosong_input_field.dart';
@@ -45,7 +46,7 @@ class FriendsTabs {
                 border: Border.all(color: const Color(0xFFE2E8F0)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
+                    color: Colors.black.withOpacity(0.05),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -136,9 +137,9 @@ class FriendsTabs {
           padding: const EdgeInsets.all(12),
           margin: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
-            color: Colors.blue.withValues(alpha: 0.1),
+            color: Colors.blue.withOpacity(0.1),
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+            border: Border.all(color: Colors.blue.withOpacity(0.3)),
           ),
           child: Row(
             children: [
@@ -169,7 +170,7 @@ class FriendsTabs {
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
+                      color: const Color(0xFF1E3A8A).withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -217,40 +218,74 @@ class FriendsTabs {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       children: [
         if (controller.friendRequests.isNotEmpty) ...[
-          Container(
-            padding: const EdgeInsets.all(12),
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(
-              color: Colors.red.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.notifications_active,
-                  color: Colors.red.shade600,
-                  size: 16,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    AppLocalizations.of(
-                      context,
-                    )!.newFriendRequests(controller.friendRequests.length),
-                    style: TextStyle(
-                      color: Colors.red.shade700,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
+          TweenAnimationBuilder<double>(
+            duration: const Duration(milliseconds: 500),
+            tween: Tween(begin: 0.0, end: 1.0),
+            builder: (context, value, child) {
+              return Transform.scale(
+                scale: 0.95 + (0.05 * value),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.red.withOpacity(0.3)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.red.withOpacity(0.1 * value),
+                        blurRadius: 8 * value,
+                        offset: Offset(0, 2 * value),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        width: 16,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade600,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.notifications_active,
+                          color: Colors.white,
+                          size: 10,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          AppLocalizations.of(
+                            context,
+                          )!.newFriendRequests(controller.friendRequests.length),
+                          style: TextStyle(
+                            color: Colors.red.shade700,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              );
+            },
           ),
         ],
 
-        if (controller.friendRequests.isEmpty)
+        if (controller.friendRequests.isEmpty) ...[
+          // 🔥 디버그: 받은 요청이 비어있을 때 로그 출력
+          Builder(
+            builder: (context) {
+              if (kDebugMode) {
+                debugPrint('📋 받은 요청 목록이 비어있음 - 친구 요청 개수: ${controller.friendRequests.length}');
+              }
+              return const SizedBox.shrink();
+            },
+          ),
           SizedBox(
             height: 300,
             child: Center(
@@ -261,7 +296,7 @@ class FriendsTabs {
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
+                      color: const Color(0xFF1E3A8A).withOpacity(0.1),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -282,8 +317,20 @@ class FriendsTabs {
                 ],
               ),
             ),
-          )
-        else
+          ),
+        ] else ...[
+          // 🔥 디버그: 받은 요청이 있을 때 로그 출력
+          Builder(
+            builder: (context) {
+              if (kDebugMode) {
+                debugPrint('📋 받은 요청 목록 표시 - 친구 요청 개수: ${controller.friendRequests.length}');
+                for (final request in controller.friendRequests) {
+                  debugPrint('  - ${request.fromUserName}(${request.fromUserId})');
+                }
+              }
+              return const SizedBox.shrink();
+            },
+          ),
           ...controller.friendRequests.map(
             (request) => FriendsTiles.buildReceivedRequestTile(
               context,
@@ -292,6 +339,7 @@ class FriendsTabs {
               () => onRejectRequest(request.fromUserId, request.fromUserName),
             ),
           ),
+        ],
       ],
     );
   }
