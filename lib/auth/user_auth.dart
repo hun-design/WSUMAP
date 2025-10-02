@@ -418,34 +418,48 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 🔥 게스트 로그인 - 위치 전송 및 웹소켓 연결 제거
+  /// 🔥 게스트 로그인 - 서버 API 연동
   Future<void> loginAsGuest({BuildContext? context}) async {
     _setLoading(true);
     _clearError();
 
     try {
-      // 🔥 게스트 로그인 지연 시간 제거 - 즉시 처리
-      
       // 게스트 ID 생성 (타임스탬프 기반)
       final guestId = 'guest_${DateTime.now().millisecondsSinceEpoch}';
 
-      _userRole = UserRole.external;
-      _userId = guestId;
-      if (context != null) {
-        final l10n = AppLocalizations.of(context)!;
-        _userName = l10n.guest;
-      } else {
-        _userName = '게스트';
-      }
-      _isLoggedIn = true;
-      _isFirstLaunch = false;
+      debugPrint('🔄 게스트 로그인 시도 - ID: $guestId');
 
-      // 🔥 게스트 로그인 시 위치 전송 및 웹소켓 연결 시작 제거
-      debugPrint('✅ 게스트 로그인 완료 - 위치 전송 및 웹소켓 연결 없음');
-      notifyListeners();
+      // 🔥 서버 게스트 로그인 API 호출
+      final result = await AuthService.guestLogin(id: guestId);
+
+      if (result.isSuccess) {
+        _userRole = UserRole.external;
+        _userId = guestId;
+        if (context != null) {
+          final l10n = AppLocalizations.of(context)!;
+          _userName = l10n.guest;
+        } else {
+          _userName = '게스트';
+        }
+        _isLoggedIn = true;
+        _isFirstLaunch = false;
+        _isTutorial = true; // 게스트는 항상 튜토리얼 표시
+
+        // 🔥 게스트 로그인 시 위치 전송 및 웹소켓 연결 시작 제거
+        debugPrint('✅ 게스트 로그인 완료 - 위치 전송 및 웹소켓 연결 없음');
+        notifyListeners();
+      } else {
+        debugPrint('❌ 게스트 로그인 실패: ${result.message}');
+        _setError(result.message);
+      }
     } catch (e) {
       debugPrint('❌ 게스트 로그인 오류: $e');
-      _setError('게스트 로그인 중 오류가 발생했습니다.');
+      if (context != null) {
+        final l10n = AppLocalizations.of(context)!;
+        _setError(l10n.unexpected_login_error);
+      } else {
+        _setError('게스트 로그인 중 오류가 발생했습니다.');
+      }
     } finally {
       _setLoading(false);
     }

@@ -221,6 +221,73 @@ class AuthService {
     }
   }
 
+  /// 🔥 게스트 로그인 API 호출
+  static Future<LoginResult> guestLogin({required String id}) async {
+    try {
+      debugPrint('=== 🔥 게스트 로그인 API 요청 ===');
+      debugPrint('URL: $baseUrl/guest_login');
+      debugPrint('게스트 ID: $id');
+
+      final requestBody = {'id': id};
+
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/guest_login'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode(requestBody),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      debugPrint('=== 🔥 게스트 로그인 API 응답 ===');
+      debugPrint('상태코드: ${response.statusCode}');
+      debugPrint('응답 내용: ${response.body}');
+
+      switch (response.statusCode) {
+        case 200:
+          // 게스트 로그인 성공
+          final data = jsonDecode(response.body);
+          
+          if (data['success'] == true && data['token'] != null) {
+            // 🔥 JWT 토큰 저장
+            await JwtService.saveToken(data['token']);
+            debugPrint('🔐 게스트 JWT 토큰 저장 완료');
+            
+            return LoginResult.success(
+              userId: id,
+              userName: '게스트',
+              isLogin: true,
+              isTutorial: true, // 게스트는 항상 튜토리얼 표시
+            );
+          } else {
+            debugPrint('❌ 게스트 로그인 응답 형식 오류');
+            return LoginResult.failure('게스트 로그인 처리 중 오류가 발생했습니다.');
+          }
+        case 500:
+          debugPrint('❌ 게스트 로그인 서버 오류');
+          return LoginResult.failure('게스트 로그인 처리 중 서버 오류가 발생했습니다.');
+        default:
+          debugPrint('❌ 게스트 로그인 실패 - 알 수 없는 오류: ${response.statusCode}');
+          return LoginResult.failure(
+            '게스트 로그인 중 오류가 발생했습니다. (${response.statusCode})',
+          );
+      }
+    } catch (e) {
+      debugPrint('❌ 게스트 로그인 네트워크 오류: $e');
+      if (e.toString().contains('timeout') ||
+          e.toString().contains('TimeoutException')) {
+        return LoginResult.failure('서버 응답 시간이 초과되었습니다. 네트워크 연결을 확인해주세요.');
+      }
+      if (e.toString().contains('SocketException') ||
+          e.toString().contains('network')) {
+        return LoginResult.failure('네트워크 연결에 실패했습니다. 인터넷 연결을 확인해주세요.');
+      }
+      return LoginResult.failure('게스트 로그인 중 예상치 못한 오류가 발생했습니다.');
+    }
+  }
+
   /// 🔥 로그아웃 API 호출 (JWT 토큰 포함)
   static Future<AuthResult> logout({required String id}) async {
     try {
