@@ -31,22 +31,24 @@ class ApiService {
     }
   }
 
-  /// 특정 건물의 층 목록을 받아오는 함수
-  /// 🔥 서버 라우트: GET /floor/names/:building (building-service)
+  /// 특정 건물의 층 목록을 받아오는 함수 (전체 Floor 정보 포함)
+  /// 🔥 서버 라우트: GET /floor/:building (building-service)
+  /// 반환: [{Floor_Id, Floor_Number, Building_Name, File}, ...]
   Future<List<dynamic>> fetchFloorList(String buildingName) async {
     try {
       // URL 인코딩 적용
       final encodedBuildingName = Uri.encodeComponent(buildingName);
-      final response = await ApiHelper.get('${ApiConfig.floorBase}/names/$encodedBuildingName');
+      // 🔥 전체 Floor 정보를 가져오기 위해 /floor/:building 엔드포인트 사용
+      final response = await ApiHelper.get('${ApiConfig.floorBase}/$encodedBuildingName');
       
       if (response.statusCode == 200) {
         // 서버 응답을 디코딩하여 floorList 추출
         final List<dynamic> floorList = json.decode(utf8.decode(response.bodyBytes));
         
-        // 서버에서 [{Floor_Number: '...'}, ...] 형식으로 반환
+        // 🔥 전체 Floor 객체를 반환 (Floor_Id, Floor_Number, Building_Name, File 포함)
         return floorList.map((item) {
-          if (item is Map<String, dynamic> && item.containsKey('Floor_Number')) {
-            return item['Floor_Number'];
+          if (item is Map<String, dynamic>) {
+            return item;
           }
           return item;
         }).toList();
