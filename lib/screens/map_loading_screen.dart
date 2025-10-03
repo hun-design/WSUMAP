@@ -200,18 +200,18 @@ class _MapLoadingScreenState extends State<MapLoadingScreen>
     );
   }
 
-  /// 🔥 로그인 상태 확인 후 적절한 화면으로 이동 (게스트 진입 방지)
+  /// 🔥 로그인 상태 확인 후 적절한 화면으로 이동 (게스트 모드 지원)
   void _checkLoginStatusAndNavigate() {
     final userAuth = Provider.of<UserAuth>(context, listen: false);
     
-    // 🔥 로그인 상태 확인
+    // 🔥 로그인 상태 또는 게스트 모드 확인
     if (userAuth.isLoggedIn) {
-      // 로그인 성공 시 MapScreen으로 이동
+      // 로그인 성공 또는 게스트 모드 시 MapScreen으로 이동
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const MapScreen()),
       );
     } else {
-      // 🔥 로그인 실패 시 로그인 화면으로 돌아가기 (게스트 진입 방지)
+      // 🔥 로그인 실패 시 로그인 화면으로 돌아가기
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const LoginFormView()),
         (route) => false,
@@ -231,8 +231,19 @@ class _MapLoadingScreenState extends State<MapLoadingScreen>
   Widget build(BuildContext context) {
     return Consumer<UserAuth>(
       builder: (context, userAuth, child) {
-        // 🔥 로그인 실패 감지 시 즉시 로그인 화면으로 이동 및 에러 다이얼로그 표시
-        if (!userAuth.isLoading && !userAuth.isLoggedIn && userAuth.lastError != null) {
+        // 🔥 게스트 로그인 완료 감지 시 즉시 맵 화면으로 이동
+        if (!userAuth.isLoading && userAuth.isLoggedIn && userAuth.isGuest) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              debugPrint('✅ 게스트 로그인 완료 감지 - 즉시 맵 화면으로 이동');
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => const MapScreen()),
+              );
+            }
+          });
+        }
+        // 🔥 로그인 실패 감지 시 즉시 로그인 화면으로 이동 및 에러 다이얼로그 표시 (게스트 제외)
+        else if (!userAuth.isLoading && !userAuth.isLoggedIn && userAuth.lastError != null && !userAuth.isGuest) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _handleLoginFailure();
             // 🔥 에러 다이얼로그 표시

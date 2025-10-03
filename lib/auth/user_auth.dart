@@ -418,7 +418,7 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 🔥 게스트 로그인 - 서버 API 연동
+  /// 🔥 게스트 로그인 - 로컬 처리 (서버 없이)
   Future<void> loginAsGuest({BuildContext? context}) async {
     _setLoading(true);
     _clearError();
@@ -429,29 +429,22 @@ class UserAuth extends ChangeNotifier {
 
       debugPrint('🔄 게스트 로그인 시도 - ID: $guestId');
 
-      // 🔥 서버 게스트 로그인 API 호출
-      final result = await AuthService.guestLogin(id: guestId);
-
-      if (result.isSuccess) {
-        _userRole = UserRole.external;
-        _userId = guestId;
-        if (context != null) {
-          final l10n = AppLocalizations.of(context)!;
-          _userName = l10n.guest;
-        } else {
-          _userName = '게스트';
-        }
-        _isLoggedIn = true;
-        _isFirstLaunch = false;
-        _isTutorial = true; // 게스트는 항상 튜토리얼 표시
-
-        // 🔥 게스트 로그인 시 위치 전송 및 웹소켓 연결 시작 제거
-        debugPrint('✅ 게스트 로그인 완료 - 위치 전송 및 웹소켓 연결 없음');
-        notifyListeners();
+      // 🔥 서버 없이 로컬에서 게스트 로그인 처리
+      _userRole = UserRole.external;
+      _userId = guestId;
+      if (context != null) {
+        final l10n = AppLocalizations.of(context)!;
+        _userName = l10n.guest;
       } else {
-        debugPrint('❌ 게스트 로그인 실패: ${result.message}');
-        _setError(result.message);
+        _userName = '게스트';
       }
+      _isLoggedIn = true;
+      _isFirstLaunch = false;
+      _isTutorial = true; // 게스트는 항상 튜토리얼 표시
+
+      // 🔥 게스트 로그인 시 위치 전송 및 웹소켓 연결 시작 제거
+      debugPrint('✅ 게스트 로그인 완료 - 위치 전송 및 웹소켓 연결 없음');
+      notifyListeners();
     } catch (e) {
       debugPrint('❌ 게스트 로그인 오류: $e');
       if (context != null) {
