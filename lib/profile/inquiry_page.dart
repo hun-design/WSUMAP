@@ -959,11 +959,12 @@ void didChangeDependencies() {
           _selectedImages.clear(); // 첨부 이미지 초기화
         });
 
-        // "내 문의" 탭 새로고침
-        widget.onInquirySubmitted?.call();
-        
         // 🔥 문의 제출 성공 후 "내 문의" 탭으로 자동 이동
         _navigateToMyInquiriesTab();
+        
+        // 🔥 위젯 마운트 대기 후 새로고침
+        await Future.delayed(const Duration(milliseconds: 500));
+        widget.onInquirySubmitted?.call();
               } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

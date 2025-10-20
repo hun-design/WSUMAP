@@ -1,4 +1,4 @@
-// lib/core/result.dart - 새로 생성
+// lib/core/result.dart - 최적화된 버전
 import 'package:flutter/material.dart';
 
 /// 🔥 Result<T> 패턴 - 에러 처리 표준화
@@ -106,17 +106,16 @@ class Failure<T> extends Result<T> {
   
   const Failure(this._error, [this._errorCode, this.timestamp]);
   
+  Failure.withTimestamp(String error, [String? errorCode]) 
+      : _error = error,
+        _errorCode = errorCode,
+        timestamp = DateTime.now();
+  
   @override
   String get error => _error;
   
   @override
   String? get errorCode => _errorCode;
-  
-  /// 타임스탬프를 포함한 생성자
-  Failure.withTimestamp(String error, [String? errorCode]) 
-      : _error = error,
-        _errorCode = errorCode,
-        timestamp = null; // const 문제로 null로 설정, 실제 사용 시 DateTime.now() 할당
   
   @override
   String toString() => 'Failure(error: $error, errorCode: $errorCode)';
@@ -165,6 +164,12 @@ extension ResultExtensions<T> on Result<T> {
     }
     return this;
   }
+  
+  /// 성공 시 데이터를 옵셔널로 반환
+  T? get dataOrNull => data;
+  
+  /// 실패 시 에러를 옵셔널로 반환
+  String? get errorOrNull => error;
 }
 
 /// 🔥 Future<Result<T>> 확장 메서드들
@@ -197,6 +202,24 @@ extension FutureResultExtensions<T> on Future<Result<T>> {
     } else {
       return Failure<R>(result.error!, result.errorCode);
     }
+  }
+  
+  /// 성공 시에만 실행
+  Future<Result<T>> onSuccessAsync(void Function(T data) action) async {
+    final result = await this;
+    if (result.isSuccess) {
+      action(result.data!);
+    }
+    return result;
+  }
+  
+  /// 실패 시에만 실행
+  Future<Result<T>> onFailureAsync(void Function(String error, String? errorCode) action) async {
+    final result = await this;
+    if (result.isFailure) {
+      action(result.error!, result.errorCode);
+    }
+    return result;
   }
 }
 
@@ -257,10 +280,21 @@ class ResultHelper {
         ? results.last 
         : Failure<T>('No results provided', 'EMPTY_LIST');
   }
+  
+  /// 모든 Result가 성공인지 확인
+  static bool allSuccess<T>(List<Result<T>> results) {
+    return results.every((r) => r.isSuccess);
+  }
+  
+  /// 하나라도 성공한 Result가 있는지 확인
+  static bool anySuccess<T>(List<Result<T>> results) {
+    return results.any((r) => r.isSuccess);
+  }
 }
 
 /// 🔥 에러 코드 상수들
 class ErrorCodes {
+  // 기본 에러 코드
   static const String networkError = 'NETWORK_ERROR';
   static const String timeoutError = 'TIMEOUT_ERROR';
   static const String parseError = 'PARSE_ERROR';
@@ -271,7 +305,7 @@ class ErrorCodes {
   static const String apiError = 'API_ERROR';
   static const String unknownError = 'UNKNOWN_ERROR';
   
-  // 도메인별 에러 코드들
+  // 도메인별 에러 코드
   static const String buildingNotFound = 'BUILDING_NOT_FOUND';
   static const String categoryNotFound = 'CATEGORY_NOT_FOUND';
   static const String locationPermissionDenied = 'LOCATION_PERMISSION_DENIED';

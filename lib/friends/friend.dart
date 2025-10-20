@@ -1,4 +1,4 @@
-// lib/friends/friend.dart
+// lib/friends/friend.dart - 최적화된 버전
 
 /// 친구 정보 모델 클래스
 class Friend {
@@ -10,7 +10,7 @@ class Friend {
   final String lastLocation;
   final bool isLocationPublic;
 
-  Friend({
+  const Friend({
     required this.userId,
     required this.userName,
     required this.profileImage,
@@ -66,6 +66,44 @@ class Friend {
       'isLocationPublic': isLocationPublic,
     };
   }
+
+  /// copyWith 메서드 추가 (불변성 유지)
+  Friend copyWith({
+    String? userId,
+    String? userName,
+    String? profileImage,
+    String? phone,
+    bool? isLogin,
+    String? lastLocation,
+    bool? isLocationPublic,
+  }) {
+    return Friend(
+      userId: userId ?? this.userId,
+      userName: userName ?? this.userName,
+      profileImage: profileImage ?? this.profileImage,
+      phone: phone ?? this.phone,
+      isLogin: isLogin ?? this.isLogin,
+      lastLocation: lastLocation ?? this.lastLocation,
+      isLocationPublic: isLocationPublic ?? this.isLocationPublic,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Friend &&
+          runtimeType == other.runtimeType &&
+          userId == other.userId &&
+          userName == other.userName &&
+          isLogin == other.isLogin;
+
+  @override
+  int get hashCode => userId.hashCode ^ userName.hashCode ^ isLogin.hashCode;
+
+  @override
+  String toString() {
+    return 'Friend(userId: $userId, userName: $userName, isLogin: $isLogin)';
+  }
 }
 
 /// 받은 친구 요청 정보 모델 클래스
@@ -74,7 +112,7 @@ class FriendRequest {
   final String fromUserName;
   final String createdAt;
 
-  FriendRequest({
+  const FriendRequest({
     required this.fromUserId, 
     required this.fromUserName,
     required this.createdAt,
@@ -113,6 +151,21 @@ class FriendRequest {
       ]),
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FriendRequest &&
+          runtimeType == other.runtimeType &&
+          fromUserId == other.fromUserId;
+
+  @override
+  int get hashCode => fromUserId.hashCode;
+
+  @override
+  String toString() {
+    return 'FriendRequest(fromUserId: $fromUserId, fromUserName: $fromUserName)';
+  }
 }
 
 /// 보낸 친구 요청 정보 모델 클래스
@@ -121,7 +174,7 @@ class SentFriendRequest {
   final String toUserName;
   final String requestDate;
 
-  SentFriendRequest({
+  const SentFriendRequest({
     required this.toUserId,
     required this.toUserName,
     required this.requestDate,
@@ -148,61 +201,71 @@ class SentFriendRequest {
       requestDate: finalRequestDate,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SentFriendRequest &&
+          runtimeType == other.runtimeType &&
+          toUserId == other.toUserId;
+
+  @override
+  int get hashCode => toUserId.hashCode;
+
+  @override
+  String toString() {
+    return 'SentFriendRequest(toUserId: $toUserId, toUserName: $toUserName)';
+  }
 }
 
-/// JSON에서 문자열 값을 안전하게 추출하는 헬퍼 함수
+/// 🔥 JSON 헬퍼 함수들 (최적화)
+
+/// JSON에서 문자열 값을 안전하게 추출
 String _extractString(Map<String, dynamic> json, List<String> keys) {
-  for (String key in keys) {
-    if (json.containsKey(key)) {
-      final value = json[key];
-      if (value != null) {
-        return value.toString().trim();
-      }
+  for (final key in keys) {
+    final value = json[key];
+    if (value != null) {
+      return value.toString().trim();
     }
   }
   return '';
 }
 
-/// JSON에서 boolean 값을 안전하게 추출하는 헬퍼 함수
+/// JSON에서 boolean 값을 안전하게 추출
 bool _extractBool(Map<String, dynamic> json, List<String> keys) {
-  for (String key in keys) {
-    if (json.containsKey(key)) {
-      final value = json[key];
-      if (value != null) {
-        if (value is bool) return value;
-        if (value is String) {
-          return value.toLowerCase() == 'true' || value == '1';
-        }
-        if (value is int) return value == 1;
+  for (final key in keys) {
+    final value = json[key];
+    if (value != null) {
+      if (value is bool) return value;
+      if (value is String) {
+        return value.toLowerCase() == 'true' || value == '1';
       }
+      if (value is int) return value == 1;
     }
   }
   return false;
 }
 
-/// 위치 정보를 안전하게 추출하는 헬퍼 함수 (새로 추가)
+/// 위치 정보를 안전하게 추출
 String _extractLocation(Map<String, dynamic> json, List<String> keys) {
-  for (String key in keys) {
-    if (json.containsKey(key)) {
-      final value = json[key];
-      if (value != null) {
-        // JSON 객체인 경우 처리: {"x": 36.3360047, "y": 127.4453375}
-        if (value is Map<String, dynamic>) {
-          final x = value['x'];
-          final y = value['y'];
-          if (x != null && y != null) {
-            // 표준 JSON 형태로 변환
-            return '{x: $x, y: $y}';
-          }
+  for (final key in keys) {
+    final value = json[key];
+    if (value != null) {
+      // JSON 객체인 경우 처리: {"x": 36.3360047, "y": 127.4453375}
+      if (value is Map<String, dynamic>) {
+        final x = value['x'];
+        final y = value['y'];
+        if (x != null && y != null) {
+          return '{x: $x, y: $y}';
         }
-        // 문자열인 경우 그대로 반환
-        else if (value is String) {
-          return value.trim();
-        }
-        // 기타 타입은 문자열로 변환
-        else {
-          return value.toString().trim();
-        }
+      }
+      // 문자열인 경우 그대로 반환
+      else if (value is String) {
+        return value.trim();
+      }
+      // 기타 타입은 문자열로 변환
+      else {
+        return value.toString().trim();
       }
     }
   }

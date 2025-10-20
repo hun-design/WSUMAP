@@ -1,4 +1,5 @@
-// lib/map/location_handler.dart
+// lib/map/map_location_handler.dart - 최적화된 버전
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +8,7 @@ import 'package:flutter_application_1/controllers/map_controller.dart';
 import 'package:flutter_application_1/managers/location_manager.dart';
 import '../generated/app_localizations.dart';
 
+/// 지도 위치 핸들러
 class MapLocationHandler {
   final BuildContext context;
   final MapScreenController controller;
@@ -36,22 +38,13 @@ class MapLocationHandler {
   void dispose() {
     debugPrint('🗺️ MapLocationHandler dispose 시작...');
     
-    // 🔥 모든 타이머 정리
-    try {
-      _autoMoveTimer?.cancel();
-      _autoMoveTimer = null;
-    } catch (e) {
-      debugPrint('⚠️ _autoMoveTimer 취소 실패: $e');
-    }
+    // 모든 타이머 정리
+    _autoMoveTimer?.cancel();
+    _autoMoveTimer = null;
+    _forceAutoMoveTimer?.cancel();
+    _forceAutoMoveTimer = null;
 
-    try {
-      _forceAutoMoveTimer?.cancel();
-      _forceAutoMoveTimer = null;
-    } catch (e) {
-      debugPrint('⚠️ _forceAutoMoveTimer 취소 실패: $e');
-    }
-
-    // 🔥 상태 변수들 초기화
+    // 상태 변수들 초기화
     _hasFoundInitialLocation = false;
     _isMapReady = false;
     _hasTriedAutoMove = false;
@@ -79,7 +72,7 @@ class MapLocationHandler {
     _hasFoundInitialLocation = found;
   }
 
-  // 🔥 안전한 위치 권한 체크 및 요청
+  /// 안전한 위치 권한 체크 및 요청
   Future<void> checkAndRequestLocation() async {
     if (_isRequestingLocation) {
       debugPrint('⚠️ 이미 위치 요청 중입니다.');
@@ -120,7 +113,7 @@ class MapLocationHandler {
     }
   }
 
-  // 🔥 안전한 초기 위치 요청
+  /// 안전한 초기 위치 요청
   Future<void> requestInitialLocationSafely(LocationManager locationManager) async {
     if (_isRequestingLocation || _hasFoundInitialLocation) {
       return;
@@ -132,6 +125,7 @@ class MapLocationHandler {
       
       await Future.delayed(const Duration(milliseconds: 100));
       
+      // LocationManager 초기화 대기
       int retries = 0;
       while (!locationManager.isInitialized && retries < 50) {
         await Future.delayed(const Duration(milliseconds: 100));
@@ -146,6 +140,7 @@ class MapLocationHandler {
 
       debugPrint('✅ LocationManager 초기화 완료');
 
+      // 캐시된 위치 확인
       if (locationManager.hasValidLocation && locationManager.currentLocation != null) {
         debugPrint('🎯 Welcome에서 미리 준비된 위치 발견! 즉시 사용');
         _hasFoundInitialLocation = true;
@@ -179,7 +174,7 @@ class MapLocationHandler {
     }
   }
 
-  // 지도와 위치가 모두 준비되면 자동 이동
+  /// 지도와 위치가 모두 준비되면 자동 이동
   void checkAndAutoMove() {
     debugPrint('🎯 자동 이동 조건 체크...');
     debugPrint('_isMapReady: $_isMapReady');
@@ -194,7 +189,7 @@ class MapLocationHandler {
     }
   }
 
-  // 🔥 즉시 자동 이동 예약 (위치 발견 즉시)
+  /// 즉시 자동 이동 예약
   void scheduleImmediateAutoMove() {
     if (_autoMoveScheduled) return;
     
@@ -215,6 +210,7 @@ class MapLocationHandler {
     });
   }
 
+  /// 자동 이동 예약
   void scheduleAutoMove() {
     if (_autoMoveScheduled) return;
     
@@ -236,7 +232,7 @@ class MapLocationHandler {
     });
   }
 
-  // 🔥 강건한 자동 이동 실행
+  /// 강건한 자동 이동 실행
   Future<void> executeRobustAutoMove() async {
     if (_hasTriedAutoMove) return;
     
@@ -277,6 +273,7 @@ class MapLocationHandler {
     }
   }
 
+  /// 자동 이동 실행
   Future<void> executeAutoMove() async {
     if (_hasTriedAutoMove) return;
     
@@ -296,7 +293,7 @@ class MapLocationHandler {
     }
   }
 
-  // 🔥 위치 이동 시도 (성공/실패 반환)
+  /// 위치 이동 시도 (성공/실패 반환)
   Future<bool> tryMoveToLocation() async {
     try {
       debugPrint('📍 위치 이동 시도 시작...');
@@ -317,7 +314,7 @@ class MapLocationHandler {
     }
   }
 
-  // 🔥 안전한 내 위치로 이동
+  /// 안전한 내 위치로 이동
   Future<void> moveToMyLocationSafely() async {
     if (_isRequestingLocation) {
       debugPrint('⚠️ 이미 위치 요청 중입니다.');
@@ -330,6 +327,7 @@ class MapLocationHandler {
       
       final locationManager = Provider.of<LocationManager>(context, listen: false);
       
+      // LocationManager 초기화 대기
       if (!locationManager.isInitialized) {
         debugPrint('⏳ LocationManager 초기화 대기...');
         for (int i = 0; i < 10; i++) {
@@ -343,6 +341,7 @@ class MapLocationHandler {
         }
       }
 
+      // 권한 확인
       await locationManager.recheckPermissionStatus();
       
       if (locationManager.permissionStatus != loc.PermissionStatus.granted) {
@@ -356,12 +355,14 @@ class MapLocationHandler {
         }
       }
 
+      // 위치 요청
       if (!locationManager.hasValidLocation) {
         debugPrint('📍 새로운 위치 요청 중...');
         await locationManager.requestLocation();
         await Future.delayed(const Duration(milliseconds: 1000));
       }
 
+      // 위치 이동 시도 (최대 3회)
       bool moveSuccess = false;
       for (int attempt = 1; attempt <= 3; attempt++) {
         try {
@@ -397,6 +398,7 @@ class MapLocationHandler {
     }
   }
 
+  /// 위치 이동 성공 메시지 표시
   void showLocationMoveSuccess() {
     final l10n = AppLocalizations.of(context)!;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -419,6 +421,7 @@ class MapLocationHandler {
     );
   }
 
+  /// 위치 에러 메시지 표시
   void showLocationError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

@@ -1,8 +1,10 @@
-// lib/map/navigation_state_manager.dart
+// lib/map/navigation_state_manager.dart - 최적화된 버전
+
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/building.dart';
 import 'package:flutter_application_1/controllers/map_controller.dart';
 
+/// 네비게이션 상태 관리자
 class NavigationStateManager extends ChangeNotifier {
   bool _showNavigationStatus = false;
   String _estimatedDistance = '';
@@ -17,7 +19,7 @@ class NavigationStateManager extends ChangeNotifier {
   Building? get navigationStart => _navigationStart;
   Building? get navigationEnd => _navigationEnd;
 
-  // 상태 초기화
+  /// 상태 초기화
   void clearNavigation() {
     _showNavigationStatus = false;
     _estimatedDistance = '';
@@ -27,7 +29,7 @@ class NavigationStateManager extends ChangeNotifier {
     notifyListeners();
   }
 
-  // 길찾기 결과 처리 메서드
+  /// 길찾기 결과 처리
   void handleDirectionsResult(Map<String, dynamic> result, BuildContext context) {
     final startBuilding = result['start'] as Building?;
     final endBuilding = result['end'] as Building?;
@@ -58,7 +60,7 @@ class NavigationStateManager extends ChangeNotifier {
     }
   }
 
-  // 실제 길 안내 시작 메서드
+  /// 실제 길 안내 시작
   void startActualNavigation(MapScreenController controller, BuildContext context) {
     if (_navigationEnd == null) {
       debugPrint('도착지가 설정되지 않았습니다');
@@ -91,6 +93,7 @@ class NavigationStateManager extends ChangeNotifier {
     }
   }
 
+  /// 성공 메시지 표시
   void _showSuccessMessage(BuildContext context, Building? endBuilding, String distance, String time) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -133,6 +136,7 @@ class NavigationStateManager extends ChangeNotifier {
     );
   }
 
+  /// 네비게이션 시작 메시지 표시
   void _showNavigationStartMessage(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -161,6 +165,7 @@ class NavigationStateManager extends ChangeNotifier {
     );
   }
 
+  /// 에러 메시지 표시
   void _showErrorMessage(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -180,7 +185,7 @@ class NavigationStateManager extends ChangeNotifier {
   void dispose() {
     debugPrint('🗺️ NavigationStateManager dispose 시작...');
     
-    // 🔥 모든 상태 초기화로 메모리 정리
+    // 모든 상태 초기화
     _showNavigationStatus = false;
     _estimatedDistance = '';
     _estimatedTime = '';

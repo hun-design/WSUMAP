@@ -1,14 +1,15 @@
-// lib/utils/category_name_mapper.dart
+// lib/utils/category_name_mapper.dart - 최적화된 버전
 
+/// 카테고리 이름 매핑 유틸리티
 class CategoryNameMapper {
-  static final Map<String, String> _koreanToIdMap = {
+  static const Map<String, String> _koreanToIdMap = {
     '카페': 'cafe',
     '식당': 'restaurant',
     '프린터': 'printer',
     '복사기': 'copier',
-    'ATM': 'atm', // ATM 매핑
-    '은행(atm)': 'atm', // 은행(atm) 매핑
-    'bank': 'atm', // SVG의 bank ID 매핑
+    'ATM': 'atm',
+    '은행(atm)': 'atm',
+    'bank': 'atm',
     '보건소': 'health_center',
     '의료': 'medical',
     '라운지': 'lounge',
@@ -28,7 +29,7 @@ class CategoryNameMapper {
     return _koreanToIdMap[koreanName.trim()] ?? koreanName.trim().toLowerCase();
   }
 
-  /// ID → 한국어 (예: 서버에 요청할 때)
+  /// ID → 한국어
   static String toKoreanName(String categoryId) {
     return _koreanToIdMap.entries
         .firstWhere(
@@ -38,6 +39,6 @@ class CategoryNameMapper {
         .key;
   }
 
-  /// 외부에서 한글 ↔️ ID 전체 Map 접근이 필요할 경우 사용
-  static Map<String, String> get koreanToId => _koreanToIdMap;
+  /// 외부에서 한글 ↔️ ID 전체 Map 접근
+  static Map<String, String> get koreanToId => Map.from(_koreanToIdMap);
 }

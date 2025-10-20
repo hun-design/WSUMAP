@@ -1,8 +1,25 @@
-// lib/core/base_controller.dart - 최적화된 기본 컨트롤러
+// lib/core/base_controller.dart - 최적화된 버전
 
+import 'dart:async';
 import 'package:flutter/material.dart';
-import '../utils/performance_utils.dart';
 import 'error_handler.dart';
+
+/// 🔥 디바운서 클래스 (내부 구현)
+class Debouncer {
+  final Duration delay;
+  Timer? _timer;
+
+  Debouncer({required this.delay});
+
+  void call(VoidCallback action) {
+    _timer?.cancel();
+    _timer = Timer(delay, action);
+  }
+
+  void dispose() {
+    _timer?.cancel();
+  }
+}
 
 /// 모든 컨트롤러의 기본 클래스
 abstract class BaseController extends ChangeNotifier {
@@ -71,28 +88,13 @@ abstract class BaseController extends ChangeNotifier {
 
     try {
       if (showLoading) setLoading(true);
-      
-      if (operationName != null) {
-        PerformanceProfiler.start(operationName);
-      }
-
       final result = await operation();
-      
-      if (operationName != null) {
-        PerformanceProfiler.end(operationName);
-      }
-
       if (showLoading) setLoading(false);
       return result;
       
     } catch (e, stackTrace) {
       final appError = ErrorHandler.fromException(e, stackTrace: stackTrace);
       setError(appError);
-      
-      if (operationName != null) {
-        PerformanceProfiler.end(operationName);
-      }
-      
       return null;
     }
   }
@@ -156,10 +158,10 @@ abstract class BaseController extends ChangeNotifier {
 
 /// 리스트 기반 컨트롤러의 기본 클래스
 abstract class BaseListController<T> extends BaseController {
-  final MemoryEfficientList<T> _items = MemoryEfficientList<T>();
+  final List<T> _items = [];
   
-  /// 아이템 목록
-  List<T> get items => _items.items;
+  /// 아이템 목록 (읽기 전용)
+  List<T> get items => List.unmodifiable(_items);
 
   /// 아이템 개수
   int get itemCount => _items.length;
@@ -184,6 +186,22 @@ abstract class BaseListController<T> extends BaseController {
     });
   }
 
+  /// 아이템 제거
+  void removeItem(T item) {
+    safeSetState(() {
+      _items.remove(item);
+    });
+  }
+
+  /// 인덱스로 아이템 제거
+  void removeItemAt(int index) {
+    if (index >= 0 && index < _items.length) {
+      safeSetState(() {
+        _items.removeAt(index);
+      });
+    }
+  }
+
   /// 아이템 클리어
   void clearItems() {
     safeSetState(() {
@@ -193,7 +211,7 @@ abstract class BaseListController<T> extends BaseController {
 
   /// 아이템 필터링
   List<T> filterItems(bool Function(T) predicate) {
-    return _items.items.where(predicate).toList();
+    return _items.where(predicate).toList();
   }
 
   /// 페이지네이션 지원
@@ -203,7 +221,7 @@ abstract class BaseListController<T> extends BaseController {
     
     if (startIndex >= _items.length) return [];
     
-    return _items.items.sublist(startIndex, endIndex);
+    return _items.sublist(startIndex, endIndex);
   }
 
   @override

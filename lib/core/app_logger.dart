@@ -1,7 +1,7 @@
-// lib/core/app_logger.dart - 수정된 버전 (Result 충돌 해결)
+// lib/core/app_logger.dart - 최적화된 버전
 import 'package:flutter/foundation.dart';
 
-/// 🔥 로그 레벨 enum (클래스 외부로 이동)
+/// 🔥 로그 레벨 enum
 enum LogLevel {
   debug(0, '🐛', 'DEBUG'),
   info(1, 'ℹ️', 'INFO'),
@@ -18,16 +18,16 @@ enum LogLevel {
 /// 🔥 통합 로깅 시스템
 class AppLogger {
   static const String _appName = 'WoosongMap';
-  static bool _isEnabled = true;
+  static bool _isEnabled = kDebugMode; // 디버그 모드에서만 기본 활성화
   static LogLevel _minimumLevel = LogLevel.debug;
   
   /// 로깅 설정
   static void configure({
-    bool enabled = true,
-    LogLevel minimumLevel = LogLevel.debug,
+    bool? enabled,
+    LogLevel? minimumLevel,
   }) {
-    _isEnabled = enabled;
-    _minimumLevel = minimumLevel;
+    _isEnabled = enabled ?? kDebugMode;
+    _minimumLevel = minimumLevel ?? LogLevel.debug;
   }
   
   /// 디버그 로그
@@ -61,26 +61,45 @@ class AppLogger {
     }
   }
   
-  /// 메인 로그 메서드
+  /// 메인 로그 메서드 (성능 최적화)
   static void _log(LogLevel level, String message, {String? tag, Object? extra}) {
+    // 🔥 빠른 종료 조건 체크 (성능 최적화)
     if (!_isEnabled || level.value < _minimumLevel.value) {
       return;
     }
     
-    final timestamp = DateTime.now().toIso8601String();
-    final tagStr = tag != null ? '[$tag]' : '';
-    final extraStr = extra != null ? ' | Extra: $extra' : '';
-    
-    final logMessage = '${level.emoji} $_appName ${level.name} $timestamp $tagStr $message$extraStr';
+    // 🔥 문자열 생성 최적화 (불필요한 연산 제거)
+    final logMessage = _buildLogMessage(level, message, tag, extra);
     
     if (kDebugMode) {
       debugPrint(logMessage);
     }
     
-    // 프로덕션에서는 외부 로깅 서비스로 전송 가능
-    if (kReleaseMode && (level == LogLevel.error || level == LogLevel.critical)) {
+    // 프로덕션에서는 크리티컬 에러만 외부 로깅
+    if (kReleaseMode && level == LogLevel.critical) {
       _sendToRemoteLogging(level, message, tag, extra);
     }
+  }
+  
+  /// 로그 메시지 생성 (성능 최적화)
+  static String _buildLogMessage(LogLevel level, String message, String? tag, Object? extra) {
+    // 🔥 StringBuffer 사용으로 메모리 최적화
+    final buffer = StringBuffer();
+    buffer.write(level.emoji);
+    buffer.write(' $_appName ${level.name} ');
+    buffer.write(DateTime.now().toIso8601String());
+    
+    if (tag != null) {
+      buffer.write(' [$tag]');
+    }
+    
+    buffer.write(' $message');
+    
+    if (extra != null) {
+      buffer.write(' | Extra: $extra');
+    }
+    
+    return buffer.toString();
   }
   
   /// 원격 로깅 (프로덕션용)
@@ -89,15 +108,15 @@ class AppLogger {
     // 현재는 구현하지 않음
   }
   
-  /// Result<T> 전용 로깅 메서드들 (동적 타입 사용)
+  /// Result<T> 전용 로깅 메서드
   static void logResult<T>(dynamic result, {String? tag, String? context}) {
-    if (result != null) {
-      final resultStr = result.toString();
-      if (resultStr.contains('Success')) {
-        info('${context ?? 'Operation'} 성공', tag: tag);
-      } else if (resultStr.contains('Failure')) {
-        error('${context ?? 'Operation'} 실패', tag: tag);
-      }
+    if (result == null) return;
+    
+    final resultStr = result.toString();
+    if (resultStr.contains('Success')) {
+      info('${context ?? 'Operation'} 성공', tag: tag);
+    } else if (resultStr.contains('Failure')) {
+      error('${context ?? 'Operation'} 실패', tag: tag);
     }
   }
   
@@ -123,108 +142,79 @@ class AppLogger {
   }
 }
 
-/// 🔥 도메인별 로거들
-class MapLogger {
-  static const String _tag = 'MAP';
+/// 🔥 도메인별 로거 베이스 클래스 (중복 코드 제거)
+abstract class DomainLogger {
+  final String _tag;
   
-  static void debug(String message, {Object? extra}) =>
+  const DomainLogger(this._tag);
+  
+  void debug(String message, {Object? extra}) =>
       AppLogger.debug(message, tag: _tag, extra: extra);
   
-  static void info(String message, {Object? extra}) =>
+  void info(String message, {Object? extra}) =>
       AppLogger.info(message, tag: _tag, extra: extra);
   
-  static void warning(String message, {Object? extra}) =>
+  void warning(String message, {Object? extra}) =>
       AppLogger.warning(message, tag: _tag, extra: extra);
   
-  static void error(String message, {Object? error, StackTrace? stackTrace}) =>
+  void error(String message, {Object? error, StackTrace? stackTrace}) =>
       AppLogger.error(message, tag: _tag, error: error, stackTrace: stackTrace);
+}
+
+/// 🔥 도메인별 로거들 (베이스 클래스 상속)
+class MapLogger extends DomainLogger {
+  const MapLogger() : super('MAP');
   
-  static void markerAdded(String markerType, int count) =>
+  void markerAdded(String markerType, int count) =>
       info('마커 추가: $markerType ($count개)');
   
-  static void cameraMove(double lat, double lng, double zoom) =>
+  void cameraMove(double lat, double lng, double zoom) =>
       debug('카메라 이동: ($lat, $lng) zoom: $zoom');
   
-  static void overlayOperation(String operation, String overlayId, bool success) =>
+  void overlayOperation(String operation, String overlayId, bool success) =>
       success 
           ? debug('오버레이 $operation 성공: $overlayId')
           : error('오버레이 $operation 실패: $overlayId');
 }
 
-class ApiLogger {
-  static const String _tag = 'API';
+class ApiLogger extends DomainLogger {
+  const ApiLogger() : super('API');
   
-  static void debug(String message, {Object? extra}) =>
-      AppLogger.debug(message, tag: _tag, extra: extra);
-  
-  static void info(String message, {Object? extra}) =>
-      AppLogger.info(message, tag: _tag, extra: extra);
-  
-  static void warning(String message, {Object? extra}) =>
-      AppLogger.warning(message, tag: _tag, extra: extra);
-  
-  static void error(String message, {Object? error, StackTrace? stackTrace}) =>
-      AppLogger.error(message, tag: _tag, error: error, stackTrace: stackTrace);
-  
-  static void request(String method, String url, {Map<String, dynamic>? params}) =>
+  void request(String method, String url, {Map<String, dynamic>? params}) =>
       debug('$method $url', extra: params);
   
-  static void response(String url, int statusCode, {Object? data}) =>
+  void response(String url, int statusCode, {Object? data}) =>
       statusCode >= 200 && statusCode < 300
           ? debug('응답 성공: $url ($statusCode)')
           : error('응답 실패: $url ($statusCode)', error: data);
   
-  static void timeout(String url, Duration duration) =>
+  void timeout(String url, Duration duration) =>
       warning('API 타임아웃: $url (${duration.inSeconds}초)');
 }
 
-class CategoryLogger {
-  static const String _tag = 'CATEGORY';
+class CategoryLogger extends DomainLogger {
+  const CategoryLogger() : super('CATEGORY');
   
-  static void debug(String message, {Object? extra}) =>
-      AppLogger.debug(message, tag: _tag, extra: extra);
-  
-  static void info(String message, {Object? extra}) =>
-      AppLogger.info(message, tag: _tag, extra: extra);
-  
-  static void warning(String message, {Object? extra}) =>
-      AppLogger.warning(message, tag: _tag, extra: extra);
-  
-  static void error(String message, {Object? error, StackTrace? stackTrace}) =>
-      AppLogger.error(message, tag: _tag, error: error, stackTrace: stackTrace);
-  
-  static void selection(String category, int buildingCount) =>
+  void selection(String category, int buildingCount) =>
       info('카테고리 선택: $category (건물: ${buildingCount}개)');
   
-  static void iconGeneration(String category, bool success) =>
+  void iconGeneration(String category, bool success) =>
       success
           ? debug('카테고리 아이콘 생성 성공: $category')
           : error('카테고리 아이콘 생성 실패: $category');
 }
 
-class SearchLogger {
-  static const String _tag = 'SEARCH';
+class SearchLogger extends DomainLogger {
+  const SearchLogger() : super('SEARCH');
   
-  static void debug(String message, {Object? extra}) =>
-      AppLogger.debug(message, tag: _tag, extra: extra);
-  
-  static void info(String message, {Object? extra}) =>
-      AppLogger.info(message, tag: _tag, extra: extra);
-  
-  static void warning(String message, {Object? extra}) =>
-      AppLogger.warning(message, tag: _tag, extra: extra);
-  
-  static void error(String message, {Object? error, StackTrace? stackTrace}) =>
-      AppLogger.error(message, tag: _tag, error: error, stackTrace: stackTrace);
-  
-  static void query(String query, int resultCount, Duration duration) =>
+  void query(String query, int resultCount, Duration duration) =>
       info('검색 완료: "$query" (결과: ${resultCount}개, ${duration.inMilliseconds}ms)');
   
-  static void indexBuild(int buildingCount, Duration duration) =>
+  void indexBuild(int buildingCount, Duration duration) =>
       info('검색 인덱스 구축: ${buildingCount}개 건물 (${duration.inMilliseconds}ms)');
 }
 
-/// 🔥 Result와 Logger를 결합한 헬퍼 (동적 타입으로 처리)
+/// 🔥 Result와 Logger를 결합한 헬퍼
 extension ResultLogging on dynamic {
   dynamic log({String? tag, String? context}) {
     AppLogger.logResult(this, tag: tag, context: context);

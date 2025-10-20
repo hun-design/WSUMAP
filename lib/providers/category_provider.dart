@@ -1,13 +1,16 @@
+// lib/providers/category_provider.dart - 최적화된 버전
+
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/services/category_api_service.dart';
 import 'package:flutter_application_1/data/category_fallback_data.dart';
 
+/// 카테고리 제공자
 class CategoryProvider extends ChangeNotifier {
   List<String> _categories = [];
   bool _isLoaded = false;
   bool _isLoading = false;
   String? _error;
-  String _currentLanguage = 'ko'; // 현재 언어 추적
+  String _currentLanguage = 'ko';
 
   // Getters
   List<String> get categories => _categories;
@@ -15,7 +18,7 @@ class CategoryProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  /// 🔥 로그인/게스트 진입 시에만 서버에서 카테고리 로드
+  /// 서버에서 카테고리 로드
   Future<void> loadCategoriesFromServer() async {
     if (_isLoading) {
       debugPrint('⚠️ 이미 카테고리 로딩 중');
@@ -56,7 +59,7 @@ class CategoryProvider extends ChangeNotifier {
     }
   }
 
-  /// 🔥 앱 시작 시 fallback 데이터로 초기화
+  /// fallback 데이터로 초기화
   void initializeWithFallback() {
     if (!_isLoaded) {
       debugPrint('🔄 fallback 카테고리로 초기화');
@@ -66,22 +69,21 @@ class CategoryProvider extends ChangeNotifier {
     }
   }
 
-  /// 🔥 언어 변경 시 카테고리 새로고침
+  /// 언어 변경 시 카테고리 새로고침
   void onLanguageChanged(String newLanguage) {
     if (_currentLanguage != newLanguage) {
       debugPrint('🔤 언어 변경 감지: $_currentLanguage → $newLanguage');
       _currentLanguage = newLanguage;
-      // 언어 변경 시 카테고리 새로고침
       refreshCategories();
     }
   }
 
-  /// 🔥 카테고리 새로고침 (수동)
+  /// 카테고리 새로고침
   Future<void> refreshCategories() async {
     await loadCategoriesFromServer();
   }
 
-  /// 🔥 카테고리 초기화
+  /// 카테고리 초기화
   void reset() {
     _categories = [];
     _isLoaded = false;
@@ -89,4 +91,4 @@ class CategoryProvider extends ChangeNotifier {
     _error = null;
     notifyListeners();
   }
-} 
+}

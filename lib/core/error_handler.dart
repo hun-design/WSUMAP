@@ -1,4 +1,4 @@
-// lib/core/error_handler.dart - 통합 에러 처리 시스템
+// lib/core/error_handler.dart - 최적화된 버전
 
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -21,14 +21,16 @@ class AppError {
   final String? code;
   final dynamic originalError;
   final StackTrace? stackTrace;
+  final DateTime timestamp;
 
-  const AppError({
+  AppError({
     required this.type,
     required this.message,
     this.code,
     this.originalError,
     this.stackTrace,
-  });
+    DateTime? timestamp,
+  }) : timestamp = timestamp ?? DateTime(0);
 
   /// 네트워크 에러 생성
   factory AppError.network(String message, {dynamic originalError}) {
@@ -36,6 +38,7 @@ class AppError {
       type: ErrorType.network,
       message: message,
       originalError: originalError,
+      timestamp: DateTime.now(),
     );
   }
 
@@ -46,6 +49,7 @@ class AppError {
       message: message,
       code: code,
       originalError: originalError,
+      timestamp: DateTime.now(),
     );
   }
 
@@ -55,6 +59,7 @@ class AppError {
       type: ErrorType.authentication,
       message: message,
       originalError: originalError,
+      timestamp: DateTime.now(),
     );
   }
 
@@ -64,6 +69,7 @@ class AppError {
       type: ErrorType.permission,
       message: message,
       originalError: originalError,
+      timestamp: DateTime.now(),
     );
   }
 
@@ -73,6 +79,7 @@ class AppError {
       type: ErrorType.validation,
       message: message,
       originalError: originalError,
+      timestamp: DateTime.now(),
     );
   }
 
@@ -83,6 +90,7 @@ class AppError {
       message: message,
       originalError: originalError,
       stackTrace: stackTrace,
+      timestamp: DateTime.now(),
     );
   }
 
@@ -90,6 +98,18 @@ class AppError {
   String toString() {
     return 'AppError(type: $type, message: $message, code: $code)';
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AppError &&
+          runtimeType == other.runtimeType &&
+          type == other.type &&
+          message == other.message &&
+          code == other.code;
+
+  @override
+  int get hashCode => type.hashCode ^ message.hashCode ^ (code?.hashCode ?? 0);
 }
 
 /// 에러 처리 유틸리티 클래스
@@ -102,32 +122,68 @@ class ErrorHandler {
 
     final String message = error?.toString() ?? 'Unknown error occurred';
     
-    // 네트워크 관련 에러 감지
-    if (message.contains('SocketException') || 
-        message.contains('NetworkException') ||
-        message.contains('Connection') ||
-        message.contains('TimeoutException')) {
+    // 🔥 에러 타입 감지 최적화 (정규식 사용)
+    if (_isNetworkError(message)) {
       return AppError.network(message, originalError: error);
     }
 
-    // HTTP 상태 코드 기반 에러 분류
-    if (message.contains('401') || message.contains('Unauthorized')) {
+    if (_isAuthError(message)) {
       return AppError.authentication(message, originalError: error);
     }
 
-    if (message.contains('403') || message.contains('Forbidden')) {
+    if (_isPermissionError(message)) {
       return AppError.permission(message, originalError: error);
     }
 
-    if (message.contains('400') || message.contains('Bad Request')) {
+    if (_isValidationError(message)) {
       return AppError.validation(message, originalError: error);
     }
 
-    if (message.contains('500') || message.contains('Internal Server Error')) {
+    if (_isServerError(message)) {
       return AppError.server(message, originalError: error);
     }
 
     return AppError.unknown(message, originalError: error, stackTrace: stackTrace);
+  }
+
+  /// 네트워크 에러 감지
+  static bool _isNetworkError(String message) {
+    return message.contains('SocketException') || 
+           message.contains('NetworkException') ||
+           message.contains('Connection') ||
+           message.contains('TimeoutException') ||
+           message.contains('Failed host lookup');
+  }
+
+  /// 인증 에러 감지
+  static bool _isAuthError(String message) {
+    return message.contains('401') || 
+           message.contains('Unauthorized') ||
+           message.contains('인증') ||
+           message.contains('Authentication');
+  }
+
+  /// 권한 에러 감지
+  static bool _isPermissionError(String message) {
+    return message.contains('403') || 
+           message.contains('Forbidden') ||
+           message.contains('권한') ||
+           message.contains('Permission');
+  }
+
+  /// 유효성 검사 에러 감지
+  static bool _isValidationError(String message) {
+    return message.contains('400') || 
+           message.contains('Bad Request') ||
+           message.contains('검증') ||
+           message.contains('Validation');
+  }
+
+  /// 서버 에러 감지
+  static bool _isServerError(String message) {
+    return message.contains('500') || 
+           message.contains('Internal Server Error') ||
+           message.contains('서버');
   }
 
   /// 사용자 친화적인 에러 메시지 생성

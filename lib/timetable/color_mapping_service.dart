@@ -1,3 +1,5 @@
+// lib/timetable/color_mapping_service.dart - 최적화된 버전
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'timetable_item.dart';
@@ -29,7 +31,7 @@ class ColorMappingService {
   /// 수업 이름에 따라 색상을 할당하거나 기존 색상을 반환
   static Color getColorForSubject(String subjectName) {
     if (subjectName.isEmpty) {
-      return _colorPalette[0]; // 기본 색상
+      return _colorPalette[0];
     }
 
     // 이미 매핑된 색상이 있으면 반환
@@ -37,7 +39,7 @@ class ColorMappingService {
       return _subjectColorMap[subjectName]!;
     }
 
-    // 새로운 색상 할당 (사용되지 않은 색상 우선 선택)
+    // 새로운 색상 할당
     final usedColors = _subjectColorMap.values.toSet();
     Color selectedColor = _colorPalette[0];
     
@@ -56,21 +58,21 @@ class ColorMappingService {
     }
     
     _subjectColorMap[subjectName] = selectedColor;
-    debugPrint('🎨 색상 할당: "$subjectName" → ${selectedColor.value.toRadixString(16)}');
+    
+    if (kDebugMode) {
+      debugPrint('🎨 색상 할당: "$subjectName" → ${selectedColor.value.toRadixString(16)}');
+    }
+    
     return selectedColor;
   }
 
   /// 시간표 아이템 리스트에 색상을 자동 할당
   static List<ScheduleItem> assignColorsToScheduleItems(List<ScheduleItem> items) {
-    // 수업 이름별로 그룹화하여 색상 할당
     final Map<String, List<ScheduleItem>> subjectGroups = {};
     
     // 수업 이름별로 그룹화
     for (final item in items) {
-      if (!subjectGroups.containsKey(item.title)) {
-        subjectGroups[item.title] = [];
-      }
-      subjectGroups[item.title]!.add(item);
+      subjectGroups.putIfAbsent(item.title, () => []).add(item);
     }
 
     // 각 그룹에 동일한 색상 할당
@@ -82,19 +84,7 @@ class ColorMappingService {
 
       // 각 아이템에 색상 할당
       for (final item in subjectItems) {
-        updatedItems.add(ScheduleItem(
-          id: item.id,
-          title: item.title,
-          professor: item.professor,
-          buildingName: item.buildingName,
-          floorNumber: item.floorNumber,
-          roomName: item.roomName,
-          dayOfWeek: item.dayOfWeek,
-          startTime: item.startTime,
-          endTime: item.endTime,
-          color: assignedColor,
-          memo: item.memo,
-        ));
+        updatedItems.add(item.copyWith(color: assignedColor));
       }
     }
 
@@ -111,19 +101,7 @@ class ColorMappingService {
     
     return items.map((item) {
       if (item.title == subjectName) {
-        return ScheduleItem(
-          id: item.id,
-          title: item.title,
-          professor: item.professor,
-          buildingName: item.buildingName,
-          floorNumber: item.floorNumber,
-          roomName: item.roomName,
-          dayOfWeek: item.dayOfWeek,
-          startTime: item.startTime,
-          endTime: item.endTime,
-          color: newColor,
-          memo: item.memo,
-        );
+        return item.copyWith(color: newColor);
       }
       return item;
     }).toList();
@@ -131,7 +109,9 @@ class ColorMappingService {
 
   /// 색상 매핑 초기화
   static void clearColorMapping() {
-    debugPrint('🎨 색상 매핑 초기화');
+    if (kDebugMode) {
+      debugPrint('🎨 색상 매핑 초기화');
+    }
     _subjectColorMap.clear();
     _colorIndex = 0;
   }
