@@ -226,41 +226,37 @@ class MapScreenController extends ChangeNotifier {
     }
   }
 
-  /// 🔥 기본 마커들 로드 - 새 메서드 추가
+  /// 기본 마커들 로드
   Future<void> loadDefaultMarkers() async {
     try {
-      debugPrint('🔄 기본 마커 로드 시작');
+      debugPrint('기본 마커 로드 시작');
 
-      // 지도가 준비되지 않았으면 대기
       if (!_isMapReady || _mapService?.getController() == null) {
-        debugPrint('⚠️ 지도가 준비되지 않아 기본 마커 로드 연기');
+        debugPrint('지도가 준비되지 않아 기본 마커 로드 연기');
         return;
       }
 
-      // BuildingRepository에서 기본 건물들 가져오기
       final allBuildings = _buildingRepository.allBuildings;
 
       if (allBuildings.isNotEmpty) {
-        // MapService를 통해 건물 마커들 추가
         await _mapService?.addBuildingMarkers(_onBuildingMarkerTap);
-        debugPrint('✅ 기본 마커 로드 완료: ${allBuildings.length}개');
+        debugPrint('기본 마커 로드 완료: ${allBuildings.length}개');
       } else {
-        debugPrint('⚠️ 로드할 기본 건물 데이터가 없음');
-        // BuildingRepository 강제 새로고침 시도
+        debugPrint('로드할 기본 건물 데이터가 없음');
         await _buildingRepository.getAllBuildings();
         if (_buildingRepository.allBuildings.isNotEmpty) {
           await _mapService?.addBuildingMarkers(_onBuildingMarkerTap);
           debugPrint(
-            '✅ 새로고침 후 기본 마커 로드 완료: ${_buildingRepository.allBuildings.length}개',
+            '새로고침 후 기본 마커 로드 완료: ${_buildingRepository.allBuildings.length}개',
           );
         }
       }
     } catch (e) {
-      debugPrint('❌ 기본 마커 로드 오류: $e');
+      debugPrint('기본 마커 로드 오류: $e');
     }
   }
 
-  /// 🔥 친구 위치 표시 (개선된 버전)
+  /// 친구 위치 표시 (개선된 버전)
   Future<void> showFriendLocation(Friend friend) async {
     try {
       debugPrint('=== 친구 위치 표시 시작 ===');

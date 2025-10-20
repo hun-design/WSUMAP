@@ -1,4 +1,4 @@
-// lib/controllers/unified_navigation_controller.dart - 실내외 통합 네비게이션 컨트롤러
+// lib/controllers/unified_navigation_controller.dart
 
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/inside/building_map_page.dart';
@@ -70,8 +70,6 @@ class UnifiedNavigationController extends ChangeNotifier {
   bool get isNavigating => _state.isActive;
   NavigationStep get currentStep => _state.currentStep;
   String? get currentInstruction => _state.instruction;
-  
-  // 🔥 추가: _currentPathResponse에 대한 public getter
   UnifiedPathResponse? get currentPathResponse => _currentPathResponse;
 
   /// 컨텍스트 설정

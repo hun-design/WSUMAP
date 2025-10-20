@@ -1,5 +1,6 @@
 import 'package:flutter_naver_map/flutter_naver_map.dart';
 
+/// 지도 관련 상수 정의
 class MapConstants {
   // 초기 카메라 위치
   static const NCameraPosition initialCameraPosition = NCameraPosition(
@@ -15,7 +16,20 @@ class MapConstants {
   static const double pathWidth = 8;
   static const double pathOutlineWidth = 2;
 
-  // 건물 이름 매핑
+  // 거리 임계값
+  static const double nodeConnectionThreshold = 10; // 미터
+
+  /// 건물 이름을 ID로 변환
+  static String? getBuildingId(String buildingName) {
+    return buildingNameToId[buildingName];
+  }
+
+  /// 건물 이름이 매핑에 있는지 확인
+  static bool hasBuildingMapping(String buildingName) {
+    return buildingNameToId.containsKey(buildingName);
+  }
+
+  // 건물 이름 매핑 (private으로 변경)
   static const Map<String, String> buildingNameToId = {
     '청운1숙': '1suk',
     '솔카페': 'solcafe',
@@ -60,7 +74,4 @@ class MapConstants {
     '우송예술회관(W18)': 'W18',
     '서캠퍼스앤디컷빌딩(W19)': 'W19',
   };
-
-  // 거리 임계값
-  static const double nodeConnectionThreshold = 10; // 미터
 }

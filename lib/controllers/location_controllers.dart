@@ -1,4 +1,4 @@
-// lib/controllers/location_controllers.dart - 완전한 구현 - 실제 코드 기반
+// lib/controllers/location_controllers.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/services/map_location_service.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
@@ -12,20 +12,19 @@ class LocationController extends ChangeNotifier {
   final LocationPermissionManager _permissionManager;
   final MapLocationService _mapLocationService;
 
-  // 🔥 Location 인스턴스 직접 생성
   final loc.Location _location = loc.Location();
 
   // 현재 상태
   bool _isRequesting = false;
   bool _hasValidLocation = false;
   bool _hasLocationPermissionError = false;
-  bool _isLocationSearching = false; // 내 위치 찾기 중 상태
+  bool _isLocationSearching = false;
   loc.LocationData? _currentLocation;
 
   // 지도 관련
   NaverMapController? _mapController;
 
-  // 🔥 마지막으로 업데이트된 위치 저장
+  // 마지막으로 업데이트된 위치 저장
   NLatLng? _lastUpdatedPosition;
 
   LocationController({
@@ -75,7 +74,7 @@ class LocationController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 🔥 초고속 위치 요청 (MapScreen용) - iOS 최적화
+  /// 초고속 위치 요청 (MapScreen용) - iOS 최적화
   Future<void> requestCurrentLocationQuickly() async {
     if (_isRequesting) return;
 
@@ -85,13 +84,12 @@ class LocationController extends ChangeNotifier {
       _hasLocationPermissionError = false;
       notifyListeners();
 
-      // 🔥 빠른 권한 확인 (캐시 우선)
+      // 빠른 권한 확인 (캐시 우선)
       final permissionResult = await _permissionManager.checkPermissionStatus(
-        forceRefresh: false, // 캐시 사용
+        forceRefresh: false,
       );
 
       if (permissionResult != PermissionResult.granted) {
-        // 빠른 권한 요청
         final requestResult = await _permissionManager.requestPermission();
         if (requestResult != PermissionResult.granted) {
           _hasLocationPermissionError = true;
@@ -101,10 +99,10 @@ class LocationController extends ChangeNotifier {
         }
       }
 
-      // 🔥 iOS 최적화: 더 긴 타임아웃과 재시도 로직
+      // iOS 최적화: 더 긴 타임아웃과 재시도 로직
       final locationResult = await _locationService.getCurrentLocation(
         forceRefresh: true,
-        timeout: const Duration(seconds: 3), // iOS에서 더 긴 시간 필요
+        timeout: const Duration(seconds: 3),
       );
 
       if (locationResult.isSuccess && locationResult.hasValidLocation) {
@@ -112,15 +110,14 @@ class LocationController extends ChangeNotifier {
         _hasValidLocation = true;
         _isLocationSearching = false;
         
-        debugPrint('✅ 위치 획득 성공: ${locationResult.locationData!.latitude}, ${locationResult.locationData!.longitude}');
+        debugPrint('위치 획득 성공: ${locationResult.locationData!.latitude}, ${locationResult.locationData!.longitude}');
 
         await _mapLocationService.showMyLocation(
           locationResult.locationData!,
           shouldMoveCamera: true,
         );
       } else {
-        // 내 위치를 찾지 못한 경우
-        debugPrint('❌ 내 위치를 찾을 수 없습니다');
+        debugPrint('내 위치를 찾을 수 없습니다');
         _hasLocationPermissionError = true;
         _isLocationSearching = false;
       }
@@ -130,7 +127,6 @@ class LocationController extends ChangeNotifier {
       _isLocationSearching = false;
     } finally {
       _isRequesting = false;
-      // 🔥 iOS 최적화: 상태 변경 후 즉시 UI 업데이트
       notifyListeners();
     }
   }
@@ -213,34 +209,32 @@ class LocationController extends ChangeNotifier {
     await requestCurrentLocation(forceRefresh: true);
   }
 
-  /// 🔥 위치 업데이트 재시작 메서드 추가
+  /// 위치 업데이트 재시작
   void resumeLocationUpdates() {
-    debugPrint('📍 위치 업데이트 재시작');
-    // 이미 요청 중이 아니면 위치 요청 재시작
+    debugPrint('위치 업데이트 재시작');
     if (!_isRequesting) {
       requestCurrentLocation();
     }
   }
 
-  /// 🔥 위치 업데이트 일시정지 메서드 추가
+  /// 위치 업데이트 일시정지
   void pauseLocationUpdates() {
-    debugPrint('⏸️ 위치 업데이트 일시정지');
-    // 현재 진행 중인 위치 요청을 중단하고 상태 정리
+    debugPrint('위치 업데이트 일시정지');
     _isRequesting = false;
     notifyListeners();
   }
 
-  /// 🔥 지도 컨트롤러 설정
+  /// 지도 컨트롤러 설정
   void setMapController(NaverMapController mapController) {
     _mapController = mapController;
     _mapLocationService.setMapController(mapController);
-    debugPrint('✅ LocationController에 지도 컨트롤러 설정 완료');
+    debugPrint('LocationController에 지도 컨트롤러 설정 완료');
   }
   
-  /// 🔥 컨텍스트 설정
+  /// 컨텍스트 설정
   void setContext(BuildContext context) {
     _mapLocationService.setContext(context);
-    debugPrint('✅ LocationController에 컨텍스트 설정 완료');
+    debugPrint('LocationController에 컨텍스트 설정 완료');
   }
   
   /// 지도 회전 각도 업데이트
@@ -249,27 +243,25 @@ class LocationController extends ChangeNotifier {
   }
   
 
-  /// 🔥 사용자 위치 마커 업데이트 - 커스텀 마커 사용
+  /// 사용자 위치 마커 업데이트 - 커스텀 마커 사용
   void updateUserLocationMarker(NLatLng position) async {
     if (_mapController == null) {
-      debugPrint('⚠️ MapController가 null입니다');
+      debugPrint('MapController가 null입니다');
       return;
     }
 
-    // 🔥 위치 변경 감지 - 같은 위치면 업데이트하지 않음
+    // 위치 변경 감지 - 같은 위치면 업데이트하지 않음
     if (_lastUpdatedPosition != null &&
         _lastUpdatedPosition!.latitude == position.latitude &&
         _lastUpdatedPosition!.longitude == position.longitude) {
-      return; // 위치가 변경되지 않았으면 업데이트하지 않음
+      return;
     }
 
     try {
-      // 🔥 로그 최적화 - 실제 업데이트 시에만 출력
       debugPrint(
-        '📍 커스텀 위치 마커 업데이트: ${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}',
+        '커스텀 위치 마커 업데이트: ${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}',
       );
 
-      // 🔥 MapLocationService 사용 (커스텀 마커 포함)
       final locationData = loc.LocationData.fromMap({
         'latitude': position.latitude,
         'longitude': position.longitude,
@@ -278,23 +270,17 @@ class LocationController extends ChangeNotifier {
 
       await _mapLocationService.updateMyLocation(
         locationData,
-        shouldMoveCamera: false, // 카메라는 이동하지 않음
+        shouldMoveCamera: false,
       );
 
-      // 🔥 성공 시 위치 저장
       _lastUpdatedPosition = position;
     } catch (e) {
-      debugPrint('❌ 커스텀 위치 마커 업데이트 실패: $e');
+      debugPrint('커스텀 위치 마커 업데이트 실패: $e');
     }
   }
 
-  // 🔥 기존 마커 관련 메서드들은 CustomUserLocationMarker로 대체됨
-
-  // 🔥 기존 오버레이 관련 메서드들은 CustomUserLocationMarker로 대체됨
-
   @override
   void dispose() {
-    // 🔥 dispose 시에는 MapLocationService가 CustomUserLocationMarker를 정리함
     _permissionManager.removePermissionListener(_onPermissionChanged);
     _permissionManager.dispose();
     _locationService.dispose();
