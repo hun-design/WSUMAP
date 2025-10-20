@@ -41,6 +41,7 @@ class FriendsController extends ChangeNotifier {
   // 🔥 백그라운드 상태 관리
   Timer? _backgroundTimer;
   bool _isInBackground = false;
+  DateTime? _backgroundEnterTime;
 
   // 친구 요청 알림 콜백
   Function(String)? _onFriendRequestNotification;
@@ -1283,36 +1284,53 @@ class FriendsController extends ChangeNotifier {
   // 🔥 백그라운드 진입 시 호출되는 메서드
   Future<void> onAppPaused() async {
     if (kDebugMode) {
-      debugPrint('📱 백그라운드 진입 - 오프라인 처리 및 타이머 시작');
+      debugPrint('📱 백그라운드 진입 - 즉시 오프라인 처리 및 앱 종료');
     }
     
     _isInBackground = true;
     
-    // 🔥 1. 웹소켓 연결 해제 및 오프라인 처리
+    // 🔥 1. 웹소켓 연결 해제 및 오프라인 처리 (즉시 실행)
     if (_wsService.isConnected && !_isGuestUser()) {
       if (kDebugMode) {
-        debugPrint('🔌 백그라운드 진입 - 웹소켓 연결 해제');
+        debugPrint('🔌 백그라운드 진입 - 웹소켓 연결 즉시 해제');
       }
       
-      // 웹소켓 연결 해제
+      // 웹소켓 연결 해제 (서버에 로그아웃 요청 전송)
       await _wsService.logoutAndDisconnect();
       isWebSocketConnected = false;
+      
+      if (kDebugMode) {
+        debugPrint('✅ 웹소켓 연결 해제 완료 - 다른 친구들에게 즉시 오프라인 상태 전달됨');
+      }
     }
     
-    // 🔥 2. 3초 후 앱 종료 타이머 시작
-    _backgroundTimer = Timer(const Duration(seconds: 3), () {
-      if (_isInBackground) {
-        if (kDebugMode) {
-          debugPrint('🛑 백그라운드 3초 경과 - 앱 종료');
-        }
-        
-        // 앱 종료
-        exit(0);
+    // 🔥 2. iOS에서는 백그라운드로 가면 즉시 앱 종료 (타이머가 일시정지되므로)
+    if (Platform.isIOS) {
+      if (kDebugMode) {
+        debugPrint('🍎 iOS 백그라운드 진입 - 즉시 앱 종료');
       }
-    });
-    
-    if (kDebugMode) {
-      debugPrint('⏱️ 백그라운드 타이머 시작 - 3초 후 앱 종료 예약');
+      
+      // 3초 대기 후 앱 종료
+      Future.delayed(const Duration(seconds: 3), () {
+        if (kDebugMode) {
+          debugPrint('🛑 iOS 백그라운드 3초 경과 - 앱 종료');
+        }
+        exit(0);
+      });
+    } else {
+      // Android는 기존 방식 유지
+      _backgroundTimer = Timer(const Duration(seconds: 3), () {
+        if (_isInBackground) {
+          if (kDebugMode) {
+            debugPrint('🛑 Android 백그라운드 3초 경과 - 앱 종료');
+          }
+          exit(0);
+        }
+      });
+      
+      if (kDebugMode) {
+        debugPrint('⏱️ Android 백그라운드 타이머 시작 - 3초 후 앱 종료 예약');
+      }
     }
   }
   
