@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+/// 우송대학교 테마 입력 필드 컴포넌트
 class WoosongInputField extends StatefulWidget {
   final IconData icon;
   final String label;
@@ -9,10 +10,10 @@ class WoosongInputField extends StatefulWidget {
   final bool isPassword;
   final String? hint;
   final TextInputType? keyboardType;
-  final bool enabled; // 활성화/비활성화 옵션 추가
-  final Function(String)? onSubmitted; // Enter 키 처리 추가
+  final bool enabled;
+  final Function(String)? onSubmitted;
   final int? maxLines;
-  final List<TextInputFormatter>? inputFormatters; // 입력 포맷터 추가
+  final List<TextInputFormatter>? inputFormatters;
 
   const WoosongInputField({
     super.key,
@@ -34,7 +35,7 @@ class WoosongInputField extends StatefulWidget {
 
 class _WoosongInputFieldState extends State<WoosongInputField> {
   bool isFocused = false;
-  bool isObscured = true;
+  late bool isObscured;
 
   @override
   void initState() {
@@ -49,101 +50,130 @@ class _WoosongInputFieldState extends State<WoosongInputField> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            widget.label,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: widget.enabled 
-                  ? const Color(0xFF1E3A8A)
-                  : const Color(0xFF94A3B8),
-            ),
-          ),
+          _buildLabel(),
           const SizedBox(height: 8),
-          Focus(
-            onFocusChange: (focus) => setState(() => isFocused = focus),
-            child: Container(
-              decoration: BoxDecoration(
-                color: widget.enabled ? Colors.white : const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: !widget.enabled
-                      ? const Color(0xFFE2E8F0)
-                      : isFocused
-                          ? const Color(0xFF3B82F6)
-                          : const Color(0xFFE2E8F0),
-                  width: isFocused && widget.enabled ? 2 : 1,
-                ),
-                boxShadow: [
-                  if (isFocused && widget.enabled)
-                    BoxShadow(
-                      color: const Color(0xFF3B82F6).withOpacity(0.1),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                child: Row(
-                  children: [
-                    Icon(
-                      widget.icon,
-                      color: !widget.enabled
-                          ? const Color(0xFF94A3B8)
-                          : isFocused
-                              ? const Color(0xFF3B82F6)
-                              : const Color(0xFF64748B),
-                      size: 22,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextField(
-                        controller: widget.controller,
-                        obscureText: isObscured,
-                        enabled: widget.enabled,
-                        keyboardType: widget.keyboardType,
-                        maxLines: widget.maxLines,
-                        onSubmitted: widget.onSubmitted,
-                        inputFormatters: widget.inputFormatters,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: widget.enabled 
-                              ? const Color(0xFF1E293B)
-                              : const Color(0xFF94A3B8),
-                        ),
-                        decoration: InputDecoration(
-                          border: InputBorder.none,
-                          hintText: widget.hint ?? widget.label,
-                          hintStyle: TextStyle(
-                            color: widget.enabled 
-                                ? const Color(0xFF94A3B8)
-                                : const Color(0xFFCBD5E1),
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (widget.isPassword)
-                      GestureDetector(
-                        onTap: widget.enabled 
-                            ? () => setState(() => isObscured = !isObscured)
-                            : null,
-                        child: Icon(
-                          isObscured ? Icons.visibility_off : Icons.visibility,
-                          color: widget.enabled 
-                              ? const Color(0xFF64748B)
-                              : const Color(0xFF94A3B8),
-                          size: 20,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+          _buildInputField(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLabel() {
+    return Text(
+      widget.label,
+      style: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: widget.enabled 
+            ? const Color(0xFF1E3A8A)
+            : const Color(0xFF94A3B8),
+      ),
+    );
+  }
+
+  Widget _buildInputField() {
+    return Focus(
+      onFocusChange: (focus) => setState(() => isFocused = focus),
+      child: Container(
+        decoration: _buildDecoration(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          child: Row(
+            children: [
+              _buildIcon(),
+              const SizedBox(width: 12),
+              Expanded(child: _buildTextField()),
+              if (widget.isPassword) _buildPasswordToggle(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  BoxDecoration _buildDecoration() {
+    return BoxDecoration(
+      color: widget.enabled ? Colors.white : const Color(0xFFF8FAFC),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(
+        color: _getBorderColor(),
+        width: isFocused && widget.enabled ? 2 : 1,
+      ),
+      boxShadow: _getBoxShadow(),
+    );
+  }
+
+  Color _getBorderColor() {
+    if (!widget.enabled) return const Color(0xFFE2E8F0);
+    return isFocused ? const Color(0xFF3B82F6) : const Color(0xFFE2E8F0);
+  }
+
+  List<BoxShadow> _getBoxShadow() {
+    if (isFocused && widget.enabled) {
+      return [
+        BoxShadow(
+          color: const Color(0xFF3B82F6).withOpacity(0.1),
+          blurRadius: 8,
+          offset: const Offset(0, 2),
+        ),
+      ];
+    }
+    return [];
+  }
+
+  Widget _buildIcon() {
+    return Icon(
+      widget.icon,
+      color: _getIconColor(),
+      size: 22,
+    );
+  }
+
+  Color _getIconColor() {
+    if (!widget.enabled) return const Color(0xFF94A3B8);
+    return isFocused ? const Color(0xFF3B82F6) : const Color(0xFF64748B);
+  }
+
+  Widget _buildTextField() {
+    return TextField(
+      controller: widget.controller,
+      obscureText: isObscured,
+      enabled: widget.enabled,
+      keyboardType: widget.keyboardType,
+      maxLines: widget.maxLines,
+      onSubmitted: widget.onSubmitted,
+      inputFormatters: widget.inputFormatters,
+      style: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        color: widget.enabled 
+            ? const Color(0xFF1E293B)
+            : const Color(0xFF94A3B8),
+      ),
+      decoration: InputDecoration(
+        border: InputBorder.none,
+        hintText: widget.hint ?? widget.label,
+        hintStyle: TextStyle(
+          color: widget.enabled 
+              ? const Color(0xFF94A3B8)
+              : const Color(0xFFCBD5E1),
+          fontWeight: FontWeight.w400,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPasswordToggle() {
+    return GestureDetector(
+      onTap: widget.enabled 
+          ? () => setState(() => isObscured = !isObscured)
+          : null,
+      child: Icon(
+        isObscured ? Icons.visibility_off : Icons.visibility,
+        color: widget.enabled 
+            ? const Color(0xFF64748B)
+            : const Color(0xFF94A3B8),
+        size: 20,
       ),
     );
   }

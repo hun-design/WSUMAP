@@ -21,6 +21,27 @@ enum UserRole {
   admin,
 }
 
+/// 인증 관련 상수 정의
+class AuthConstants {
+  // 지연 시간 상수
+  static const Duration locationStartDelay = Duration(seconds: 2);
+  static const Duration onlineStatusDelay = Duration(seconds: 3);
+  static const Duration logoutNotificationDelay = Duration(milliseconds: 1000);
+  static const Duration logoutMessageDelay = Duration(milliseconds: 1500);
+  
+  // SharedPreferences 키
+  static const String keyUserId = 'user_id';
+  static const String keyUserName = 'user_name';
+  static const String keyUserPassword = 'user_password';
+  static const String keyIsLoggedIn = 'is_logged_in';
+  static const String keyRememberMe = 'remember_me';
+  
+  // 특수 사용자 ID
+  static const String guestPrefix = 'guest_';
+  static const String adminId = 'admin';
+  static const String guestId = 'guest';
+}
+
 /// UserRole enum에 대한 확장 기능
 extension UserRoleExtension on UserRole {
   /// 사용자 역할의 다국어 표시명
@@ -127,11 +148,16 @@ class UserAuth extends ChangeNotifier {
     debugPrint('UserAuth: notifyListeners 호출됨');
   }
 
-  /// 🔥 웹소켓 연결 시작 (게스트 제외)
+  /// 게스트 사용자인지 확인
+  bool _isGuestUser() {
+    return _userRole == UserRole.external || 
+           _userId == null || 
+           _userId!.startsWith(AuthConstants.guestPrefix);
+  }
+
+  /// 웹소켓 연결 시작 (게스트 제외)
   void _startWebSocketConnection() {
-    if (_userId == null ||
-        _userRole == UserRole.external ||
-        _userId!.startsWith('guest_')) {
+    if (_isGuestUser()) {
       debugPrint('⚠️ 게스트 사용자는 웹소켓 연결 제외');
       return;
     }
@@ -144,16 +170,9 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-
-  /// 🔥 위치 전송 시작 (게스트 제외)
+  /// 위치 전송 시작 (게스트 제외)
   void _startLocationSending(BuildContext context) {
-    if (_userId == null) {
-      debugPrint('⚠️ 사용자 ID가 없어 위치 전송 시작 불가');
-      return;
-    }
-
-    // 🔥 게스트 사용자는 위치 전송 제외
-    if (_userRole == UserRole.external || _userId!.startsWith('guest_')) {
+    if (_isGuestUser()) {
       debugPrint('⚠️ 게스트 사용자는 위치 전송 제외');
       return;
     }
@@ -170,7 +189,7 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 🔥 위치 전송 중지 (로그아웃 시)
+  /// 위치 전송 중지 (로그아웃 시)
   void _stopLocationSending(BuildContext context) {
     try {
       final locationManager = Provider.of<LocationManager>(
@@ -184,13 +203,28 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 🔥 서버에 자동 로그인 (저장된 정보 사용)
+  /// 위치 전송 및 웹소켓 연결 시작 (지연 실행)
+  void _startLocationAndWebSocketWithDelay(BuildContext context) {
+    Future.delayed(AuthConstants.locationStartDelay, () {
+      _startLocationSending(context);
+      _startWebSocketConnection();
+    });
+  }
+
+  /// 로그인 후 온라인 상태 강제 유지
+  void _enforceOnlineStatusAfterLoginWithDelay() {
+    Future.delayed(AuthConstants.onlineStatusDelay, () {
+      _enforceOnlineStatusAfterLogin();
+    });
+  }
+
+  /// 서버에 자동 로그인 (저장된 정보 사용)
   Future<bool> autoLoginToServer() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final savedUserId = prefs.getString('user_id');
-      final savedPassword = prefs.getString('user_password');
-      final rememberMe = prefs.getBool('remember_me') ?? false;
+      final savedUserId = prefs.getString(AuthConstants.keyUserId);
+      final savedPassword = prefs.getString(AuthConstants.keyUserPassword);
+      final rememberMe = prefs.getBool(AuthConstants.keyRememberMe) ?? false;
 
       // 기억하기가 체크되어 있고 저장된 정보가 있는 경우만 자동 로그인
       if (rememberMe && savedUserId != null && savedPassword != null) {
@@ -228,18 +262,17 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 🔥 서버에서만 로그아웃 (로컬 정보는 유지) - 웹소켓 알림 추가
+  /// 서버에서만 로그아웃 (로컬 정보는 유지) - 웹소켓 알림 추가
   Future<bool> logoutServerOnly() async {
     try {
-      if (_userId != null && _userId != 'guest' && _userId != 'admin') {
+      if (_userId != null && _userId != AuthConstants.guestId && _userId != AuthConstants.adminId) {
         debugPrint('🔄 서버 전용 로그아웃 시도 - 사용자: $_userId');
 
-        // 🔥 1. 먼저 웹소켓을 통해 친구들에게 로그아웃 알림 전송 (웹소켓 연결은 유지)
+        // 1. 먼저 웹소켓을 통해 친구들에게 로그아웃 알림 전송 (웹소켓 연결은 유지)
         try {
           final wsService = WebSocketService();
           if (wsService.isConnected) {
             debugPrint('🔥 서버 전용 로그아웃: 웹소켓을 통한 로그아웃 알림 전송');
-            // 🔥 웹소켓 연결은 유지하고 로그아웃 알림만 전송
             await wsService.sendLogoutNotification();
             debugPrint('✅ 서버 전용 로그아웃: 웹소켓 로그아웃 알림 완료');
           } else {
@@ -249,9 +282,9 @@ class UserAuth extends ChangeNotifier {
           debugPrint('❌ 서버 전용 로그아웃: 웹소켓 알림 전송 실패: $wsError');
         }
 
-        // 🔥 2. 잠시 대기하여 서버가 친구들에게 메시지를 전송할 시간 확보 (300ms → 1000ms로 증가)
+        // 2. 잠시 대기하여 서버가 친구들에게 메시지를 전송할 시간 확보
         debugPrint('⏳ 서버가 친구들에게 로그아웃 메시지를 전송할 시간 대기 중...');
-        await Future.delayed(const Duration(milliseconds: 1000));
+        await Future.delayed(AuthConstants.logoutNotificationDelay);
 
         // 3. 서버에 로그아웃 요청
         final result = await AuthService.logout(id: _userId!);
@@ -276,54 +309,48 @@ class UserAuth extends ChangeNotifier {
   Future<void> initialize({BuildContext? context}) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final savedUserId = prefs.getString('user_id');
-      final savedUserName = prefs.getString('user_name');
-      final savedIsLoggedIn = prefs.getBool('is_logged_in') ?? false;
-      final rememberMe = prefs.getBool('remember_me') ?? false;
+      final savedUserId = prefs.getString(AuthConstants.keyUserId);
+      final savedUserName = prefs.getString(AuthConstants.keyUserName);
+      final savedIsLoggedIn = prefs.getBool(AuthConstants.keyIsLoggedIn) ?? false;
+      final rememberMe = prefs.getBool(AuthConstants.keyRememberMe) ?? false;
 
-      // 🔥 게스트 사용자는 위치 전송 제외
+      // 게스트 사용자는 위치 전송 제외
       if (rememberMe &&
           savedIsLoggedIn &&
           savedUserId != null &&
           savedUserName != null &&
-          !savedUserId.startsWith('guest_')) {
+          !savedUserId.startsWith(AuthConstants.guestPrefix)) {
         
         debugPrint('🔄 저장된 로그인 정보 발견 - JWT 토큰 확인');
         
-        // 🔥 1단계: JWT 토큰이 유효한지 확인
+        // 1단계: JWT 토큰이 유효한지 확인
         final isTokenValid = await JwtService.isTokenValid();
         
         if (isTokenValid) {
           debugPrint('✅ JWT 토큰이 유효함 - 토큰으로 로그인 상태 복원');
           
-          // 🔥 토큰이 유효하면 비밀번호 없이 로그인 상태 복원
+          // 토큰이 유효하면 비밀번호 없이 로그인 상태 복원
           _userId = savedUserId;
           _userName = savedUserName;
           _userRole = UserRole.studentProfessor;
           _isLoggedIn = true;
           _isFirstLaunch = false;
           
-          // 🔥 게스트가 아닌 경우에만 위치 전송 및 웹소켓 연결 시작 (지연)
+          // 게스트가 아닌 경우에만 위치 전송 및 웹소켓 연결 시작 (지연)
           if (context != null) {
-            Future.delayed(const Duration(seconds: 2), () {
-              _startLocationSending(context);
-              _startWebSocketConnection();
-            });
+            _startLocationAndWebSocketWithDelay(context);
           }
         } else {
           debugPrint('❌ JWT 토큰이 만료됨 - 서버 자동 로그인 시도');
           
-          // 🔥 2단계: 토큰이 만료되었을 때만 비밀번호로 재로그인
+          // 2단계: 토큰이 만료되었을 때만 비밀번호로 재로그인
           final autoLoginSuccess = await autoLoginToServer();
           
           if (autoLoginSuccess) {
             debugPrint('✅ 서버 자동 로그인 성공 - 로그인 상태 복원');
             
             if (context != null) {
-              Future.delayed(const Duration(seconds: 2), () {
-                _startLocationSending(context);
-                _startWebSocketConnection();
-              });
+              _startLocationAndWebSocketWithDelay(context);
             }
           } else {
             debugPrint('❌ 서버 자동 로그인 실패 - 로그인 정보 삭제');
@@ -342,7 +369,7 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 🔥 사용자 로그인 (서버 API 연동) - 서버 DB 검증 강화 및 게스트 진입 방지
+  /// 사용자 로그인 (서버 API 연동) - 서버 DB 검증 강화 및 게스트 진입 방지
   Future<bool> loginWithCredentials({
     required String id,
     required String password,
@@ -355,7 +382,7 @@ class UserAuth extends ChangeNotifier {
     try {
       debugPrint('🔄 로그인 시도 시작 - 사용자 ID: $id');
       
-      // 🔥 서버 DB 검증 강화 - 로그인 API 호출
+      // 서버 DB 검증 강화 - 로그인 API 호출
       final result = await AuthService.login(id: id, pw: password);
 
       if (result.isSuccess) {
@@ -376,27 +403,19 @@ class UserAuth extends ChangeNotifier {
           // 로그인 성공 시 항상 비밀번호 저장 (프로필 수정 시 확인용)
           await _saveLoginInfo(rememberMe: rememberMe, password: password);
 
-          // 🔥 로그인 성공 시 위치 전송 시작 및 웹소켓 연결
+          // 로그인 성공 시 위치 전송 시작 및 웹소켓 연결
           if (context != null) {
             _startLocationSending(context);
             _startWebSocketConnection();
-            
-            // 🔥 로그인 후 강제 온라인 상태 유지 (3초 후 실행)
-            Future.delayed(const Duration(seconds: 3), () {
-              _enforceOnlineStatusAfterLogin();
-            });
+            _enforceOnlineStatusAfterLoginWithDelay();
           }
 
           notifyListeners();
           return true;
         } else {
           debugPrint('❌ 서버 응답에서 사용자 정보 누락');
-          if (context != null) {
-            final l10n = AppLocalizations.of(context)!;
-            _setError(l10n.user_info_not_found);
-          } else {
-            _setError('로그인 응답에서 사용자 정보를 찾을 수 없습니다.');
-          }
+          _setErrorFromContext(context, 'user_info_not_found', 
+              '로그인 응답에서 사용자 정보를 찾을 수 없습니다.');
           return false;
         }
       } else {
@@ -406,88 +425,68 @@ class UserAuth extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('❌ 로그인 중 예외 발생: $e');
-      if (context != null) {
-        final l10n = AppLocalizations.of(context)!;
-        _setError(l10n.unexpected_login_error);
-      } else {
-        _setError('로그인 중 예상치 못한 오류가 발생했습니다.');
-      }
+      _setErrorFromContext(context, 'unexpected_login_error', 
+          '로그인 중 예상치 못한 오류가 발생했습니다.');
       return false;
     } finally {
       _setLoading(false);
     }
   }
 
-  /// 🔥 게스트 로그인 - 로컬 처리 (서버 없이)
+  /// 게스트 로그인 - 로컬 처리 (서버 없이)
   Future<void> loginAsGuest({BuildContext? context}) async {
     _setLoading(true);
     _clearError();
 
     try {
       // 게스트 ID 생성 (타임스탬프 기반)
-      final guestId = 'guest_${DateTime.now().millisecondsSinceEpoch}';
+      final guestId = '${AuthConstants.guestPrefix}${DateTime.now().millisecondsSinceEpoch}';
 
       debugPrint('🔄 게스트 로그인 시도 - ID: $guestId');
 
-      // 🔥 서버 없이 로컬에서 게스트 로그인 처리
+      // 서버 없이 로컬에서 게스트 로그인 처리
       _userRole = UserRole.external;
       _userId = guestId;
-      if (context != null) {
-        final l10n = AppLocalizations.of(context)!;
-        _userName = l10n.guest;
-      } else {
-        _userName = '게스트';
-      }
+      _userName = context != null 
+          ? AppLocalizations.of(context)!.guest 
+          : '게스트';
       _isLoggedIn = true;
       _isFirstLaunch = false;
       _isTutorial = true; // 게스트는 항상 튜토리얼 표시
 
-      // 🔥 게스트 로그인 시 위치 전송 및 웹소켓 연결 시작 제거
+      // 게스트 로그인 시 위치 전송 및 웹소켓 연결 시작 제거
       debugPrint('✅ 게스트 로그인 완료 - 위치 전송 및 웹소켓 연결 없음');
       notifyListeners();
     } catch (e) {
       debugPrint('❌ 게스트 로그인 오류: $e');
-      if (context != null) {
-        final l10n = AppLocalizations.of(context)!;
-        _setError(l10n.unexpected_login_error);
-      } else {
-        _setError('게스트 로그인 중 오류가 발생했습니다.');
-      }
+      _setErrorFromContext(context, 'unexpected_login_error', 
+          '게스트 로그인 중 오류가 발생했습니다.');
     } finally {
       _setLoading(false);
     }
   }
 
-  /// 🔥 관리자 로그인 (개발용) - 위치 전송 시작 및 웹소켓 연결 추가
+  /// 관리자 로그인 (개발용) - 위치 전송 시작 및 웹소켓 연결 추가
   Future<void> loginAsAdmin({BuildContext? context}) async {
     _setLoading(true);
     _clearError();
 
     try {
-      // 🔥 관리자 로그인 지연 시간 제거 - 즉시 처리
-      
       _userRole = UserRole.admin;
-      _userId = 'admin';
-      if (context != null) {
-        final l10n = AppLocalizations.of(context)!;
-        _userName = l10n.admin;
-      } else {
-        _userName = '관리자';
-      }
+      _userId = AuthConstants.adminId;
+      _userName = context != null 
+          ? AppLocalizations.of(context)!.admin 
+          : '관리자';
       _isLoggedIn = true;
       _isFirstLaunch = false;
 
       await _saveLoginInfo(rememberMe: true);
 
-      // 🔥 관리자 로그인 시 위치 전송 시작 및 웹소켓 연결
+      // 관리자 로그인 시 위치 전송 시작 및 웹소켓 연결
       if (context != null) {
         _startLocationSending(context);
         _startWebSocketConnection();
-        
-        // 🔥 관리자 로그인 후 강제 온라인 상태 유지 (3초 후 실행)
-        Future.delayed(const Duration(seconds: 3), () {
-          _enforceOnlineStatusAfterLogin();
-        });
+        _enforceOnlineStatusAfterLoginWithDelay();
       }
 
       notifyListeners();
@@ -496,14 +495,14 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 🔥 사용자 로그아웃 - 웹소켓 해제 강화된 버전
+  /// 사용자 로그아웃 - 웹소켓 해제 강화된 버전
   Future<bool> logout({BuildContext? context}) async {
     _setLoading(true);
 
     try {
       debugPrint('🔄 UserAuth: 로그아웃 시작 - 현재 사용자: $_userId');
 
-      // 🔥 1. 먼저 웹소켓 연결을 명시적으로 해제하여 친구들에게 로그아웃 알림 전송
+      // 1. 먼저 웹소켓 연결을 명시적으로 해제하여 친구들에게 로그아웃 알림 전송
       try {
         final wsService = WebSocketService();
         if (wsService.isConnected) {
@@ -517,9 +516,9 @@ class UserAuth extends ChangeNotifier {
         debugPrint('❌ UserAuth: 웹소켓 해제 중 오류: $wsError');
       }
 
-      // 🔥 2. 잠시 대기하여 서버가 친구들에게 로그아웃 메시지를 전송할 시간 확보 (500ms → 1500ms로 증가)
+      // 2. 잠시 대기하여 서버가 친구들에게 로그아웃 메시지를 전송할 시간 확보
       debugPrint('⏳ 서버가 친구들에게 로그아웃 메시지를 전송할 시간 대기 중...');
-      await Future.delayed(const Duration(milliseconds: 1500));
+      await Future.delayed(AuthConstants.logoutMessageDelay);
 
       // 3. 위치 전송 중지
       if (context != null) {
@@ -527,7 +526,7 @@ class UserAuth extends ChangeNotifier {
       }
 
       // 4. 서버에 로그아웃 요청
-      if (_userId != null && _userId != 'guest' && _userId != 'admin') {
+      if (_userId != null && _userId != AuthConstants.guestId && _userId != AuthConstants.adminId) {
         try {
           final result = await AuthService.logout(id: _userId!);
           if (!result.isSuccess) {
@@ -541,7 +540,7 @@ class UserAuth extends ChangeNotifier {
       // 5. 로컬 상태 초기화
       await _clearLoginInfo();
 
-      // 🔥 상태 완전 초기화
+      // 상태 완전 초기화
       final previousUserId = _userId;
       _userRole = null;
       _userId = null;
@@ -552,7 +551,7 @@ class UserAuth extends ChangeNotifier {
 
       debugPrint('🔥 UserAuth: 로그아웃 완료 - 이전 사용자: $previousUserId');
 
-      // 🔥 상태 변경 알림 - 지연 없이 즉시 호출
+      // 상태 변경 알림 - 지연 없이 즉시 호출
       notifyListeners();
 
       return true;
@@ -575,7 +574,7 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 🔥 앱 종료 시 자동 로그아웃 (기억하기 옵션이 false인 경우) - 위치 전송 중지 및 웹소켓 연결 해제 추가
+  /// 앱 종료 시 자동 로그아웃 (기억하기 옵션이 false인 경우) - 위치 전송 중지 및 웹소켓 연결 해제 추가
   Future<void> autoLogoutOnAppExit({BuildContext? context}) async {
     debugPrint('🔄 앱 종료 감지 - 자동 로그아웃 확인');
 
@@ -586,7 +585,7 @@ class UserAuth extends ChangeNotifier {
 
     try {
       final prefs = await SharedPreferences.getInstance();
-      final rememberMe = prefs.getBool('remember_me') ?? false;
+      final rememberMe = prefs.getBool(AuthConstants.keyRememberMe) ?? false;
 
       if (rememberMe) {
         debugPrint('✅ 기억하기 옵션이 체크되어 있어 자동 로그아웃 스킵');
@@ -596,14 +595,13 @@ class UserAuth extends ChangeNotifier {
       if (_userRole == UserRole.external || !rememberMe) {
         debugPrint('🔄 자동 로그아웃 실행 - 사용자: $_userId, 역할: $_userRole');
 
-        // 🔥 자동 로그아웃 시 위치 전송만 중지 (웹소켓 연결은 유지)
+        // 자동 로그아웃 시 위치 전송만 중지 (웹소켓 연결은 유지)
         if (context != null) {
           _stopLocationSending(context);
-          // 🔥 웹소켓 연결은 유지 (실시간 통신 필요)
           debugPrint('✅ 자동 로그아웃 - 위치 전송만 중지, 웹소켓 연결 유지');
         }
 
-        if (_userId != null && _userId != 'guest' && _userId != 'admin') {
+        if (_userId != null && _userId != AuthConstants.guestId && _userId != AuthConstants.adminId) {
           try {
             final result = await AuthService.logout(id: _userId!);
             if (result.isSuccess) {
@@ -632,27 +630,25 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 🔥 로그인 후 강제 온라인 상태 유지 메서드
+  /// 로그인 후 강제 온라인 상태 유지 메서드
   void _enforceOnlineStatusAfterLogin() {
     try {
       debugPrint('🛡️ 로그인 후 강제 온라인 상태 유지 시작');
       
-      // 🔥 WebSocket 서비스를 통해 현재 사용자 온라인 상태 강제 확인
+      // WebSocket 서비스를 통해 현재 사용자 온라인 상태 강제 확인
       final wsService = WebSocketService();
       if (wsService.isConnected) {
         debugPrint('🛡️ WebSocket 연결 확인됨 - 온라인 상태 유지');
         
-        // 🔥 하트비트 전송으로 연결 상태 활성화
+        // 하트비트 전송으로 연결 상태 활성화
         wsService.sendHeartbeat();
         
-        // 🔥 FriendsController에 온라인 상태 강제 유지 요청
-        // (Provider를 통해 접근)
         debugPrint('🛡️ 로그인 후 온라인 상태 강제 유지 완료');
       } else {
         debugPrint('⚠️ WebSocket 연결되지 않음 - 재연결 시도');
         
-        // 🔥 WebSocket 재연결 시도
-        if (_userId != null && !_userId!.startsWith('guest_')) {
+        // WebSocket 재연결 시도
+        if (!_isGuestUser()) {
           _startWebSocketConnection();
         }
       }
@@ -661,12 +657,12 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 🔥 앱 재시작 시 자동 로그아웃 처리된 상태 확인
+  /// 앱 재시작 시 자동 로그아웃 처리된 상태 확인
   Future<bool> shouldAutoLogout() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final rememberMe = prefs.getBool('remember_me') ?? false;
-      final savedUserId = prefs.getString('user_id');
+      final rememberMe = prefs.getBool(AuthConstants.keyRememberMe) ?? false;
+      final savedUserId = prefs.getString(AuthConstants.keyUserId);
 
       return !rememberMe && savedUserId != null;
     } catch (e) {
@@ -838,9 +834,9 @@ class UserAuth extends ChangeNotifier {
   Future<bool> hasSavedLoginInfo() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final rememberMe = prefs.getBool('remember_me') ?? false;
-      final savedUserId = prefs.getString('user_id');
-      final savedUserName = prefs.getString('user_name');
+      final rememberMe = prefs.getBool(AuthConstants.keyRememberMe) ?? false;
+      final savedUserId = prefs.getString(AuthConstants.keyUserId);
+      final savedUserName = prefs.getString(AuthConstants.keyUserName);
 
       return rememberMe && savedUserId != null && savedUserName != null;
     } catch (e) {
@@ -854,10 +850,10 @@ class UserAuth extends ChangeNotifier {
     _setError(message);
   }
 
-  /// 🔥 튜토리얼 표시 여부 업데이트
+  /// 튜토리얼 표시 여부 업데이트
   Future<bool> updateTutorial({required bool showTutorial}) async {
     try {
-      if (_userId == null || _userId == 'guest' || _userId!.startsWith('guest_')) {
+      if (_isGuestUser()) {
         debugPrint('⚠️ 게스트 사용자는 튜토리얼 설정을 업데이트할 수 없습니다.');
         return false;
       }
@@ -896,6 +892,40 @@ class UserAuth extends ChangeNotifier {
     _lastError = null;
   }
 
+  /// Context를 사용하여 에러 메시지 설정
+  void _setErrorFromContext(BuildContext? context, String l10nKey, String fallbackMessage) {
+    if (context != null) {
+      final l10n = AppLocalizations.of(context)!;
+      // l10nKey를 통해 동적으로 번역된 메시지 가져오기
+      String message;
+      switch (l10nKey) {
+        case 'user_info_not_found':
+          message = l10n.user_info_not_found;
+          break;
+        case 'unexpected_login_error':
+          message = l10n.unexpected_login_error;
+          break;
+        case 'login_required':
+          message = l10n.login_required;
+          break;
+        case 'register_error':
+          message = l10n.register_error;
+          break;
+        case 'update_error':
+          message = l10n.update_error;
+          break;
+        case 'delete_error':
+          message = l10n.delete_error;
+          break;
+        default:
+          message = fallbackMessage;
+      }
+      _setError(message);
+    } else {
+      _setError(fallbackMessage);
+    }
+  }
+
   /// 로그인 정보 저장 (수정됨 - 패스워드 저장 추가)
   Future<void> _saveLoginInfo({
     bool rememberMe = false,
@@ -903,15 +933,15 @@ class UserAuth extends ChangeNotifier {
   }) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('user_id', _userId ?? '');
-      await prefs.setString('user_name', _userName ?? '');
-      await prefs.setBool('is_logged_in', _isLoggedIn);
-      await prefs.setBool('remember_me', rememberMe);
+      await prefs.setString(AuthConstants.keyUserId, _userId ?? '');
+      await prefs.setString(AuthConstants.keyUserName, _userName ?? '');
+      await prefs.setBool(AuthConstants.keyIsLoggedIn, _isLoggedIn);
+      await prefs.setBool(AuthConstants.keyRememberMe, rememberMe);
 
       // 프로필 수정 시 확인용으로 항상 비밀번호 저장
       if (password != null) {
-        await prefs.setString('user_password', password);
-        debugPrint('🔐 비밀번호 저장됨: $password');
+        await prefs.setString(AuthConstants.keyUserPassword, password);
+        debugPrint('🔐 비밀번호 저장됨');
       }
     } catch (e) {
       debugPrint('로그인 정보 저장 오류: $e');
@@ -922,13 +952,13 @@ class UserAuth extends ChangeNotifier {
   Future<void> _clearLoginInfo() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('user_id');
-      await prefs.remove('user_name');
-      await prefs.remove('is_logged_in');
-      await prefs.remove('remember_me');
-      await prefs.remove('user_password');
+      await prefs.remove(AuthConstants.keyUserId);
+      await prefs.remove(AuthConstants.keyUserName);
+      await prefs.remove(AuthConstants.keyIsLoggedIn);
+      await prefs.remove(AuthConstants.keyRememberMe);
+      await prefs.remove(AuthConstants.keyUserPassword);
       
-      // 🔥 JWT 토큰 삭제
+      // JWT 토큰 삭제
       await JwtService.clearToken();
       debugPrint('🔐 JWT 토큰 삭제 완료');
     } catch (e) {

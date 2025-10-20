@@ -2,8 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-class WoosongButton extends StatefulWidget {
-  final VoidCallback? onPressed; // null 허용으로 변경
+/// 우송대학교 테마 버튼 컴포넌트
+class WoosongButton extends StatelessWidget {
+  final VoidCallback? onPressed;
   final Widget child;
   final bool isPrimary;
   final bool isOutlined;
@@ -17,45 +18,24 @@ class WoosongButton extends StatefulWidget {
   });
 
   @override
-  State<WoosongButton> createState() => _WoosongButtonState();
-}
-
-class _WoosongButtonState extends State<WoosongButton> {
-  @override
   Widget build(BuildContext context) {
-    final isEnabled = widget.onPressed != null;
+    final isEnabled = onPressed != null;
     
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: ElevatedButton(
         onPressed: isEnabled ? () {
-          // 🔥 즉시 햅틱 피드백
           HapticFeedback.lightImpact();
-          // 🔥 즉시 실행
-          widget.onPressed?.call();
+          onPressed?.call();
         } : null,
         style: ElevatedButton.styleFrom(
-          backgroundColor: widget.isOutlined
-              ? Colors.transparent
-              : widget.isPrimary
-                  ? (isEnabled
-                      ? const Color(0xFF1E3A8A)
-                      : const Color(0xFFE2E8F0))
-                  : (isEnabled
-                      ? const Color(0xFF64748B)
-                      : const Color(0xFFE2E8F0)),
-          foregroundColor: widget.isOutlined
-              ? (isEnabled 
-                  ? const Color(0xFF1E3A8A)
-                  : const Color(0xFFCBD5E1))
-              : (isEnabled 
-                  ? Colors.white
-                  : const Color(0xFF94A3B8)),
-          elevation: widget.isOutlined || !isEnabled ? 0 : 8,
+          backgroundColor: _getBackgroundColor(isEnabled),
+          foregroundColor: _getForegroundColor(isEnabled),
+          elevation: isOutlined || !isEnabled ? 0 : 8,
           shadowColor: const Color(0xFF1E3A8A).withOpacity(0.3),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: widget.isOutlined
+            side: isOutlined
                 ? BorderSide(
                     color: isEnabled 
                         ? const Color(0xFF1E3A8A)
@@ -71,18 +51,25 @@ class _WoosongButtonState extends State<WoosongButton> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w600,
-            color: widget.isOutlined
-                ? (isEnabled 
-                    ? const Color(0xFF1E3A8A)
-                    : const Color(0xFFCBD5E1))
-                : (isEnabled 
-                    ? Colors.white
-                    : const Color(0xFF94A3B8)),
+            color: _getForegroundColor(isEnabled),
             letterSpacing: -0.2,
           ),
-          child: widget.child,
+          child: child,
         ),
       ),
     );
+  }
+
+  Color _getBackgroundColor(bool isEnabled) {
+    if (isOutlined) return Colors.transparent;
+    if (!isEnabled) return const Color(0xFFE2E8F0);
+    return isPrimary ? const Color(0xFF1E3A8A) : const Color(0xFF64748B);
+  }
+
+  Color _getForegroundColor(bool isEnabled) {
+    if (isOutlined) {
+      return isEnabled ? const Color(0xFF1E3A8A) : const Color(0xFFCBD5E1);
+    }
+    return isEnabled ? Colors.white : const Color(0xFF94A3B8);
   }
 }
