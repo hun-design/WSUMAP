@@ -871,6 +871,56 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
       'timestamp': DateTime.now().toIso8601String(),
     });
   }
+
+  // 🔥 포그라운드 복귀 시 호출되는 메서드
+  Future<void> onAppResumed() async {
+    if (kDebugMode) {
+      debugPrint('📱 포그라운드 복귀 - WebSocket 상태 확인');
+    }
+    
+    try {
+      // 🔥 1. 연결 상태 확인
+      if (_isConnected && _channel != null && _subscription != null) {
+        // 🔥 2. 하트비트 전송으로 연결 활성화
+        sendHeartbeat();
+        
+        // 🔥 3. 온라인 사용자 목록 요청
+        _requestOnlineUsers();
+        
+        if (kDebugMode) {
+          debugPrint('✅ 포그라운드 복귀 - WebSocket 연결 유지됨');
+        }
+      } else {
+        if (kDebugMode) {
+          debugPrint('⚠️ 포그라운드 복귀 - WebSocket 연결 안됨, 재연결 시도');
+        }
+        
+        // 🔥 연결이 끊어진 경우 재연결 시도
+        if (_userId != null && !_userId!.startsWith('guest_')) {
+          await connect(_userId!);
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ 포그라운드 복귀 - WebSocket 상태 확인 실패: $e');
+      }
+    }
+  }
+
+  // 🔥 온라인 사용자 목록 요청
+  void _requestOnlineUsers() {
+    if (_isConnected && _channel != null) {
+      _sendMessage({
+        'type': 'request_online_users',
+        'userId': _userId,
+        'timestamp': DateTime.now().toIso8601String(),
+      });
+      
+      if (kDebugMode) {
+        debugPrint('📤 온라인 사용자 목록 요청 전송');
+      }
+    }
+  }
   
   // 🔥 연결 건강 상태 모니터링 시작
   void _startConnectionHealthMonitoring() {

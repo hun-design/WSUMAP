@@ -45,6 +45,9 @@ android {
             buildConfigField("boolean", "SUPPRESS_IMAGEREADER_LOGS", "true")
             buildConfigField("boolean", "SUPPRESS_NATIVE_LOGS", "true")
             buildConfigField("boolean", "SUPPRESS_JNI_LOGS", "true")
+            
+            // 🔥 로그 레벨을 ERROR로 제한 (WARN 로그 차단)
+            buildConfigField("String", "LOG_LEVEL", "\"ERROR\"")
         }
         debug {
             // 🔥 디버그 빌드에서도 ImageReader_JNI 로그 차단
@@ -56,6 +59,9 @@ android {
             ndk {
                 debugSymbolLevel = "NONE"
             }
+            
+            // 🔥 로그 레벨을 ERROR로 제한 (WARN 로그 차단)
+            buildConfigField("String", "LOG_LEVEL", "\"ERROR\"")
         }
     }
     

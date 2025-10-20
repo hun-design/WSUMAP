@@ -112,11 +112,13 @@ class _FriendsScreenState extends State<FriendsScreen>
       case AppLifecycleState.resumed:
         debugPrint('📱 앱 포그라운드 전환 - 실시간 업데이트 재시작');
         controller.resumeRealTimeUpdates();
+        controller.onAppResumed();
         break;
       case AppLifecycleState.paused:
       case AppLifecycleState.inactive:
         debugPrint('📱 앱 백그라운드 전환 - 실시간 업데이트 일시중지');
         controller.stopRealTimeUpdates();
+        controller.onAppPaused();
         break;
       default:
         break;
@@ -550,33 +552,6 @@ class _FriendsScreenState extends State<FriendsScreen>
               ),
             ],
           ),
-          // 실시간 업데이트 정보 표시
-          if (controller.isRealTimeEnabled) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.green.withOpacity(0.3)),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.wifi, color: Colors.green.shade600, size: 14),
-                  const SizedBox(width: 6),
-                  Text(
-                    AppLocalizations.of(context)!.realTimeSyncStatus,
-                    style: TextStyle(
-                      color: Colors.green.shade700,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
         ],
       ),
     );

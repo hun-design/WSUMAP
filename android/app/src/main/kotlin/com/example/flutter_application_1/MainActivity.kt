@@ -77,6 +77,9 @@ class MainActivity : FlutterActivity() {
         // 🔥 추가: ImageReader_JNI 로그 완전 차단 (최종 버전)
         blockImageReaderJNIForeverFinal()
         
+        // 🔥 최강: BuildConfig를 사용한 로그 레벨 제한
+        restrictLogLevel()
+        
         // 스플래시 스크린 완전 제거
         window.setFlags(
             WindowManager.LayoutParams.FLAG_FULLSCREEN,
@@ -738,6 +741,39 @@ class MainActivity : FlutterActivity() {
             
         } catch (e: Exception) {
             Log.d("MainActivity", "ImageReader_JNI 평생 차단 (최종) 일부 실패 (정상): ${e.message}")
+        }
+    }
+    
+    /**
+     * 🔥 BuildConfig를 사용한 로그 레벨 제한 (최강 버전)
+     */
+    private fun restrictLogLevel() {
+        try {
+            // 🔥 BuildConfig.LOG_LEVEL을 사용하여 로그 레벨 제한
+            // WARN 로그를 ERROR 레벨로 차단
+            System.setProperty("log.tag", "ERROR")
+            
+            // 🔥 ImageReader_JNI 관련 모든 로그를 ERROR 레벨로 차단
+            val imageReaderTags = listOf(
+                "ImageReader_JNI", "ImageReader", "ImageReader_Cpp",
+                "Camera2_JNI", "Camera2", "Camera2Impl",
+                "BufferQueue", "BufferQueueConsumer", "BufferQueueProducer",
+                "Surface", "SurfaceFlinger", "GraphicBuffer",
+                "GraphicBufferAllocator", "GraphicBufferMapper",
+                "CameraDevice", "CameraCaptureSession", "CameraManager",
+                "Image", "Plane", "ImageReaderNative", "ImageReaderImpl",
+                "CameraDeviceImpl", "CameraCaptureSessionImpl", "CameraMetadata",
+                "CameraCharacteristics", "CaptureRequest", "CaptureResult"
+            )
+            
+            imageReaderTags.forEach { tag ->
+                System.setProperty("log.tag.$tag", "ERROR")
+            }
+            
+            Log.i("MainActivity", "🔥 로그 레벨 제한 완료 - WARN 로그 차단")
+            
+        } catch (e: Exception) {
+            Log.d("MainActivity", "로그 레벨 제한 일부 실패 (정상): ${e.message}")
         }
     }
 }

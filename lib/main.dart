@@ -315,12 +315,12 @@ class _CampusNavigatorAppState extends State<CampusNavigatorApp>
     try {
       // 🔥 WebSocket 서비스를 통해 온라인 상태 강제 유지
       final wsService = WebSocketService();
-      if (wsService.isConnected) {
-        // 🔥 하트비트 전송으로 연결 상태 활성화
-        wsService.sendHeartbeat();
-        if (kDebugMode) {
-          debugPrint('🛡️ 포그라운드 복귀 시 온라인 상태 강제 유지');
-        }
+      
+      // 🔥 포그라운드 복귀 시 WebSocket 상태 확인 및 친구 상태 동기화
+      wsService.onAppResumed();
+      
+      if (kDebugMode) {
+        debugPrint('🛡️ 포그라운드 복귀 시 온라인 상태 강제 유지');
       }
     } catch (e) {
       if (kDebugMode) {

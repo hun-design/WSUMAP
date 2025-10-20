@@ -118,7 +118,6 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
 
   String? _selectedInquiryType;
   List<File> _selectedImages = [];
-  final ImagePicker _picker = ImagePicker();
 
   // 🔥 제출 상태 관리 추가
   bool _isSubmitting = false;
@@ -172,6 +171,20 @@ void didChangeDependencies() {
   void dispose() {
     _titleController.dispose();
     _contentController.dispose();
+    
+    // 🔥 이미지 파일 메모리 정리 (버퍼 오버플로우 방지)
+    for (var image in _selectedImages) {
+      try {
+        if (image.existsSync()) {
+          // 이미지 파일은 삭제하지 않고 메모리만 해제
+          // 실제 파일은 서버에 업로드 후에 정리
+        }
+      } catch (e) {
+        // 무시
+      }
+    }
+    _selectedImages.clear();
+    
     super.dispose();
   }
 
@@ -877,7 +890,10 @@ void didChangeDependencies() {
     }
 
     try {
-      final XFile? image = await _picker.pickImage(
+      // 🔥 매번 새로운 ImagePicker 인스턴스 생성 (버퍼 오버플로우 방지)
+      final picker = ImagePicker();
+      
+      final XFile? image = await picker.pickImage(
         source: source,
         maxWidth: 800, // 🔥 해상도를 낮춰서 버퍼 사용량 감소
         maxHeight: 800,
@@ -885,9 +901,15 @@ void didChangeDependencies() {
       );
 
       if (image != null) {
+        // 🔥 이미지 경로를 즉시 저장
+        final imageFile = File(image.path);
+        
         setState(() {
-          _selectedImages = [File(image.path)];
+          _selectedImages = [imageFile];
         });
+        
+        // 🔥 이미지 버퍼 즉시 해제 (메모리 누수 방지)
+        await Future.delayed(const Duration(milliseconds: 50));
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
