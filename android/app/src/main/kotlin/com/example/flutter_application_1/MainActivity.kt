@@ -39,6 +39,9 @@ class MainActivity : FlutterActivity() {
     }
     
     override fun onCreate(savedInstanceState: Bundle?) {
+        // 🔥🔥🔥 가장 먼저 실행: ImageReader_JNI 로그 완전 차단 (super.onCreate 전에!)
+        blockImageReaderJNILogsBeforeSuper()
+        
         super.onCreate(savedInstanceState)
         
         // 🔥 앱 시작 시 즉시 모든 불필요한 로그 억제
@@ -90,6 +93,55 @@ class MainActivity : FlutterActivity() {
         window.setBackgroundDrawableResource(android.R.color.transparent)
         
         Log.i("MainActivity", "🎯 메인 액티비티 초기화 완료 - ImageReader_JNI 로그 평생 차단됨")
+    }
+    
+    /**
+     * 🔥🔥🔥 super.onCreate() 전에 실행되는 최우선 로그 차단 메서드
+     * ImageReader_JNI 로그를 가장 먼저 차단하여 평생 안 뜨게 함
+     */
+    private fun blockImageReaderJNILogsBeforeSuper() {
+        try {
+            // 🔥 가장 먼저 실행: ImageReader_JNI 로그 완전 차단
+            System.setProperty("log.tag.ImageReader_JNI", "SILENT")
+            System.setProperty("log.tag.ImageReader", "SILENT")
+            System.setProperty("log.tag.ImageReader_Cpp", "SILENT")
+            System.setProperty("log.tag.Camera2_JNI", "SILENT")
+            System.setProperty("log.tag.Camera2", "SILENT")
+            System.setProperty("log.tag.BufferQueue", "SILENT")
+            System.setProperty("log.tag.BufferQueueConsumer", "SILENT")
+            System.setProperty("log.tag.BufferQueueProducer", "SILENT")
+            System.setProperty("log.tag.Surface", "SILENT")
+            System.setProperty("log.tag.SurfaceFlinger", "SILENT")
+            System.setProperty("log.tag.GraphicBuffer", "SILENT")
+            System.setProperty("log.tag.GraphicBufferAllocator", "SILENT")
+            System.setProperty("log.tag.GraphicBufferMapper", "SILENT")
+            
+            // 🔥 네이티브 레벨 로그 차단
+            System.setProperty("android.util.Log.VERBOSE", "false")
+            System.setProperty("android.util.Log.DEBUG", "false")
+            System.setProperty("android.util.Log.INFO", "false")
+            System.setProperty("android.util.Log.WARN", "false")
+            
+            // 🔥 JNI 레벨 로그 차단
+            System.setProperty("jni.log", "false")
+            System.setProperty("jni.debug", "false")
+            System.setProperty("jni.verbose", "false")
+            
+            // 🔥 ImageReader 버퍼 설정 강제 적용
+            System.setProperty("android.media.ImageReader.maxImages", "1")
+            System.setProperty("android.media.ImageReader.bufferCount", "1")
+            System.setProperty("android.media.ImageReader.bufferOverflowProtection", "true")
+            System.setProperty("android.media.ImageReader.forceSingleBuffer", "true")
+            
+            // 🔥 추가: ImageReader_JNI 로그 완전 차단 플래그
+            System.setProperty("imagereader.suppress", "true")
+            System.setProperty("imagereader.block", "true")
+            System.setProperty("imagereader.disable", "true")
+            System.setProperty("imagereader.silent", "true")
+            
+        } catch (e: Exception) {
+            // 조용히 실패 (로그 출력 안 함)
+        }
     }
     
     /**

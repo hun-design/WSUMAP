@@ -40,7 +40,6 @@ class FriendsController extends ChangeNotifier {
   
   // 🔥 백그라운드 상태 관리
   Timer? _backgroundTimer;
-  bool _isInBackground = false;
   DateTime? _backgroundEnterTime;
 
   // 친구 요청 알림 콜백
@@ -1213,16 +1212,23 @@ class FriendsController extends ChangeNotifier {
     }
   }
 
-  // 🔥 포그라운드 복귀 시 호출되는 메서드 (친구 상태 강제 동기화)
+  // 🔥 포그라운드 복귀 시 호출되는 메서드 (개선된 버전)
   Future<void> onAppResumed() async {
     if (kDebugMode) {
-      debugPrint('🔄 포그라운드 복귀 - 친구 상태 동기화 시작');
+      debugPrint('🔄 포그라운드 복귀 - 친구 상태 동기화 시작 (네이버 지도/카카오맵 방식)');
     }
     
     // 🔥 백그라운드 타이머 취소
     _backgroundTimer?.cancel();
     _backgroundTimer = null;
-    _isInBackground = false;
+    
+    // 🔥 백그라운드에 있었던 시간 계산
+    if (_backgroundEnterTime != null) {
+      final backgroundDuration = DateTime.now().difference(_backgroundEnterTime!);
+      if (kDebugMode) {
+        debugPrint('⏱️ 백그라운드에 있었던 시간: ${backgroundDuration.inSeconds}초');
+      }
+    }
     
     try {
       // 🔥 1. 웹소켓 연결 상태 확인 및 재연결 시도
@@ -1258,11 +1264,21 @@ class FriendsController extends ChangeNotifier {
           debugPrint('✅ 현재 온라인 친구 수: ${onlineUsers.length}명');
         }
         
-        // 🔥 2. 웹소켓 연결 상태를 우선시하고 UI만 업데이트
+        // 🔥 2. 하트비트 전송으로 연결 활성화 (네이버 지도/카카오맵 방식)
+        _wsService.sendHeartbeat();
+        
+        // 🔥 3. 온라인 사용자 목록 요청
+        _wsService.sendMessage({
+          'type': 'request_online_users',
+          'userId': myId,
+          'timestamp': DateTime.now().toIso8601String(),
+        });
+        
+        // 🔥 4. 웹소켓 연결 상태를 우선시하고 UI만 업데이트
         // API 호출을 하지 않음 (DB 상태가 오래되었을 수 있음)
         _syncWithServerData();
         
-        // 🔥 3. UI 업데이트
+        // 🔥 5. UI 업데이트
         notifyListeners();
         
         if (kDebugMode) {
@@ -1281,57 +1297,26 @@ class FriendsController extends ChangeNotifier {
     }
   }
   
-  // 🔥 백그라운드 진입 시 호출되는 메서드
+  // 🔥 백그라운드 진입 시 호출되는 메서드 (개선된 버전)
   Future<void> onAppPaused() async {
     if (kDebugMode) {
-      debugPrint('📱 백그라운드 진입 - 즉시 오프라인 처리 및 앱 종료');
+      debugPrint('📱 백그라운드 진입 - 웹소켓 연결 유지 (네이버 지도/카카오맵 방식)');
     }
     
-    _isInBackground = true;
+    _backgroundEnterTime = DateTime.now();
     
-    // 🔥 1. 웹소켓 연결 해제 및 오프라인 처리 (즉시 실행)
-    if (_wsService.isConnected && !_isGuestUser()) {
-      if (kDebugMode) {
-        debugPrint('🔌 백그라운드 진입 - 웹소켓 연결 즉시 해제');
-      }
-      
-      // 웹소켓 연결 해제 (서버에 로그아웃 요청 전송)
-      await _wsService.logoutAndDisconnect();
-      isWebSocketConnected = false;
-      
-      if (kDebugMode) {
-        debugPrint('✅ 웹소켓 연결 해제 완료 - 다른 친구들에게 즉시 오프라인 상태 전달됨');
-      }
+    // 🔥 기존 백그라운드 타이머 취소
+    _backgroundTimer?.cancel();
+    _backgroundTimer = null;
+    
+    // 🔥 웹소켓 연결 유지 (백그라운드에서도 친구들이 온라인 상태를 볼 수 있음)
+    // 위치 전송만 중지하고 웹소켓은 계속 유지하여 실시간 친구 상태 확인 가능
+    if (kDebugMode) {
+      debugPrint('✅ 백그라운드 진입 - 웹소켓 연결 유지, 위치 전송만 중지');
+      debugPrint('✅ 친구들이 당신을 온라인으로 계속 볼 수 있습니다');
     }
     
-    // 🔥 2. iOS에서는 백그라운드로 가면 즉시 앱 종료 (타이머가 일시정지되므로)
-    if (Platform.isIOS) {
-      if (kDebugMode) {
-        debugPrint('🍎 iOS 백그라운드 진입 - 즉시 앱 종료');
-      }
-      
-      // 3초 대기 후 앱 종료
-      Future.delayed(const Duration(seconds: 3), () {
-        if (kDebugMode) {
-          debugPrint('🛑 iOS 백그라운드 3초 경과 - 앱 종료');
-        }
-        exit(0);
-      });
-    } else {
-      // Android는 기존 방식 유지
-      _backgroundTimer = Timer(const Duration(seconds: 3), () {
-        if (_isInBackground) {
-          if (kDebugMode) {
-            debugPrint('🛑 Android 백그라운드 3초 경과 - 앱 종료');
-          }
-          exit(0);
-        }
-      });
-      
-      if (kDebugMode) {
-        debugPrint('⏱️ Android 백그라운드 타이머 시작 - 3초 후 앱 종료 예약');
-      }
-    }
+    // 🔥 실시간 업데이트는 이미 stopRealTimeUpdates()에서 처리됨
   }
   
   // 🔥 웹소켓 재연결 후 친구 상태 동기화

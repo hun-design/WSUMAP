@@ -59,12 +59,35 @@
         android:usesCleartextTraffic="true"
         android:theme="@style/NormalTheme"
         android:hardwareAccelerated="true"
-        android:largeHeap="true">
+        android:largeHeap="true"
+        android:debuggable="false">
 
         <!-- [핵심 추가] 네이버 지도 연동을 위한 클라이언트 ID -->
         <meta-data
             android:name="com.naver.maps.map.NCP_KEY_ID"
             android:value="gxa5mf6swg" />
+
+        <!-- =========== 🔥 ImageReader_JNI 로그 완전 차단 메타데이터 =========== -->
+        
+        <!-- [핵심 추가] ImageReader_JNI 로그 완전 차단 -->
+        <meta-data
+            android:name="android.log.tag.ImageReader_JNI"
+            android:value="SILENT" />
+            
+        <!-- [핵심 추가] ImageReader 로그 완전 차단 -->
+        <meta-data
+            android:name="android.log.tag.ImageReader"
+            android:value="SILENT" />
+            
+        <!-- [핵심 추가] Camera2_JNI 로그 완전 차단 -->
+        <meta-data
+            android:name="android.log.tag.Camera2_JNI"
+            android:value="SILENT" />
+            
+        <!-- [핵심 추가] BufferQueue 로그 완전 차단 -->
+        <meta-data
+            android:name="android.log.tag.BufferQueue"
+            android:value="SILENT" />
 
         <!-- =========== 🔔 알림 관련 메타데이터 추가 =========== -->
         

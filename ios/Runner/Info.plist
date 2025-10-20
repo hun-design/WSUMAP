@@ -110,6 +110,11 @@
 	<string>이 앱이 사진 라이브러리에 접근하여 사진을 선택하려고 합니다.</string>
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>이 앱이 친구 요청 및 실시간 알림을 위해 알림 권한이 필요합니다.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
