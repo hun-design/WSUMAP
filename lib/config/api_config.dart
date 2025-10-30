@@ -9,8 +9,8 @@ class ApiConfig {
   
   // Port Configuration
   static const int buildingPort = 3000;
-  static const int userPort = 3001;
-  static const int websocketPort = 3002;
+  static const int userPort = 3000;
+  static const int websocketPort = 3000;
   
   // HTTP API Endpoints
   static String get buildingBase => '$baseHost:$buildingPort/building';
