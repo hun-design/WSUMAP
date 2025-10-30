@@ -1307,29 +1307,29 @@ class FriendsController extends ChangeNotifier {
     // 🔥 2. iOS에서는 백그라운드로 가면 즉시 앱 종료 (타이머가 일시정지되므로)
     if (Platform.isIOS) {
       if (kDebugMode) {
-        debugPrint('🍎 iOS 백그라운드 진입 - 즉시 앱 종료');
+        debugPrint('🍎 iOS 백그라운드 진입 - 1분 후 앱 종료 예약');
       }
       
-      // 3초 대기 후 앱 종료
-      Future.delayed(const Duration(seconds: 3), () {
+      // 1분 대기 후 앱 종료
+      Future.delayed(const Duration(minutes: 1), () {
         if (kDebugMode) {
-          debugPrint('🛑 iOS 백그라운드 3초 경과 - 앱 종료');
+          debugPrint('🛑 iOS 백그라운드 1분 경과 - 앱 종료');
         }
         exit(0);
       });
     } else {
       // Android는 기존 방식 유지
-      _backgroundTimer = Timer(const Duration(seconds: 3), () {
+      _backgroundTimer = Timer(const Duration(minutes: 1), () {
         if (_isInBackground) {
           if (kDebugMode) {
-            debugPrint('🛑 Android 백그라운드 3초 경과 - 앱 종료');
+            debugPrint('🛑 Android 백그라운드 1분 경과 - 앱 종료');
           }
           exit(0);
         }
       });
       
       if (kDebugMode) {
-        debugPrint('⏱️ Android 백그라운드 타이머 시작 - 3초 후 앱 종료 예약');
+        debugPrint('⏱️ Android 백그라운드 타이머 시작 - 1분 후 앱 종료 예약');
       }
     }
   }
