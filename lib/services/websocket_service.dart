@@ -122,19 +122,24 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     _shouldReconnect = true;
     _reconnectAttempts = 0;
 
-    // 🔥 플랫폼별 최적화된 연결 타임아웃 설정
+    // 🔥 플랫폼별 최적화된 연결 타임아웃 설정 (연장된 타임아웃)
     try {
       await _doConnect().timeout(
-        _platformConnectionTimeout,
+        Duration(seconds: _platformConnectionTimeout.inSeconds + 5), // 🔥 5초 추가 연장
         onTimeout: () {
-          debugPrint('⏰ 웹소켓 연결 타임아웃 (${_platformConnectionTimeout.inSeconds}초)');
-          throw TimeoutException('웹소켓 연결 타임아웃', _platformConnectionTimeout);
+          debugPrint('⏰ 웹소켓 연결 타임아웃 (${_platformConnectionTimeout.inSeconds + 5}초)');
+          throw TimeoutException('웹소켓 연결 타임아웃', Duration(seconds: _platformConnectionTimeout.inSeconds + 5));
         },
       );
     } catch (e) {
       debugPrint('❌ 웹소켓 연결 실패: $e');
+      // 🔥 연결 실패 시 즉시 재연결하지 않고 잠시 대기 후 재시도
       if (_shouldReconnect) {
-        _scheduleReconnect();
+        Future.delayed(const Duration(seconds: 3), () {
+          if (_shouldReconnect && !_isConnected) {
+            _scheduleReconnect();
+          }
+        });
       }
       rethrow;
     }
@@ -179,13 +184,13 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     }
 
     debugPrint('⏳ 웹소켓 연결 대기 중...');
-    // 🔥 연결 확인을 위한 타임아웃 (ApiConfig에서 가져오기)
+    // 🔥 연결 확인을 위한 타임아웃 (연장된 설정)
     try {
       await _channel!.ready.timeout(
-        ApiConfig.connectionTimeout,
+        Duration(seconds: ApiConfig.connectionTimeout.inSeconds + 3), // 🔥 3초 추가 연장
         onTimeout: () {
-          debugPrint('⏰ 웹소켓 연결 타임아웃 (${ApiConfig.connectionTimeout.inSeconds}초)');
-          throw TimeoutException('웹소켓 연결 타임아웃', ApiConfig.connectionTimeout);
+          debugPrint('⏰ 웹소켓 연결 타임아웃 (${ApiConfig.connectionTimeout.inSeconds + 3}초)');
+          throw TimeoutException('웹소켓 연결 타임아웃', Duration(seconds: ApiConfig.connectionTimeout.inSeconds + 3));
         },
       );
       debugPrint('✅ 웹소켓 연결 준비 완료');
@@ -195,26 +200,60 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
       rethrow;
     }
 
-    // 🔥 연결 직후 즉시 서버에 연결 알림 전송 (서버에서 처리하는 메시지 타입으로 변경)
+    // 🔥 메시지 수신 리스너 설정 - 먼저 설정해야 register 응답을 받을 수 있음
+    debugPrint('👂 메시지 수신 리스너 설정 시작');
+    await _setupMessageListener();
+
+    // 🔥 연결 직후 서버에 연결 알림 전송 (서버에서 처리하는 메시지 타입으로 변경)
     debugPrint('📤 웹소켓 연결 직후 서버에 연결 알림 전송');
+    
+    // 🔥 등록 메시지 전송 전에 Completer 초기화 (타이밍 이슈 방지)
+    _registrationCompleter = Completer<bool>();
+    
     _sendMessageDirectly({
       'type': 'register', // 🔥 서버에서 처리하는 타입
       'userId': _userId,
       'timestamp': DateTime.now().toIso8601String(),
     });
 
-    // 🔥 연결 직후 서버에서 자동으로 친구 상태 정보를 전송해주기를 기다림
-    debugPrint('📤 웹소켓 연결 완료 - 서버에서 친구 상태 정보 전송 대기');
+    // 🔥 서버의 registered 응답을 기다림 (필수 대기 - 타임아웃 연장)
+    debugPrint('⏳ 서버 registered 응답 대기 중...');
+    bool registered = false;
+    try {
+      registered = await _registrationCompleter!.future.timeout(
+        const Duration(seconds: 10), // 🔥 10초 타임아웃
+        onTimeout: () {
+          debugPrint('⏰ registered 응답 타임아웃 - 연결 실패로 처리');
+          if (_registrationCompleter != null && !_registrationCompleter!.isCompleted) {
+            _registrationCompleter!.complete(false);
+          }
+          return false;
+        },
+      );
+    } catch (e) {
+      debugPrint('❌ 등록 확인 대기 중 오류: $e');
+      registered = false;
+    }
 
-    // 서버가 메시지를 처리할 시간 확보 (충분한 시간 확보)
-    await Future.delayed(const Duration(milliseconds: 500));
+    if (!registered) {
+      debugPrint('❌ 서버 등록 확인 실패 - 연결 중단');
+      _registrationCompleter = null;
+      throw Exception('서버 등록 확인 실패');
+    }
 
-    // 메시지 수신 리스너 설정 - 중복 리스너 방지
-    debugPrint('👂 메시지 수신 리스너 설정 시작');
-    await _setupMessageListener();
+    _registrationCompleter = null;
+    debugPrint('✅ 서버 등록 확인 완료');
 
-    // 초기 메시지들 전송
+    // 🔥 등록 확인 후 연결 안정화를 위한 대기 시간 추가 (서버가 친구들에게 알림을 보낼 시간 확보)
+    debugPrint('⏳ 연결 안정화 대기 중 (서버 알림 처리 시간 확보)...');
+    await Future.delayed(const Duration(milliseconds: 1500)); // 🔥 1.5초 대기 (서버의 notifyUserLoggedIn 처리 시간 확보)
+
+    // 초기 메시지들 전송 (하트비트만)
     await _sendInitialMessages();
+
+    // 🔥 추가 안정화 대기 (하트비트 응답 확인)
+    debugPrint('⏳ 하트비트 응답 확인 대기 중...');
+    await Future.delayed(const Duration(milliseconds: 1000)); // 🔥 1초 추가 대기
 
     // 🔥 연결 상태를 마지막에 설정하여 완전히 준비된 후에만 연결됨으로 표시
     _isConnected = true;
@@ -287,6 +326,9 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     debugPrint('🧹 기존 연결 정리 완료');
   }
 
+
+  // 🔥 서버 등록 확인을 위한 Completer (클래스 멤버로 유지)
+  Completer<bool>? _registrationCompleter;
 
   // 🔥 메시지 리스너 설정
   Future<void> _setupMessageListener() async {
@@ -581,10 +623,22 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
       debugPrint('✅ 웹소켓 등록 확인됨');
     }
 
-    // 등록 후 연결 상태 확실히 설정
-    _isConnected = true;
+    // 🔥 등록 확인 Completer 완료 (중요: _isConnected는 여기서 설정하지 않음)
+    // _isConnected는 연결 안정화 후에만 설정되어야 함
+    if (_registrationCompleter != null && !_registrationCompleter!.isCompleted) {
+      _registrationCompleter!.complete(true);
+      if (kDebugMode) {
+        debugPrint('✅ 등록 확인 Completer 완료');
+      }
+    } else {
+      if (kDebugMode) {
+        debugPrint('⚠️ 등록 확인 Completer가 없거나 이미 완료됨');
+      }
+    }
+
+    // 하트비트 응답 시간 기록 (연결 상태 확인용)
     _lastHeartbeatReceived = DateTime.now();
-    
+
     // 등록 후 서버에서 자동으로 온라인 사용자 목록을 전송해주기를 기다림
     if (kDebugMode) {
       debugPrint('📤 등록 완료 - 서버에서 온라인 사용자 목록 전송 대기');
@@ -983,30 +1037,38 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     final now = DateTime.now();
     bool shouldReconnect = false;
     
-    // 🔥 하트비트 응답이 40초 이상 없으면 연결 불건강으로 판단 (더 엄격하게)
+    // 🔥 하트비트 응답이 60초 이상 없으면 연결 불건강으로 판단 (적정 수준)
     if (_lastHeartbeatReceived != null) {
       final timeSinceLastResponse = now.difference(_lastHeartbeatReceived!);
-      if (timeSinceLastResponse.inSeconds > 40) {
+      if (timeSinceLastResponse.inSeconds > 60) { // 🔥 90초 → 60초로 조정
         _consecutiveHeartbeatFailures++;
-        
+
         if (kDebugMode) {
           debugPrint('⚠️ 하트비트 응답 없음: ${timeSinceLastResponse.inSeconds}초, 실패 횟수: $_consecutiveHeartbeatFailures');
         }
-        
-        // 🔥 2회 연속 실패하면 재연결 시도 (더 빠른 대응)
-        if (_consecutiveHeartbeatFailures >= 2) {
+
+        // 🔥 3회 연속 실패하면 재연결 시도 (더 안정적)
+        if (_consecutiveHeartbeatFailures >= 3) { // 🔥 2회 → 3회로 완화
           shouldReconnect = true;
           if (kDebugMode) {
             debugPrint('🔄 하트비트 실패로 인한 재연결 시도');
           }
         }
+      } else {
+        // 🔥 응답이 정상적으로 오면 실패 횟수 리셋
+        if (_consecutiveHeartbeatFailures > 0) {
+          _consecutiveHeartbeatFailures = 0;
+          if (kDebugMode) {
+            debugPrint('✅ 하트비트 응답 정상 복구');
+          }
+        }
       }
     }
     
-    // 🔥 하트비트 전송이 60초 이상 없으면 연결 문제로 판단 (더 엄격하게)
+    // 🔥 하트비트 전송이 120초 이상 없으면 연결 문제로 판단 (완화된 설정)
     if (_lastHeartbeatSent != null) {
       final timeSinceLastSent = now.difference(_lastHeartbeatSent!);
-      if (timeSinceLastSent.inSeconds > 60) {
+      if (timeSinceLastSent.inSeconds > 120) { // 🔥 60초 → 120초로 완화
         shouldReconnect = true;
         if (kDebugMode) {
           debugPrint('🔄 하트비트 전송 지연으로 인한 재연결 시도');
@@ -1040,6 +1102,14 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
   // 🔌 연결 해제 처리 (개선된 버전)
   void _handleDisconnection() {
     debugPrint('🔌 웹소켓 연결 해제됨');
+    
+    // 🔥 등록 확인 중이었다면 실패로 처리
+    if (_registrationCompleter != null && !_registrationCompleter!.isCompleted) {
+      debugPrint('⚠️ 연결 해제 시 등록 확인 중이었음 - 등록 실패로 처리');
+      _registrationCompleter!.complete(false);
+      _registrationCompleter = null;
+    }
+    
     _isConnected = false;
     
     // 🔥 타이머 정리
@@ -1051,9 +1121,15 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
       _connectionController.add(false);
     });
 
-    // 🔥 재연결이 필요한 경우에만 재연결 시도
+    // 🔥 재연결이 필요한 경우에만 재연결 시도 (등록 완료 후에만 재연결)
+    // 등록이 완료되지 않은 상태에서 끊어졌다면 재연결 시도
     if (_shouldReconnect && _userId != null && !_userId!.startsWith('guest_')) {
-      _scheduleReconnect();
+      // 🔥 등록 완료 전에 끊어진 경우는 짧은 지연 후 재연결
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (_shouldReconnect && !_isConnected && !_isConnecting) {
+          _scheduleReconnect();
+        }
+      });
     }
   }
 
@@ -1105,14 +1181,20 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     });
   }
 
-  // 🔌 연결 해제
+  // 🔌 연결 해제 (강화된 버전)
   Future<void> disconnect() async {
     debugPrint('🔌 웹소켓 연결 해제 중...');
 
-    // 🔥 재연결 방지
+    // 🔥 재연결 방지 및 상태 초기화
     _shouldReconnect = false;
     _isConnected = false;
     _isConnecting = false;
+
+    // 🔥 등록 확인 Completer 정리
+    if (_registrationCompleter != null && !_registrationCompleter!.isCompleted) {
+      _registrationCompleter!.complete(false);
+    }
+    _registrationCompleter = null;
 
     // 🔥 타이머들 정리
     _heartbeatTimer?.cancel();
@@ -1121,29 +1203,41 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     _heartbeatTimer = null;
     _reconnectTimer = null;
     _connectionHealthTimer = null;
-    
+
     // 🔥 연결 상태 변수들 초기화
     _lastHeartbeatReceived = null;
     _lastHeartbeatSent = null;
     _consecutiveHeartbeatFailures = 0;
 
-    // 🔥 구독 정리
+    // 🔥 구독 정리 (강화된 정리)
     try {
-      await _subscription?.cancel();
-      debugPrint('✅ 구독 정리 완료');
+      if (_subscription != null) {
+        await _subscription!.cancel();
+        debugPrint('✅ 구독 정리 완료');
+      }
     } catch (e) {
       debugPrint('⚠️ 구독 정리 중 오류: $e');
+    } finally {
+      _subscription = null;
     }
-    _subscription = null;
 
-    // 🔥 채널 정리
+    // 🔥 채널 정리 (강화된 정리)
     try {
-      await _channel?.sink.close(status.normalClosure);
-      debugPrint('✅ 채널 정리 완료');
+      if (_channel != null) {
+        await _channel!.sink.close(status.normalClosure);
+        debugPrint('✅ 채널 정리 완료');
+      }
     } catch (e) {
       debugPrint('⚠️ 채널 정리 중 오류: $e');
+      // 강제 정리 시도
+      try {
+        _channel!.sink.close();
+      } catch (e2) {
+        debugPrint('⚠️ 채널 강제 정리 실패: $e2');
+      }
+    } finally {
+      _channel = null;
     }
-    _channel = null;
 
     // 🔥 연결 상태 스트림 업데이트를 마이크로태스크로 지연하여 안정성 확보
     Future.microtask(() {

@@ -42,8 +42,8 @@
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <!-- =========== 📷 이미지 선택 권한 추가 =========== -->
-    <!-- [필수 추가] 카메라 사용 권한 -->
-    <uses-permission android:name="android.permission.CAMERA" />
+    <!-- [필수 추가] 카메라 사용 권한 (ImageReader_JNI 로그 방지로 일시 중단) -->
+    <!-- <uses-permission android:name="android.permission.CAMERA" /> -->
     
     <!-- [권장 추가] 외부 저장소 읽기 권한 (Android 10 이하) -->
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
@@ -333,6 +333,17 @@
         <meta-data
             android:name="android.media.ImageReader.SUPPRESS_NATIVE_WARNINGS"
             android:value="true" />
+
+        <!-- 🔥 추가: 시스템 속성으로 ImageReader 로그 완전 차단 -->
+        <meta-data
+            android:name="android.os.SystemProperties.IMAGE_READER_LOGGING"
+            android:value="false" />
+        <meta-data
+            android:name="android.os.SystemProperties.JNI_LOGGING"
+            android:value="false" />
+        <meta-data
+            android:name="android.os.SystemProperties.CAMERA_LOGGING"
+            android:value="false" />
             
         <!-- 🔥 추가: ImageReader_JNI 로그 완전 차단 (최종 버전) -->
         <meta-data

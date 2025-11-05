@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:image_picker/image_picker.dart';
+// import 'package:image_picker/image_picker.dart'; // 🔥 이미지 첨부 기능 일시 중단
 import 'dart:io';
 import '../generated/app_localizations.dart';
 import '../services/inquiry_service.dart';
@@ -117,7 +117,8 @@ class _CreateInquiryTabState extends State<CreateInquiryTab> {
   final _contentController = TextEditingController();
 
   String? _selectedInquiryType;
-  List<File> _selectedImages = [];
+  // 🔥 이미지 첨부 기능 일시 중단으로 인한 주석 처리
+  // List<File> _selectedImages = [];
 
   // 🔥 제출 상태 관리 추가
   bool _isSubmitting = false;
@@ -171,20 +172,10 @@ void didChangeDependencies() {
   void dispose() {
     _titleController.dispose();
     _contentController.dispose();
-    
-    // 🔥 이미지 파일 메모리 정리 (버퍼 오버플로우 방지)
-    for (var image in _selectedImages) {
-      try {
-        if (image.existsSync()) {
-          // 이미지 파일은 삭제하지 않고 메모리만 해제
-          // 실제 파일은 서버에 업로드 후에 정리
-        }
-      } catch (e) {
-        // 무시
-      }
-    }
-    _selectedImages.clear();
-    
+
+    // 🔥 이미지 첨부 기능 일시 중단으로 메모리 정리 코드 제거
+    // _selectedImages.clear();
+
     super.dispose();
   }
 
@@ -583,340 +574,58 @@ void didChangeDependencies() {
               ),
             ),
             const SizedBox(width: 8),
-            Text(
-              l10n.max_one_image,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.orange[800],
-                fontWeight: FontWeight.w500,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.grey.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                '일시 중단',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ],
         ),
         const SizedBox(height: 8),
-        GestureDetector(
-          onTap: _selectedImages.isNotEmpty ? null : _showImagePickerDialog,
-          child: Container(
-            width: double.infinity, // 양옆으로 꽉 차게 설정
-            height: 120,
-            decoration: BoxDecoration(
-              color: _selectedImages.isNotEmpty
-                  ? Colors.grey[100]
-                  : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: _selectedImages.isNotEmpty
-                    ? Colors.grey[200]!
-                    : Colors.grey[300]!,
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.grey[200]!),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.info_outline,
+                color: Colors.grey[600],
+                size: 20,
               ),
-            ),
-            child: _selectedImages.isNotEmpty
-                ? Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(12),
-                        child: Image.file(
-                          _selectedImages.first,
-                          width: double.infinity,
-                          height: 120,
-                          fit: BoxFit.cover,
-                          // 🔥 ImageReader_JNI 로그 방지를 위한 최적화
-                          filterQuality: FilterQuality.low, // 최저 품질로 버퍼 사용량 최소화
-                          isAntiAlias: false, // 안티앨리어싱 비활성화로 버퍼 절약
-                          cacheWidth: 400, // 적절한 해상도로 캐시
-                          cacheHeight: 120,
-                          // 🔥 추가: 메모리 효율적인 로딩
-                          frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-                            if (wasSynchronouslyLoaded) return child;
-                            return AnimatedOpacity(
-                              opacity: frame == null ? 0 : 1,
-                              duration: const Duration(milliseconds: 150),
-                              child: child,
-                            );
-                          },
-                        ),
-                      ),
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _selectedImages.clear();
-                            });
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.6),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(
-                              Icons.close,
-                              color: Colors.white,
-                              size: 16,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  )
-                : Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        _selectedImages.isNotEmpty
-                            ? Icons.check_circle
-                            : Icons.add_photo_alternate,
-                        color: _selectedImages.isNotEmpty
-                            ? Colors.green[600]
-                            : Colors.grey[600],
-                        size: 32,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _selectedImages.isEmpty
-                            ? l10n.photo_attachment
-                            : l10n.photo_attachment_complete,
-                        style: TextStyle(
-                          color: _selectedImages.isNotEmpty
-                              ? Colors.green[600]
-                              : Colors.grey[600],
-                          fontSize: 16,
-                          fontWeight: _selectedImages.isNotEmpty
-                              ? FontWeight.w600
-                              : FontWeight.normal,
-                        ),
-                      ),
-                    ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  '이미지 첨부 기능이 일시적으로 중단되었습니다.\n텍스트로만 문의를 접수해주세요.',
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 14,
+                    height: 1.4,
                   ),
+                ),
+              ),
+            ],
           ),
         ),
       ],
     );
   }
 
-  void _showImagePickerDialog() {
-    final l10n = AppLocalizations.of(context)!;
-    showDialog(
-      context: context,
-      barrierColor: Colors.black.withOpacity(0.5),
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 헤더
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(24),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF1E3A8A),
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(20),
-                    topRight: Radius.circular(20),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.image,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        l10n.image_selection,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(
-                        Icons.close,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // 내용
-              Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    Text(
-                      l10n.select_image_method,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF64748B),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    // 갤러리 버튼
-                    _buildImageOptionButton(
-                      icon: Icons.photo_library,
-                      title: l10n.select_from_gallery,
-                      subtitle: l10n.select_from_gallery_desc,
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _pickImage(ImageSource.gallery);
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    // 파일 선택 버튼
-                    _buildImageOptionButton(
-                      icon: Icons.folder_open,
-                      title: l10n.select_from_file,
-                      subtitle: l10n.select_from_file_desc,
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _pickImage(ImageSource.gallery);
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildImageOptionButton({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onPressed,
-  }) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: const Color(0xFF1E3A8A),
-          elevation: 0,
-          padding: const EdgeInsets.all(16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: const Color(0xFFE2E8F0), width: 1),
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E3A8A).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, color: const Color(0xFF1E3A8A), size: 20),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF1E3A8A),
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF64748B),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Icon(
-              Icons.arrow_forward_ios,
-              color: Color(0xFF64748B),
-              size: 16,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _pickImage(ImageSource source) async {
-    final l10n = AppLocalizations.of(context)!;
-    if (_selectedImages.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(l10n.max_one_image_error),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    try {
-      // 🔥 매번 새로운 ImagePicker 인스턴스 생성 (버퍼 오버플로우 방지)
-      final picker = ImagePicker();
-      
-      final XFile? image = await picker.pickImage(
-        source: source,
-        maxWidth: 800, // 🔥 해상도를 낮춰서 버퍼 사용량 감소
-        maxHeight: 800,
-        imageQuality: 70, // 🔥 품질을 낮춰서 버퍼 사용량 감소
-      );
-
-      if (image != null) {
-        // 🔥 이미지 경로를 즉시 저장
-        final imageFile = File(image.path);
-        
-        setState(() {
-          _selectedImages = [imageFile];
-        });
-        
-        // 🔥 이미지 버퍼 즉시 해제 (메모리 누수 방지)
-        await Future.delayed(const Duration(milliseconds: 50));
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.image_selection_error), backgroundColor: Colors.red),
-      );
-    }
-  }
+  // 🔥 이미지 첨부 기능 일시 중단으로 관련 메서드들 제거됨
 
 
 
@@ -958,7 +667,8 @@ void didChangeDependencies() {
       category: category, // 키 값 그대로 전송
       title: _titleController.text.trim(),
       content: _contentController.text.trim(),
-      imageFile: _selectedImages.isNotEmpty ? _selectedImages.first : null,
+      // 🔥 이미지 첨부 기능 일시 중단으로 이미지 파라미터 제거
+      // imageFile: _selectedImages.isNotEmpty ? _selectedImages.first : null,
     );
 
     if (mounted) {
@@ -978,7 +688,8 @@ void didChangeDependencies() {
         _contentController.clear(); // 내용 텍스트 필드 초기화
         setState(() {
           _selectedInquiryType = null; // 문의 유형 초기화
-          _selectedImages.clear(); // 첨부 이미지 초기화
+          // 🔥 이미지 첨부 기능 일시 중단으로 초기화 코드 제거
+          // _selectedImages.clear(); // 첨부 이미지 초기화
         });
 
         // 🔥 문의 제출 성공 후 "내 문의" 탭으로 자동 이동

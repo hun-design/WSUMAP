@@ -222,4 +222,38 @@
     public *** *(...);
 }
 
+# 🔥 최강: ImageReader_JNI 로그 평생 차단을 위한 최종 차단 (최종 버전)
+-keep class android.media.ImageReader** { *; }
+-assumenosideeffects class android.media.ImageReader** {
+    public *** *(...);
+}
+
+# ==================================================================================
+# 🔥 추가: ImageReader_JNI 로그 완전 차단을 위한 최종 ProGuard 규칙
+-keep class android.media.ImageReader { *; }
+-assumenosideeffects class android.media.ImageReader {
+    public *** acquireLatestImage(...);
+    public *** acquireNextImage(...);
+    public *** close(...);
+    public *** release(...);
+    *** acquire*(...);
+    *** release*(...);
+}
+
+# 🔥 추가: 카메라 관련 모든 클래스 로그 차단
+-keep class android.hardware.camera2.** { *; }
+-assumenosideeffects class android.hardware.camera2.** {
+    *** *(...);
+}
+
+# 🔥 추가: 모든 네이티브 로그 메서드 호출 제거 (최종)
+-assumenosideeffects class ** {
+    *** *logNative*(...);
+    *** *jniLog*(...);
+    *** *nativeLog*(...);
+    *** *LogNative*(...);
+    *** *JNILog*(...);
+    *** *NativeLog*(...);
+}
+
 # ==================================================================================

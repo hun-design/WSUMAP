@@ -29,18 +29,18 @@ class ApiConfig {
   static String get websocketBase => 'ws://$baseWsHost:$websocketPort';
   
   // WebSocket 관련 상수들 (연결 안정성 개선)
-  static const Duration heartbeatInterval = Duration(seconds: 25);
+  static const Duration heartbeatInterval = Duration(seconds: 15); // 🔥 25초 → 15초로 단축
   static const Duration reconnectDelay = Duration(seconds: 2);
   static const Duration connectionTimeout = Duration(seconds: 12);
   static const int maxReconnectAttempts = 5;
   
   // 플랫폼별 최적화 설정 (연결 안정성 개선)
   static const Map<String, Duration> platformHeartbeatIntervals = {
-    'android': Duration(seconds: 25),
-    'ios': Duration(seconds: 25),
-    'windows': Duration(seconds: 20),
-    'macos': Duration(seconds: 20),
-    'linux': Duration(seconds: 20),
+    'android': Duration(seconds: 15), // 🔥 25초 → 15초로 단축
+    'ios': Duration(seconds: 15),     // 🔥 25초 → 15초로 단축
+    'windows': Duration(seconds: 15), // 🔥 20초 → 15초로 단축
+    'macos': Duration(seconds: 15),   // 🔥 20초 → 15초로 단축
+    'linux': Duration(seconds: 15),   // 🔥 20초 → 15초로 단축
   };
   
   static const Map<String, Duration> platformConnectionTimeouts = {

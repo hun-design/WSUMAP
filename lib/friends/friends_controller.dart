@@ -29,6 +29,12 @@ class FriendsController extends ChangeNotifier {
   Map<String, bool> _realTimeStatusCache = {};
   Map<String, DateTime> _statusTimestamp = {};
 
+  // 🔥 중복 메시지 처리 방지
+  final Set<String> _processedMessageIds = {};
+
+  // 🔥 메시지 디바운싱을 위한 타이머 맵
+  final Map<String, Timer> _messageDebounceTimers = {};
+
   // 리소스 관리
   Timer? _updateTimer;
   StreamSubscription? _wsMessageSubscription;
@@ -41,7 +47,6 @@ class FriendsController extends ChangeNotifier {
   // 🔥 백그라운드 상태 관리
   Timer? _backgroundTimer;
   bool _isInBackground = false;
-  DateTime? _backgroundEnterTime;
 
   // 친구 요청 알림 콜백
   Function(String)? _onFriendRequestNotification;
@@ -127,19 +132,30 @@ class FriendsController extends ChangeNotifier {
     }
   }
 
-  // 스트림 구독 시작
+  // 스트림 구독 시작 (중복 구독 방지)
   void _startStreamSubscription() {
     if (kDebugMode) {
       debugPrint('웹소켓 스트림 구독 시작');
     }
-    
-    _wsMessageSubscription?.cancel();
-    
+
+    // 🔥 중복 구독 방지: 이미 구독 중이면 취소 후 재구독
+    if (_wsMessageSubscription != null) {
+      if (kDebugMode) {
+        debugPrint('🔄 기존 메시지 스트림 구독 취소');
+      }
+      _wsMessageSubscription!.cancel();
+      _wsMessageSubscription = null;
+    }
+
     _wsMessageSubscription = _wsService.messageStream.listen(
       _handleWebSocketMessage,
       onError: _handleStreamError,
       onDone: _handleStreamDone,
     );
+
+    if (kDebugMode) {
+      debugPrint('✅ 메시지 스트림 구독 완료');
+    }
   }
 
   // 스트림 에러 핸들러
@@ -211,10 +227,19 @@ class FriendsController extends ChangeNotifier {
       await Future.delayed(_getConnectionStabilizationDelay());
       
     _startStreamSubscription();
-    
+
+    // 🔥 연결 상태 스트림 구독 (중복 구독 방지)
+    if (_wsConnectionSubscription != null) {
+      _wsConnectionSubscription!.cancel();
+    }
     _wsConnectionSubscription = _wsService.connectionStream.listen(
       _handleConnectionChange,
     );
+
+    // 🔥 온라인 사용자 스트림 구독 (중복 구독 방지)
+    if (_wsOnlineUsersSubscription != null) {
+      _wsOnlineUsersSubscription!.cancel();
+    }
     _wsOnlineUsersSubscription = _wsService.onlineUsersStream.listen(
       _handleOnlineUsersUpdate,
     );
@@ -525,15 +550,91 @@ class FriendsController extends ChangeNotifier {
     }
   }
 
+  // 🔥 중복 메시지 체크 및 디바운싱 (최종 강화 버전)
+  bool _isDuplicateMessage(Map<String, dynamic> message) {
+    final type = message['type']?.toString() ?? '';
+    final userId = message['userId']?.toString() ?? '';
+    final timestamp = message['timestamp']?.toString() ?? '';
+    final isOnline = message['isOnline']?.toString() ?? '';
+    final messageText = message['message']?.toString() ?? '';
+
+    // 🔥 디바운싱을 위한 키 생성 (사용자와 상태만으로)
+    final debounceKey = '$userId-$isOnline';
+
+    // 🚨 디바운싱 체크 - 같은 사용자와 상태의 메시지가 1초 이내에 오면 무시
+    if (_messageDebounceTimers.containsKey(debounceKey)) {
+      if (kDebugMode) {
+        debugPrint('🚨 메시지 디바운싱 - 1초 이내 중복 무시: $debounceKey');
+        debugPrint('🚨 디바운싱된 메시지: $message');
+      }
+      return true; // 🚫 1초 이내 같은 상태 메시지 무시
+    }
+
+    // 🔥 가장 정교한 메시지 ID 생성 (모든 필드 포함)
+    final messageId = '$type-$userId-$timestamp-$isOnline-${messageText.hashCode}';
+
+    // 🚨 이미 처리된 메시지인지 엄격하게 체크
+    if (_processedMessageIds.contains(messageId)) {
+      if (kDebugMode) {
+        debugPrint('🚨 중복 메시지 강제 차단: $messageId');
+        debugPrint('🚨 차단된 메시지 내용: $message');
+      }
+      return true; // 🚫 중복 메시지 완전 차단
+    }
+
+    // 🔥 디바운싱 타이머 설정 (1초 동안 같은 메시지 무시)
+    _messageDebounceTimers[debounceKey] = Timer(const Duration(seconds: 1), () {
+      _messageDebounceTimers.remove(debounceKey);
+    });
+
+    // 메시지 ID 저장 (최대 100개 유지 - 메모리 효율적)
+    _processedMessageIds.add(messageId);
+    if (_processedMessageIds.length > 100) {
+      // 가장 오래된 것부터 제거
+      _processedMessageIds.remove(_processedMessageIds.first);
+    }
+
+    if (kDebugMode) {
+      debugPrint('✅ 새로운 메시지 수신 및 처리: $messageId');
+    }
+
+    return false;
+  }
+
   // 웹소켓 메시지 처리 (개선된 버전)
   void _handleWebSocketMessage(Map<String, dynamic> message) {
     final messageType = message['type'] as String?;
-    
+
+    // 🔥 실시간으로 연결 상태 동기화 (매번 확인)
+    final actualWsConnected = _wsService.isConnected;
+    if (isWebSocketConnected != actualWsConnected) {
+      if (kDebugMode) {
+        debugPrint('🔄 실시간 상태 동기화: $isWebSocketConnected → $actualWsConnected');
+      }
+      isWebSocketConnected = actualWsConnected;
+      notifyListeners();
+    }
+
+    // 🔥 연결이 끊어진 상태에서는 메시지 무시 (단, friend_status_change는 예외적으로 처리)
+    if (!actualWsConnected && messageType != 'friend_status_change') {
+      if (kDebugMode) {
+        debugPrint('⚠️ WebSocket 연결 끊어짐 - 메시지 무시: $messageType');
+      }
+      return;
+    }
+
+    // 🔥 중복 메시지 체크
+    if (_isDuplicateMessage(message)) {
+      return;
+    }
+
     if (kDebugMode) {
       debugPrint('🔥 웹소켓 메시지 수신: $messageType');
       debugPrint('🔥 메시지 내용: $message');
       debugPrint('🔥 현재 사용자 ID: $myId');
       debugPrint('🔥 WebSocket 연결 상태: $isWebSocketConnected');
+      debugPrint('🔥 WebSocket 서비스 연결 상태: ${_wsService.isConnected}');
+      debugPrint('🔥 WebSocket 서비스 상세: ${_wsService.connectionInfo}');
     }
     
     if (_isGuestUser()) {
@@ -638,20 +739,38 @@ class FriendsController extends ChangeNotifier {
     }
   }
 
-  // 연결 상태 변경 처리
+  // 연결 상태 변경 처리 (최종 강화 버전)
   void _handleConnectionChange(bool isConnected) {
     final previousState = isWebSocketConnected;
-    isWebSocketConnected = isConnected;
+
+    // 🔥 실제 WebSocket 서비스 연결 상태와 강제 동기화
+    final actualConnectionState = _wsService.isConnected;
+
+    // 🔥 상태 불일치 시 강제 동기화 (중요!)
+    if (isWebSocketConnected != actualConnectionState) {
+      if (kDebugMode) {
+        debugPrint('🚨 상태 불일치 감지! 강제 동기화: $isWebSocketConnected → $actualConnectionState');
+      }
+    }
+
+    isWebSocketConnected = actualConnectionState; // 실제 상태로 강제 설정
 
     if (kDebugMode) {
-      debugPrint('웹소켓 연결 상태 변경: $previousState → $isConnected');
+      debugPrint('🔄 웹소켓 연결 상태 변경: $previousState → $isConnected (최종: $actualConnectionState)');
+      debugPrint('🔄 WebSocket 서비스 상태: ${_wsService.connectionInfo}');
     }
-      
-    if (isConnected) {
+
+    if (isWebSocketConnected) {
+      if (kDebugMode) {
+        debugPrint('✅ 웹소켓 연결됨 - 폴링 중지 및 초기화 시작');
+      }
       _stopPollingCompletely();
       _initializeWithWebSocket();
       _refreshFriendStatusFromAPI();
     } else {
+      if (kDebugMode) {
+        debugPrint('❌ 웹소켓 연결 끊어짐 - 폴링 모드로 전환');
+      }
       _startRealTimeUpdates();
     }
 
@@ -1213,60 +1332,37 @@ class FriendsController extends ChangeNotifier {
     }
   }
 
-  // 🔥 포그라운드 복귀 시 호출되는 메서드 (친구 상태 강제 동기화)
+  // 🔥 포그라운드 복귀 시 호출되는 메서드 (main.dart와 통합된 버전)
   Future<void> onAppResumed() async {
     if (kDebugMode) {
-      debugPrint('🔄 포그라운드 복귀 - 친구 상태 동기화 시작');
+      debugPrint('🔄 포그라운드 복귀 - FriendsController 친구 상태 동기화 시작');
+      debugPrint('🔄 현재 WebSocket 상태: ${_wsService.connectionInfo}');
     }
-    
+
     // 🔥 백그라운드 타이머 취소
     _backgroundTimer?.cancel();
     _backgroundTimer = null;
     _isInBackground = false;
-    
+
     try {
-      // 🔥 1. 웹소켓 연결 상태 확인 및 재연결 시도
-      if (!_wsService.isConnected && !_isGuestUser()) {
+      // 🔥 WebSocket 연결 상태를 실제 서비스 상태와 동기화
+      final actualWsConnected = _wsService.isConnected;
+      isWebSocketConnected = actualWsConnected;
+
+      if (actualWsConnected && !_isGuestUser()) {
         if (kDebugMode) {
-          debugPrint('⚠️ 포그라운드 복귀 - 웹소켓 연결 끊김, 재연결 시도');
-        }
-        
-        // 🔥 웹소켓 재연결 시도
-        await _wsService.connect(myId);
-        await Future.delayed(const Duration(milliseconds: 1000));
-        
-        if (_wsService.isConnected) {
-          isWebSocketConnected = true;
-          
-          if (kDebugMode) {
-            debugPrint('✅ 포그라운드 복귀 - 웹소켓 재연결 성공');
-          }
-          
-          // 🔥 재연결 후 친구 상태 동기화
-          await _syncFriendStatusAfterReconnection();
-        } else {
-          if (kDebugMode) {
-            debugPrint('❌ 포그라운드 복귀 - 웹소켓 재연결 실패, 폴링 모드로 전환');
-          }
-          _startRealTimeUpdates();
-        }
-      } else if (_wsService.isConnected) {
-        isWebSocketConnected = true;
-        
-        if (kDebugMode) {
-          debugPrint('✅ 포그라운드 복귀 - 웹소켓 연결 유지됨');
+          debugPrint('✅ 포그라운드 복귀 - 웹소켓 연결 확인됨');
           debugPrint('✅ 현재 온라인 친구 수: ${onlineUsers.length}명');
         }
-        
-        // 🔥 2. 웹소켓 연결 상태를 우선시하고 UI만 업데이트
-        // API 호출을 하지 않음 (DB 상태가 오래되었을 수 있음)
+
+        // 🔥 1. 웹소켓 연결 상태를 우선시하고 UI만 업데이트
         _syncWithServerData();
-        
-        // 🔥 3. UI 업데이트
+
+        // 🔥 2. UI 업데이트
         notifyListeners();
-        
+
         if (kDebugMode) {
-          debugPrint('✅ 포그라운드 복귀 - 친구 상태 동기화 완료 (웹소켓 상태 유지)');
+          debugPrint('✅ 포그라운드 복귀 - 친구 상태 동기화 완료');
         }
       } else {
         if (kDebugMode) {
@@ -1281,41 +1377,28 @@ class FriendsController extends ChangeNotifier {
     }
   }
   
-  // 🔥 백그라운드 진입 시 호출되는 메서드
+  // 🔥 백그라운드 진입 시 호출되는 메서드 (main.dart와 통합된 버전)
   Future<void> onAppPaused() async {
     if (kDebugMode) {
-      debugPrint('📱 백그라운드 진입 - 즉시 오프라인 처리 및 앱 종료');
+      debugPrint('📱 백그라운드 진입 - FriendsController 백그라운드 처리 시작');
     }
-    
+
     _isInBackground = true;
-    
-    // 🔥 1. 웹소켓 연결 해제 및 오프라인 처리 (즉시 실행)
-    if (_wsService.isConnected && !_isGuestUser()) {
-      if (kDebugMode) {
-        debugPrint('🔌 백그라운드 진입 - 웹소켓 연결 즉시 해제');
-      }
-      
-      // 웹소켓 연결 해제 (서버에 로그아웃 요청 전송)
-      await _wsService.logoutAndDisconnect();
-      isWebSocketConnected = false;
-      
-      if (kDebugMode) {
-        debugPrint('✅ 웹소켓 연결 해제 완료 - 다른 친구들에게 즉시 오프라인 상태 전달됨');
-      }
-    }
-    
-    // 🔥 2. iOS에서는 백그라운드로 가면 즉시 앱 종료 (타이머가 일시정지되므로)
+
+    // 🔥 백그라운드 타이머 시작 (main.dart와 동일한 로직)
     if (Platform.isIOS) {
       if (kDebugMode) {
         debugPrint('🍎 iOS 백그라운드 진입 - 1분 후 앱 종료 예약');
       }
-      
+
       // 1분 대기 후 앱 종료
       Future.delayed(const Duration(minutes: 1), () {
-        if (kDebugMode) {
-          debugPrint('🛑 iOS 백그라운드 1분 경과 - 앱 종료');
+        if (_isInBackground) {
+          if (kDebugMode) {
+            debugPrint('🛑 iOS 백그라운드 1분 경과 - 앱 종료');
+          }
+          exit(0);
         }
-        exit(0);
       });
     } else {
       // Android는 기존 방식 유지
@@ -1327,42 +1410,18 @@ class FriendsController extends ChangeNotifier {
           exit(0);
         }
       });
-      
+
       if (kDebugMode) {
         debugPrint('⏱️ Android 백그라운드 타이머 시작 - 1분 후 앱 종료 예약');
       }
     }
+
+    // 🔥 웹소켓 연결은 main.dart에서 관리하므로 여기서는 해제하지 않음
+    if (kDebugMode) {
+      debugPrint('ℹ️ 웹소켓 연결은 main.dart에서 관리 - FriendsController에서는 해제하지 않음');
+    }
   }
   
-  // 🔥 웹소켓 재연결 후 친구 상태 동기화
-  Future<void> _syncFriendStatusAfterReconnection() async {
-    if (kDebugMode) {
-      debugPrint('🔄 웹소켓 재연결 후 친구 상태 동기화 시작');
-    }
-    
-    try {
-      // 🔥 1. 친구 목록 새로고침
-      await loadAll();
-      
-      // 🔥 2. 서버에서 친구 상태 확인
-      await Future.delayed(const Duration(milliseconds: 500));
-      await _refreshFriendStatusFromAPI();
-      
-      // 🔥 3. 동기화
-      _syncWithServerData();
-      
-      // 🔥 4. UI 업데이트
-      notifyListeners();
-      
-      if (kDebugMode) {
-        debugPrint('✅ 웹소켓 재연결 후 친구 상태 동기화 완료');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('❌ 웹소켓 재연결 후 친구 상태 동기화 실패: $e');
-      }
-    }
-  }
 
   // 🔥 내부에서 사용하는 private 메서드 (기존 코드 호환성 유지)
   Future<void> _refreshFriendStatusFromAPI() async {
@@ -2017,9 +2076,15 @@ class FriendsController extends ChangeNotifier {
   void _cleanupResources() {
     _updateTimer?.cancel();
     _updateTimer = null;
-    
+
     _backgroundTimer?.cancel();
     _backgroundTimer = null;
+
+    // 🔥 디바운싱 타이머들 정리
+    for (final timer in _messageDebounceTimers.values) {
+      timer.cancel();
+    }
+    _messageDebounceTimers.clear();
 
     try {
       _wsMessageSubscription?.cancel();
