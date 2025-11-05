@@ -46,13 +46,29 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
 
   /// 연결 상태 확인 (개선된 버전)
   bool get isConnected {
-    return _isConnected && 
-           _channel != null && 
-           _subscription != null &&
-           _userId != null &&
-           !_userId!.startsWith('guest_') &&
-           _lastHeartbeatReceived != null &&
-           DateTime.now().difference(_lastHeartbeatReceived!).inSeconds < 120; // 🔥 2분 내 하트비트 응답 필요
+    // 기본 연결 상태 체크
+    if (!_isConnected || _channel == null || _subscription == null || _userId == null) {
+      return false;
+    }
+    
+    // 게스트 사용자는 연결되지 않은 것으로 처리
+    if (_userId!.startsWith('guest_')) {
+      return false;
+    }
+    
+    // 하트비트 응답이 너무 오래 전이면 연결 끊긴 것으로 간주
+    // 단, 연결 직후에는 하트비트 응답이 없을 수 있으므로 2분 이상 지났을 때만 체크
+    if (_lastHeartbeatReceived != null) {
+      final timeSinceLastHeartbeat = DateTime.now().difference(_lastHeartbeatReceived!);
+      if (timeSinceLastHeartbeat.inSeconds > 120) {
+        if (kDebugMode) {
+          debugPrint('⚠️ 하트비트 응답이 너무 오래 전: ${timeSinceLastHeartbeat.inSeconds}초');
+        }
+        return false;
+      }
+    }
+    
+    return true;
   }
 
   /// 현재 연결된 사용자 ID
@@ -155,26 +171,29 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     debugPrint('📡 WebSocketChannel 생성 시작...');
     _channel = WebSocketChannel.connect(
       Uri.parse(wsUrl),
-      // protocols: ['chat'], // 프로토콜 제거 - 서버에서 지원하지 않을 수 있음
     );
-    debugPrint('📡 WebSocketChannel 생성 완료');
-    debugPrint('📡 채널 상태: ${_channel != null}');
-    debugPrint('📡 채널 준비 상태: ${_channel?.ready}');
+    
+    if (kDebugMode) {
+      debugPrint('📡 WebSocketChannel 생성 완료');
+      debugPrint('📡 채널 상태: ${_channel != null}');
+    }
 
     debugPrint('⏳ 웹소켓 연결 대기 중...');
-    // 🔥 연결 확인을 위한 타임아웃 (ApiConfig에서 가져오기) - 수정된 부분
-    await _channel!.ready.timeout(
-      ApiConfig.connectionTimeout,
-      onTimeout: () {
-        debugPrint('⏰ 웹소켓 연결 타임아웃 (${ApiConfig.connectionTimeout.inSeconds}초)');
-        throw TimeoutException('웹소켓 연결 타임아웃', ApiConfig.connectionTimeout);
-      },
-    );
-
-    // ... 나머지 코드는 동일
-    debugPrint('✅ 웹소켓 연결 준비 완료');
-    debugPrint('✅ 채널 상태: ${_channel != null}');
-    debugPrint('✅ 채널 준비 상태: ${_channel?.ready}');
+    // 🔥 연결 확인을 위한 타임아웃 (ApiConfig에서 가져오기)
+    try {
+      await _channel!.ready.timeout(
+        ApiConfig.connectionTimeout,
+        onTimeout: () {
+          debugPrint('⏰ 웹소켓 연결 타임아웃 (${ApiConfig.connectionTimeout.inSeconds}초)');
+          throw TimeoutException('웹소켓 연결 타임아웃', ApiConfig.connectionTimeout);
+        },
+      );
+      debugPrint('✅ 웹소켓 연결 준비 완료');
+    } catch (e) {
+      debugPrint('❌ 웹소켓 연결 준비 실패: $e');
+      _channel = null;
+      rethrow;
+    }
 
     // 🔥 연결 직후 즉시 서버에 연결 알림 전송 (서버에서 처리하는 메시지 타입으로 변경)
     debugPrint('📤 웹소켓 연결 직후 서버에 연결 알림 전송');
@@ -187,8 +206,8 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     // 🔥 연결 직후 서버에서 자동으로 친구 상태 정보를 전송해주기를 기다림
     debugPrint('📤 웹소켓 연결 완료 - 서버에서 친구 상태 정보 전송 대기');
 
-    // 서버가 메시지를 처리할 시간 확보
-    await Future.delayed(const Duration(milliseconds: 200));
+    // 서버가 메시지를 처리할 시간 확보 (충분한 시간 확보)
+    await Future.delayed(const Duration(milliseconds: 500));
 
     // 메시지 수신 리스너 설정 - 중복 리스너 방지
     debugPrint('👂 메시지 수신 리스너 설정 시작');
@@ -310,13 +329,15 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
       final messageType = data['type'] as String?;
       
       if (messageType == null) {
-        debugPrint('⚠️ 메시지 타입이 없음: $data');
+        if (kDebugMode) {
+          debugPrint('⚠️ 메시지 타입이 없음: $data');
+        }
         return;
       }
       
       // 중요한 메시지만 로그 출력
       if (kDebugMode && _shouldLogMessage(messageType)) {
-        debugPrint('📨 웹소켓 메시지: $messageType');
+        debugPrint('📨 웹소켓 메시지 수신: $messageType');
       }
 
       switch (messageType) {
@@ -414,10 +435,11 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
           }
       }
 
-      // 모든 메시지를 스트림으로 전달
-      debugPrint('📡 메시지를 스트림으로 전달: $data');
-      _messageController.add(data);
-      debugPrint('✅ 메시지 스트림 전달 완료');
+      // 🔥 특정 메시지 타입은 이미 스트림으로 전달되었으므로 중복 전달 방지
+      // Login_Status와 heartbeat_response는 이미 처리되었으므로 스트림으로 전달하지 않음
+      if (messageType != 'Login_Status' && messageType != 'heartbeat_response') {
+        _messageController.add(data);
+      }
     } catch (e) {
       debugPrint('❌ 메시지 파싱 오류: $e');
     }
@@ -559,48 +581,53 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
       debugPrint('✅ 웹소켓 등록 확인됨');
     }
 
+    // 등록 후 연결 상태 확실히 설정
+    _isConnected = true;
+    _lastHeartbeatReceived = DateTime.now();
+    
     // 등록 후 서버에서 자동으로 온라인 사용자 목록을 전송해주기를 기다림
-    debugPrint('📤 등록 완료 - 서버에서 온라인 사용자 목록 전송 대기');
+    if (kDebugMode) {
+      debugPrint('📤 등록 완료 - 서버에서 온라인 사용자 목록 전송 대기');
+    }
   }
 
   // 🔥 Login_Status 메시지 처리 (서버에서 보내는 친구 로그인/로그아웃 알림) - 개선된 버전
   void _handleLoginStatusChange(Map<String, dynamic> data) {
-    final userId = data['userId'];
-    final statusRaw = data['status'];
-    final message = data['message'];
-    final timestamp = data['timestamp'];
-    
-    // 🔥 상태 값 정규화
-    final isOnline = _normalizeStatusValue(statusRaw);
-    
-    if (kDebugMode) {
-      debugPrint('🔥 Login_Status 메시지 처리 시작');
-      debugPrint('📨 친구 ID: $userId');
-      debugPrint('📨 원본 status 값: $statusRaw');
-      debugPrint('📨 정규화된 상태: $isOnline');
-      debugPrint('📨 메시지: $message');
-    }
-    
-    // 🔥 friend_status_change 형식으로 변환
-    final friendStatusMessage = {
-      'type': 'friend_status_change',
-      'userId': userId,
-      'isOnline': isOnline,
-      'message': message,
-      'timestamp': timestamp,
-      'source': 'Login_Status', // 🔥 메시지 출처 표시
-    };
-    
-    // 🔥 변환된 메시지를 스트림으로 전달
     try {
+      final userId = data['userId']?.toString();
+      if (userId == null || userId.isEmpty) {
+        if (kDebugMode) {
+          debugPrint('⚠️ Login_Status 메시지에 userId가 없음');
+        }
+        return;
+      }
+      
+      final statusRaw = data['status'];
+      final message = data['message']?.toString() ?? '';
+      final timestamp = data['timestamp']?.toString() ?? DateTime.now().toIso8601String();
+      
+      // 🔥 상태 값 정규화
+      final isOnline = _normalizeStatusValue(statusRaw);
+      
+      if (kDebugMode && _shouldLogMessage('Login_Status')) {
+        debugPrint('🔥 Login_Status 메시지 처리: $userId - ${isOnline ? '온라인' : '오프라인'}');
+      }
+      
+      // 🔥 friend_status_change 형식으로 변환
+      final friendStatusMessage = {
+        'type': 'friend_status_change',
+        'userId': userId,
+        'isOnline': isOnline,
+        'message': message,
+        'timestamp': timestamp,
+        'source': 'Login_Status', // 🔥 메시지 출처 표시
+      };
+      
+      // 🔥 변환된 메시지를 스트림으로 전달
       _messageController.add(friendStatusMessage);
-      if (kDebugMode) {
-        debugPrint('✅ Login_Status → friend_status_change 변환 완료');
-      }
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('❌ Login_Status 메시지 변환 실패: $e');
-      }
+      debugPrint('❌ Login_Status 메시지 처리 실패: $e');
+      debugPrint('❌ 메시지 데이터: $data');
     }
   }
 
@@ -811,27 +838,44 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
       try {
         final jsonMessage = jsonEncode(message);
         _channel!.sink.add(jsonMessage);
-        debugPrint('✅ 메시지 전송 성공: ${message['type']}');
+        if (kDebugMode && _shouldLogMessage(message['type'] ?? '')) {
+          debugPrint('✅ 메시지 전송 성공: ${message['type']}');
+        }
       } catch (e) {
         debugPrint('❌ 메시지 전송 실패: $e');
+        // 메시지 전송 실패 시 연결 상태 재확인
+        _isConnected = false;
+        _connectionController.add(false);
+        if (_shouldReconnect) {
+          _scheduleReconnect();
+        }
       }
     } else {
-      debugPrint('⚠️ 웹소켓 연결되지 않음 - 메시지 전송 실패');
+      if (kDebugMode) {
+        debugPrint('⚠️ 웹소켓 연결되지 않음 - 메시지 전송 실패: ${message['type']}');
+      }
     }
   }
 
-  // 📤 메시지 직접 전송 (연결 상태 체크 없음)
+  // 📤 메시지 직접 전송 (연결 상태 체크 없음 - 초기 연결 시 사용)
   void _sendMessageDirectly(Map<String, dynamic> message) {
     if (_channel != null) {
       try {
         final jsonMessage = jsonEncode(message);
         _channel!.sink.add(jsonMessage);
-        debugPrint('✅ 메시지 직접 전송 성공: ${message['type']}');
+        if (kDebugMode) {
+          debugPrint('✅ 메시지 직접 전송 성공: ${message['type']}');
+        }
       } catch (e) {
         debugPrint('❌ 메시지 직접 전송 실패: $e');
+        // 초기 메시지 전송 실패 시 연결 상태 확인
+        _isConnected = false;
+        _connectionController.add(false);
       }
     } else {
-      debugPrint('⚠️ 채널이 없음 - 메시지 직접 전송 실패');
+      if (kDebugMode) {
+        debugPrint('⚠️ 채널이 없음 - 메시지 직접 전송 실패: ${message['type']}');
+      }
     }
   }
 
@@ -978,6 +1022,8 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
   // ❌ 오류 처리 (개선된 버전)
   void _handleError(error) {
     debugPrint('❌ 웹소켓 오류: $error');
+    debugPrint('❌ 오류 타입: ${error.runtimeType}');
+    
     _isConnected = false;
     
     // 🔥 연결 상태 스트림 업데이트를 마이크로태스크로 지연하여 안정성 확보
@@ -985,7 +1031,8 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
       _connectionController.add(false);
     });
 
-    if (_shouldReconnect) {
+    // 🔥 에러 발생 시 재연결 시도 (네트워크 오류인 경우)
+    if (_shouldReconnect && _userId != null && !_userId!.startsWith('guest_')) {
       _scheduleReconnect();
     }
   }
@@ -995,12 +1042,17 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     debugPrint('🔌 웹소켓 연결 해제됨');
     _isConnected = false;
     
+    // 🔥 타이머 정리
+    _heartbeatTimer?.cancel();
+    _connectionHealthTimer?.cancel();
+    
     // 🔥 연결 상태 스트림 업데이트를 마이크로태스크로 지연하여 안정성 확보
     Future.microtask(() {
       _connectionController.add(false);
     });
 
-    if (_shouldReconnect) {
+    // 🔥 재연결이 필요한 경우에만 재연결 시도
+    if (_shouldReconnect && _userId != null && !_userId!.startsWith('guest_')) {
       _scheduleReconnect();
     }
   }

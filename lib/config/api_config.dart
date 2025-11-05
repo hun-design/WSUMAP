@@ -10,7 +10,7 @@ class ApiConfig {
   // Port Configuration
   static const int buildingPort = 3000;
   static const int userPort = 3000;
-  static const int websocketPort = 3000;
+  static const int websocketPort = 3003; // 🔥 서버 포트와 일치 (websocket-server.js에서 3003 사용)
   
   // HTTP API Endpoints
   static String get buildingBase => '$baseHost:$buildingPort/building';
