@@ -1,5 +1,4 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.flutter_application_1">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
     
     <!-- =========== 기존 권한 설정 =========== -->
     <!-- [공통] 인터넷 사용 권한 -->
@@ -45,18 +44,29 @@
     <!-- [필수 추가] 카메라 사용 권한 (ImageReader_JNI 로그 방지로 일시 중단) -->
     <!-- <uses-permission android:name="android.permission.CAMERA" /> -->
     
-    <!-- [권장 추가] 외부 저장소 읽기 권한 (Android 10 이하) -->
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <!-- [권장 추가] 외부 저장소 읽기 권한 (Android 10~12) -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" 
+                     android:maxSdkVersion="32" />
     
     <!-- [권장 추가] 외부 저장소 쓰기 권한 (Android 10 이하) -->
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" 
+                     android:maxSdkVersion="29" />
+    
+    <!-- [필수 추가] Android 13+ (API 33+) 미디어 파일 읽기 권한 -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    
+    <!-- [필수 추가] Android 14+ (API 34+) 사용자 선택 미디어 접근 권한 -->
+    <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
 
     <!-- =========== 애플리케이션 설정 =========== -->
     <application
         android:label="따라우송"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon"
-        android:usesCleartextTraffic="true"
+        android:usesCleartextTraffic="false"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:theme="@style/NormalTheme"
         android:hardwareAccelerated="true"
         android:largeHeap="true">
@@ -64,7 +74,7 @@
         <!-- [핵심 추가] 네이버 지도 연동을 위한 클라이언트 ID -->
         <meta-data
             android:name="com.naver.maps.map.NCP_KEY_ID"
-            android:value="gxa5mf6swg" />
+            android:value="jhuhqy5ctg" />
 
         <!-- =========== 🔔 알림 관련 메타데이터 추가 =========== -->
         

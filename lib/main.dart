@@ -23,8 +23,30 @@ import 'providers/app_language_provider.dart';
 import 'providers/category_provider.dart';
 import 'utils/image_memory_manager.dart';
 
+/// 개발 환경에서만 자체 서명 인증서를 허용하기 위한 HttpOverrides
+class DevelopmentHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext? context) {
+    final client = super.createHttpClient(context);
+    client.badCertificateCallback =
+        (X509Certificate cert, String host, int port) => true;
+    return client;
+  }
+}
+
+final bool _allowSelfSignedCerts = bool.fromEnvironment(
+  'ALLOW_SELF_SIGNED_CERT',
+  defaultValue: !kReleaseMode,
+);
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 개발 환경에서만 자체 서명 인증서 허용
+  if (_allowSelfSignedCerts) {
+    HttpOverrides.global = DevelopmentHttpOverrides();
+    debugPrint('⚠️ 개발 모드 - 자체 서명 인증서를 임시로 허용합니다.');
+  }
   
   // 불필요한 로그 필터링
   _filterLogs();
@@ -73,7 +95,7 @@ Future<void> _initializeAppInBackground() async {
 Future<void> _initializeNaverMapInBackground() async {
   try {
     await FlutterNaverMap().init(
-      clientId: 'a7hukqhx2a',
+      clientId: 'jhuhqy5ctg',
       onAuthFailed: (ex) => debugPrint('NaverMap 인증 실패: $ex'),
     );
     debugPrint('✅ 네이버 지도 초기화 성공');

@@ -2,7 +2,7 @@
 <!-- 🔥 android/app/src/main/res/xml/network_security_config.xml 파일 생성 -->
 <network-security-config>
     <!-- 🔥 AWS S3 CORS 문제 해결을 위한 도메인 설정 -->
-    <domain-config cleartextTrafficPermitted="true">
+    <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="true">wsu-svg.s3.ap-southeast-2.amazonaws.com</domain>
         <domain includeSubdomains="true">amazonaws.com</domain>
         <domain includeSubdomains="true">s3.ap-southeast-2.amazonaws.com</domain>

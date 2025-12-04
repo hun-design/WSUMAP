@@ -5,6 +5,20 @@
 -keep class io.flutter.** { *; }
 -keep class io.flutter.plugins.** { *; }
 
+# 🔥 네이버 맵 관련 클래스 보호 (지도 타일 로딩 문제 해결)
+-keep class com.naver.** { *; }
+-keep class com.naver.maps.** { *; }
+-keep class com.naver.android.maps.** { *; }
+-dontwarn com.naver.**
+-dontwarn com.naver.maps.**
+-dontwarn com.naver.android.maps.**
+
+# 네이버 맵 네이티브 클래스 보호
+-keep class com.naver.maps.map.** { *; }
+-keep class com.naver.maps.map.util.** { *; }
+-keep class com.naver.maps.map.overlay.** { *; }
+-keep class com.naver.maps.map.camera.** { *; }
+
 # SVG 관련 클래스 보호
 -keep class com.caverock.androidsvg.** { *; }
 -keep class androidx.webkit.** { *; }

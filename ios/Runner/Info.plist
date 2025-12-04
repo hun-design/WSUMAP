@@ -27,13 +27,13 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NMFClientId</key>
-	<string>bo5u1f0cmr</string>
+	<string>jhuhqy5ctg</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
-		<true/>
+		<false/>
 		<key>NSAllowsArbitraryLoadsInWebContent</key>
-		<true/>
+		<false/>
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 		<key>NSExceptionDomains</key>
@@ -41,58 +41,54 @@
 			<key>52.65.94.225</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
+				<false/>
 				<key>NSExceptionMinimumTLSVersion</key>
-				<string>TLSv1.0</string>
+				<string>TLSv1.2</string>
 				<key>NSExceptionPortsDefault</key>
 				<integer>3000</integer>
-				<key>NSExceptionPortsHTTP</key>
-				<array>
-					<integer>3000</integer>
-					<integer>3001</integer>
-					<integer>3002</integer>
-				</array>
 				<key>NSExceptionPortsWebSocket</key>
 				<array>
-					<integer>3002</integer>
+					<integer>3003</integer>
 				</array>
+				<key>NSIncludesSubdomains</key>
+				<true/>
 			</dict>
 			<key>map.naver.com</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
+				<false/>
 				<key>NSExceptionMinimumTLSVersion</key>
-				<string>TLSv1.0</string>
+				<string>TLSv1.2</string>
 				<key>NSIncludesSubdomains</key>
 				<true/>
 			</dict>
 			<key>naver.com</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
+				<false/>
 				<key>NSIncludesSubdomains</key>
 				<true/>
 			</dict>
 			<key>navermaps.apigw.ntruss.com</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
+				<false/>
 				<key>NSExceptionMinimumTLSVersion</key>
-				<string>TLSv1.0</string>
+				<string>TLSv1.2</string>
 				<key>NSIncludesSubdomains</key>
 				<true/>
 			</dict>
 			<key>nmaps.map.naver.com</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
+				<false/>
 				<key>NSIncludesSubdomains</key>
 				<true/>
 			</dict>
 			<key>ssl.map.naver.com</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
-				<true/>
+				<false/>
 				<key>NSIncludesSubdomains</key>
 				<true/>
 			</dict>

@@ -1,4 +1,4 @@
-package com.example.flutter_application_1
+package com.woosong.wsumap
 
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -10,7 +10,7 @@ import java.lang.reflect.Field
 import java.lang.reflect.Method
 
 class MainActivity : FlutterActivity() {
-    private val CHANNEL = "flutter_application_1/log_filter"
+    private val CHANNEL = "com.woosong.wsumap/log_filter"
     
     // 🔥 네이티브 라이브러리 로드 제거 (CMake 문제 해결)
     // ImageReader_JNI 로그 차단은 다른 방법으로 충분히 구현됨

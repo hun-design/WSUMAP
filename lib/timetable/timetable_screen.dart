@@ -10,6 +10,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'excel_import_service.dart';
 import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'color_mapping_service.dart';
+import '../config/api_config.dart';
 
 // 상수 정의
 class TimetableConstants {
@@ -3097,20 +3098,29 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
             // UI 상태 안정화를 위한 지연 처리
             await Future.delayed(const Duration(milliseconds: 500));
             
-            // 새로고침 실행
+            // 🔥 엑셀 업로드 후 명시적으로 서버에서 시간표 다시 불러오기
             try {
-              await widget.refreshCallback();
+              // 색상 매핑 초기화 (새로운 엑셀 데이터에 대해 색상 재할당)
+              ColorMappingService.clearColorMapping();
               
-              // 엑셀 업로드 후 로컬 저장소에 최신 데이터 저장
+              final apiService = TimetableApiService();
+              debugPrint('[DEBUG] ⏳ 엑셀 업로드 후 시간표 데이터 새로고침 시작...');
+              debugPrint('[DEBUG] 📡 서버에서 시간표 조회 요청: ${ApiConfig.timetableBase}');
+              
+              // 서버에서 최신 시간표 데이터 가져오기
+              final latestItems = await apiService.fetchScheduleItems(widget.userId);
+              debugPrint('[DEBUG] ✅ 시간표 데이터 조회 완료: ${latestItems.length}개 항목');
+              
+              // 로컬 저장소에 최신 데이터 저장
+              await TimetableStorageService.saveTimetableData(widget.userId, latestItems);
+              debugPrint('[DEBUG] ✅ 로컬 저장소 업데이트 완료');
+              
+              // refreshCallback 호출하여 부모 위젯(_ScheduleScreenState)에서 UI 업데이트
               try {
-                // 색상 매핑 초기화 (새로운 엑셀 데이터에 대해 색상 재할당)
-                ColorMappingService.clearColorMapping();
-                
-                final apiService = TimetableApiService();
-                final latestItems = await apiService.fetchScheduleItems(widget.userId);
-                await TimetableStorageService.saveTimetableData(widget.userId, latestItems);
+                await widget.refreshCallback();
+                debugPrint('[DEBUG] ✅ refreshCallback 완료: UI 업데이트됨 (${latestItems.length}개 항목)');
               } catch (e) {
-                // 로컬 저장소 업데이트 실패 시 무시
+                debugPrint('[WARNING] refreshCallback 실행 중 오류 (무시): $e');
               }
               
               // 성공 메시지 표시
@@ -3121,7 +3131,11 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
                       children: [
                         const Icon(Icons.check_circle, color: Colors.white, size: 20),
                         const SizedBox(width: 12),
-                        Text(AppLocalizations.of(context)!.excel_upload_success_message),
+                        Expanded(
+                          child: Text(
+                            AppLocalizations.of(context)!.excel_upload_success_message,
+                          ),
+                        ),
                       ],
                     ),
                     backgroundColor: Colors.green,
@@ -3130,7 +3144,14 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
                   ),
                 );
               }
-            } catch (error) {
+              
+            } catch (e, stackTrace) {
+              // 시간표 새로고침 실패 시 상세 에러 로그 출력
+              debugPrint('[ERROR] ❌ 시간표 새로고침 실패: $e');
+              debugPrint('[ERROR] ❌ 스택 트레이스: $stackTrace');
+              // 릴리스 빌드에서도 에러 확인을 위해 콘솔에 출력
+              print('ERROR: 시간표 새로고침 실패 - $e');
+              print('ERROR: 스택 트레이스 - $stackTrace');
               
               // 새로고침 실패 시에도 성공 메시지 표시 (업로드는 성공했으므로)
               if (mounted) {
@@ -3140,16 +3161,29 @@ class _SimpleExcelUploadDialogState extends State<_SimpleExcelUploadDialog> {
                       children: [
                         const Icon(Icons.check_circle, color: Colors.white, size: 20),
                         const SizedBox(width: 12),
-                        Text(AppLocalizations.of(context)!.excel_upload_success_message),
+                        Expanded(
+                          child: Text(
+                            AppLocalizations.of(context)!.excel_upload_success_message,
+                          ),
+                        ),
                       ],
                     ),
                     backgroundColor: Colors.green,
                     behavior: SnackBarBehavior.floating,
-                    duration: const Duration(seconds: 2),
+                    duration: const Duration(seconds: 3),
+                    action: SnackBarAction(
+                      label: '수동 새로고침',
+                      textColor: Colors.white,
+                      onPressed: () {
+                        widget.refreshCallback();
+                      },
+                    ),
                   ),
                 );
               }
             }
+            
+            // 성공 메시지 표시 (에러가 발생하지 않은 경우 - catch 블록에서 이미 표시했으므로 여기서는 제외)
           }
           
           // 작업 완료 후 wakelock 해제

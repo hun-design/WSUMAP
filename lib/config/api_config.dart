@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 /// API 설정 클래스
 class ApiConfig {
   // Base Configuration
-  static const String baseHost = 'http://52.65.94.225';
+  static const String baseHost = 'https://52.65.94.225';
   static const String baseWsHost = '52.65.94.225'; // WebSocket용 호스트 (protocol 제외)
   
   // Port Configuration
@@ -25,8 +25,8 @@ class ApiConfig {
   static String get roomBase => '$baseHost:$buildingPort/room';
   
   // WebSocket Configuration
-  static String get websocketUrl => 'ws://$baseWsHost:$websocketPort/friend/ws';
-  static String get websocketBase => 'ws://$baseWsHost:$websocketPort';
+  static String get websocketUrl => 'wss://$baseWsHost:$websocketPort/friend/ws';
+  static String get websocketBase => 'wss://$baseWsHost:$websocketPort';
   
   // WebSocket 관련 상수들 (연결 안정성 개선)
   static const Duration heartbeatInterval = Duration(seconds: 15); // 🔥 25초 → 15초로 단축
