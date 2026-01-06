@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_application_1/config/api_config.dart';
 import 'package:flutter_application_1/services/api_helper.dart';
+import 'package:flutter_application_1/services/jwt_service.dart';
 
 /// 서버와 통신하는 API 서비스 클래스
 class ApiService {
@@ -39,20 +40,57 @@ class ApiService {
   /// 특정 건물의 층 목록을 받아오는 함수 (전체 Floor 정보 포함)
   /// 🔥 서버 라우트: GET /floor/:building (building-service)
   /// 반환: [{Floor_Id, Floor_Number, Building_Name, File}, ...]
-  Future<List<dynamic>> fetchFloorList(String buildingName) async {
+  Future<List<dynamic>> fetchFloorList(String buildingName, {bool forceRefresh = false}) async {
     try {
+      // 🔥 게스트 사용자인 경우 (토큰이 없으면) 항상 캐시 무시
+      final hasToken = await JwtService.isTokenValid();
+      final shouldForceRefresh = forceRefresh || !hasToken;
+      
       final encodedBuildingName = Uri.encodeComponent(buildingName);
-      final response = await ApiHelper.get('${ApiConfig.floorBase}/$encodedBuildingName');
+      final url = '${ApiConfig.floorBase}/$encodedBuildingName';
+      
+      if (kDebugMode) {
+        debugPrint('📞 fetchFloorList API 호출: $url');
+        debugPrint('🏢 건물명: $buildingName');
+        debugPrint('🔐 JWT 토큰 유효성: $hasToken');
+        debugPrint('🔄 강제 새로고침: $shouldForceRefresh (원래: $forceRefresh)');
+      }
+      
+      final response = await ApiHelper.get(url, forceRefresh: shouldForceRefresh);
+      
+      if (kDebugMode) {
+        debugPrint('📡 fetchFloorList 응답 상태: ${response.statusCode}');
+        debugPrint('📡 fetchFloorList 응답 본문: ${response.body}');
+      }
       
       if (response.statusCode == 200) {
         final List<dynamic> floorList = json.decode(utf8.decode(response.bodyBytes));
+        if (kDebugMode) {
+          debugPrint('✅ 층 목록 로드 성공: ${floorList.length}개');
+        }
         return floorList;
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        // 🔥 인증 오류 - 게스트 사용자일 때 더 자세한 메시지
+        if (kDebugMode) {
+          debugPrint('⚠️ 인증 오류 (${response.statusCode}): 서버가 게스트 요청을 거부했습니다.');
+          debugPrint('⚠️ 응답 본문: ${response.body}');
+          debugPrint('⚠️ 요청 URL: $url');
+          debugPrint('⚠️ 서버가 X-Guest-User 헤더를 인식하지 못하는 것 같습니다.');
+          debugPrint('⚠️ 서버 개발자에게 확인 필요: 게스트 사용자 요청 허용 설정');
+        }
+        // 🔥 게스트 사용자에게 더 명확한 안내
+        throw Exception('게스트 사용자는 건물 도면을 볼 수 없습니다.\n로그인 후 다시 시도해주세요.');
       } else {
-        throw Exception('Failed to load floor list for $buildingName');
+        if (kDebugMode) {
+          debugPrint('❌ API 오류: 상태 코드 ${response.statusCode}');
+          debugPrint('❌ 응답 본문: ${response.body}');
+        }
+        throw Exception('Failed to load floor list for $buildingName (Status: ${response.statusCode})');
       }
     } catch (e) {
       if (kDebugMode) {
         debugPrint('❌ fetchFloorList 오류: $e');
+        debugPrint('❌ 오류 타입: ${e.runtimeType}');
       }
       rethrow;
     }

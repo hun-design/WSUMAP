@@ -751,13 +751,17 @@ class MapScreenController extends ChangeNotifier {
     const maxRetries = 10;
     const retryDelay = Duration(milliseconds: 500);
 
+    // 🔥 첫 번째 시도는 강제 새로고침 (게스트 로그인 시 서버에서 데이터 가져오기)
+    bool forceRefresh = true;
+    
     while (!_buildingRepository.isLoaded && retryCount < maxRetries) {
       debugPrint(
-        '⏳ BuildingRepository 로딩 대기 중... (시도: ${retryCount + 1}/$maxRetries)',
+        '⏳ BuildingRepository 로딩 대기 중... (시도: ${retryCount + 1}/$maxRetries, forceRefresh: $forceRefresh)',
       );
 
-      // 강제로 건물 데이터 로딩 시도
-      await _buildingRepository.getAllBuildings();
+      // 강제로 건물 데이터 로딩 시도 (첫 번째만 forceRefresh)
+      await _buildingRepository.getAllBuildings(forceRefresh: forceRefresh);
+      forceRefresh = false; // 두 번째부터는 캐시 사용
 
       if (_buildingRepository.isLoaded &&
           _buildingRepository.allBuildings.isNotEmpty) {

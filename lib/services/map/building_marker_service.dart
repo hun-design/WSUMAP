@@ -177,7 +177,13 @@ class BuildingMarkerService {
             await mapController.addOverlay(marker);
             return index; // 성공한 인덱스 반환
           } catch (e) {
-            debugPrint('❌ 마커 추가 실패: ${batchIds[index]} - $e');
+            // 🔥 MissingPluginException 오류는 조용히 처리 (플러그인 미지원 가능성)
+            if (e.toString().contains('MissingPluginException') || 
+                e.toString().contains('No implementation found')) {
+              // 조용히 무시
+            } else {
+              debugPrint('❌ 마커 추가 실패: ${batchIds[index]} - $e');
+            }
             return -1; // 실패 표시
           }
         });
@@ -266,8 +272,14 @@ class BuildingMarkerService {
 
       debugPrint('✅ 건물 마커 추가 완료: ${building.name}');
     } catch (e) {
-      debugPrint('❌ 건물 마커 추가 실패: ${building.name} - $e');
-      rethrow;
+      // 🔥 MissingPluginException 오류는 조용히 처리
+      if (e.toString().contains('MissingPluginException') || 
+          e.toString().contains('No implementation found')) {
+        // 조용히 무시
+      } else {
+        debugPrint('❌ 건물 마커 추가 실패: ${building.name} - $e');
+        rethrow;
+      }
     }
   }
 

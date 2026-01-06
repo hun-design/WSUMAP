@@ -170,7 +170,7 @@ static const Duration _reconnectDelay = ApiConfig.reconnectDelay;
     final wsUrl = ApiConfig.websocketUrl;
     debugPrint('🔌 웹소켓 연결 시도: $wsUrl');
     debugPrint('🔌 서버 호스트: ${ApiConfig.baseWsHost}');
-    debugPrint('🔌 서버 포트: ${ApiConfig.websocketPort}');
+    
     debugPrint('🔌 웹소켓 경로: /friend/ws');
 
     debugPrint('📡 WebSocketChannel 생성 시작...');

@@ -95,19 +95,26 @@
 		</dict>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>이 앱이 카메라에 접근하여 사진을 촬영하려고 합니다.</string>
+	<string>프로필 사진 변경 및 기타 기능에 카메라 접근 권한이 필요합니다.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>앱이 항상 또는 사용 중에 위치 정보를 사용할 수 있도록 허용해주세요.</string>
+	<string>현재 위치를 지도에 표시하고, 길찾기 및 친구들과 위치를 공유하기 위해 지속적인 위치 정보 접근 권한이 필요합니다. 앱이 백그라운드에 있을 때도 위치를 사용하여 친구들에게 최신 위치를 알려줍니다.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>현재 위치를 지도에 표시하고, 길찾기 및 친구들과 위치를 공유하기 위해 지속적인 위치 정보 접근 권한이 필요합니다. 앱이 백그라운드에 있을 때도 위치를 사용하여 친구들에게 최신 위치를 알려줍니다.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>이 앱이 사용자의 위치를 사용하려고 합니다.</string>
+	<string>앱을 사용하는 동안 현재 위치를 지도에 표시하고, 길찾기 기능을 제공하기 위해 위치 정보 접근 권한이 필요합니다.</string>
 	<key>NSMotionUsageDescription</key>
-	<string>이 앱이 나침반 및 방향 기능을 위해 모션 센서를 사용합니다.</string>
+	<string>내비게이션 중 사용자의 방향을 정확하게 표시하기 위해 나침반 및 방향 센서 접근 권한이 필요합니다.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>이 앱이 사진 라이브러리에 접근하여 사진을 선택하려고 합니다.</string>
+	<string>프로필 사진 변경 및 기타 기능에 사진 보관함 접근 권한이 필요합니다.</string>
 	<key>NSUserNotificationsUsageDescription</key>
-	<string>이 앱이 친구 요청 및 실시간 알림을 위해 알림 권한이 필요합니다.</string>
+	<string>친구 요청 및 실시간 위치 공유와 같은 알림을 받기 위해 알림 권한이 필요합니다.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>remote-notification</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

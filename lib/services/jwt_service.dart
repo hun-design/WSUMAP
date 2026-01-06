@@ -147,25 +147,25 @@ class JwtService {
   static Future<Map<String, String>> getAuthHeaders() async {
     final token = await getToken();
     debugPrint('🔐 JWT 토큰 상태: ${token != null ? "있음" : "없음"}');
+    
+    final headers = <String, String>{
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'User-Agent': 'WSUMAP-Mobile/1.0.0',
+      'X-Platform': Platform.isAndroid ? 'android' : Platform.isIOS ? 'ios' : 'unknown',
+    };
+    
     if (token != null) {
       debugPrint('🔐 JWT 토큰 길이: ${token.length}');
       debugPrint('🔐 JWT 토큰 시작: ${token.substring(0, token.length > 20 ? 20 : token.length)}...');
-      return {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'User-Agent': 'WSUMAP-Mobile/1.0.0', // 크로스 플랫폼 식별
-        'X-Platform': Platform.isAndroid ? 'android' : Platform.isIOS ? 'ios' : 'unknown',
-      };
+      headers['Authorization'] = 'Bearer $token';
     } else {
-      debugPrint('⚠️ JWT 토큰이 없어서 인증 헤더 없이 요청');
-      return {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'User-Agent': 'WSUMAP-Mobile/1.0.0', // 크로스 플랫폼 식별
-        'X-Platform': Platform.isAndroid ? 'android' : Platform.isIOS ? 'ios' : 'unknown',
-      };
+      // 🔥 게스트 사용자임을 나타내는 헤더 추가 (서버에서 게스트 요청 허용)
+      headers['X-Guest-User'] = 'true';
+      debugPrint('⚠️ JWT 토큰이 없어서 게스트 사용자 헤더 추가');
     }
+    
+    return headers;
   }
 
   /// 🔥 토큰 만료까지 남은 시간 (초)

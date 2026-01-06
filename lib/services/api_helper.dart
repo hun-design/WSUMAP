@@ -24,13 +24,13 @@ class ApiHelper {
   }
 
   /// 🔥 JWT 토큰이 포함된 헤더로 GET 요청 (캐시 최적화)
-  static Future<http.Response> get(String url, {Map<String, String>? additionalHeaders}) async {
+  static Future<http.Response> get(String url, {Map<String, String>? additionalHeaders, bool forceRefresh = false}) async {
     // 🔥 콜백 등록 확인 (최초 1회만)
     _ensureCallbackRegistered();
     
-    // 🔥 캐시 확인 (GET 요청만 캐시)
+    // 🔥 캐시 확인 (GET 요청만 캐시, forceRefresh가 true이면 캐시 무시)
     final cacheKey = url;
-    if (_responseCache.containsKey(cacheKey)) {
+    if (!forceRefresh && _responseCache.containsKey(cacheKey)) {
       final timestamp = _cacheTimestamps[cacheKey];
       if (timestamp != null && DateTime.now().difference(timestamp) < _cacheExpiry) {
         debugPrint('📋 캐시된 응답 사용: $url');
@@ -40,6 +40,11 @@ class ApiHelper {
         _responseCache.remove(cacheKey);
         _cacheTimestamps.remove(cacheKey);
       }
+    } else if (forceRefresh) {
+      // 🔥 강제 새로고침 시 해당 URL의 캐시 제거
+      _responseCache.remove(cacheKey);
+      _cacheTimestamps.remove(cacheKey);
+      debugPrint('🔄 캐시 무시하고 강제 새로고침: $url');
     }
 
     final headers = await JwtService.getAuthHeaders();

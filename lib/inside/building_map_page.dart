@@ -2,6 +2,7 @@
 
 import 'dart:async';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/generated/app_localizations.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -695,8 +696,19 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
       if (mounted) {
         setState(() {
           _isFloorListLoading = false;
-          _error = '층 목록을 불러오는 데 실패했습니다: $e';
+          
+          // 🔥 게스트 사용자에게 더 친화적인 에러 메시지
+          final errorMessage = e.toString();
+          if (errorMessage.contains('인증') || errorMessage.contains('401') || errorMessage.contains('403')) {
+            _error = '게스트 사용자는 건물 도면을 볼 수 없습니다.\n로그인 후 다시 시도해주세요.';
+          } else {
+            _error = '층 목록을 불러오는 데 실패했습니다.\n${e.toString().replaceAll('Exception: ', '')}';
+          }
         });
+      }
+      
+      if (kDebugMode) {
+        debugPrint('❌ _loadFloorList 오류: $e');
       }
     }
   }

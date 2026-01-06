@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:location/location.dart' as loc;
+import 'package:permission_handler/permission_handler.dart' as perm;
 import 'dart:async';
 import 'dart:io';
 import '../services/location_service.dart';
@@ -15,7 +16,7 @@ import '../services/location_service.dart';
 
 class LocationManager extends ChangeNotifier {
   loc.LocationData? currentLocation;
-  loc.PermissionStatus? permissionStatus;
+  perm.PermissionStatus? permissionStatus;
   final loc.Location _location = loc.Location();
   final LocationService _locationService = LocationService();
 
@@ -185,116 +186,57 @@ class LocationManager extends ChangeNotifier {
     }
   }
 
-  /// 🔥 안전한 위치 권한 요청
+  /// 🔥 안전한 위치 권한 요청 (permission_handler 사용)
   Future<bool> _requestLocationPermissionSafely() async {
-    try {
-      debugPrint('🔐 위치 권한 요청 시작...');
+    // 1. 위치 서비스 활성화 확인
+    _isLocationServiceEnabled = await perm.Permission.location.serviceStatus.isEnabled;
+    if (!_isLocationServiceEnabled) {
+      debugPrint('🔧 위치 서비스 비활성화됨. 사용자에게 활성화 요청은 다른 곳에서 처리.');
+      // 여기서 직접 요청하지 않고, UI에서 사용자에게 안내 후 설정으로 보내는 것을 권장.
+      // return false; // 일단 진행
+    }
 
-      // 1. 현재 권한 상태 확인 (타임아웃 단축)
-      var permissionStatus = await _location.hasPermission().timeout(
-        const Duration(seconds: 1), // 1초 타임아웃
-        onTimeout: () {
-          debugPrint('⏰ 권한 확인 타임아웃');
-          return loc.PermissionStatus.denied;
-        },
-      );
-      debugPrint('📋 현재 권한 상태: $permissionStatus');
+    // 2. 위치 권한 요청
+    var status = await perm.Permission.location.status;
+    debugPrint('📋 현재 위치 권한 상태: $status');
 
-      // 2. 권한이 없으면 요청 (iOS 최적화: 더 긴 타임아웃)
-      if (permissionStatus == loc.PermissionStatus.denied) {
-        debugPrint('🔐 권한 요청 중...');
-        permissionStatus = await _location.requestPermission().timeout(
-          const Duration(seconds: 5), // iOS에서 더 긴 시간 필요
-          onTimeout: () {
-            debugPrint('⏰ 권한 요청 타임아웃');
-            return loc.PermissionStatus.denied;
-          },
-        );
-        debugPrint('📋 권한 요청 결과: $permissionStatus');
-      }
+    if (status.isDenied) {
+      status = await perm.Permission.location.request();
+      debugPrint('📋 위치 권한 요청 결과: $status');
+    }
 
-      // 3. 권한이 있으면 서비스 상태 확인 (타임아웃 단축)
-      if (permissionStatus == loc.PermissionStatus.granted) {
-        debugPrint('✅ 위치 권한 허용됨');
-
-        // 4. 위치 서비스 활성화 확인 (iOS 최적화: 더 긴 타임아웃)
-        bool serviceEnabled = await _location.serviceEnabled().timeout(
-          const Duration(seconds: 3), // iOS에서 더 긴 시간 필요
-          onTimeout: () {
-            debugPrint('⏰ 서비스 확인 타임아웃');
-            return true; // 기본값으로 true 반환
-          },
-        );
-        debugPrint('📋 위치 서비스 상태: $serviceEnabled');
-
-        if (!serviceEnabled) {
-          debugPrint('🔧 위치 서비스 활성화 요청...');
-          serviceEnabled = await _location.requestService().timeout(
-            const Duration(seconds: 5), // iOS에서 더 긴 시간 필요
-            onTimeout: () {
-              debugPrint('⏰ 서비스 요청 타임아웃');
-              return true; // 기본값으로 true 반환
-            },
-          );
-          debugPrint('📋 위치 서비스 요청 결과: $serviceEnabled');
-        }
-
-        return serviceEnabled;
-      }
-
-      if (permissionStatus == loc.PermissionStatus.deniedForever) {
-        debugPrint('🚫 위치 권한이 영구적으로 거부됨');
-        _hasLocationPermissionError = true;
-        return false;
-      }
-
-      debugPrint('❌ 위치 권한 거부됨');
-      return false;
-    } catch (e) {
-      debugPrint('❌ 권한 요청 중 오류: $e');
+    if (status.isPermanentlyDenied) {
+      debugPrint('🚫 위치 권한이 영구적으로 거부됨');
+      _hasLocationPermissionError = true;
+      // 🔥 자동으로 설정 화면을 여는 대신, 사용자에게 알림만 하고 UI에서 처리하도록 변경
+      // UI에서 설정으로 이동하도록 안내해야 함
+      // perm.openAppSettings(); // 자동 열기 제거
       return false;
     }
-  }
 
-  /// 🔥 조용한 권한 확인 (개선된 버전)
-  Future<bool> checkPermissionQuietly() async {
-    try {
-      debugPrint('🔍 개선된 조용한 권한 확인...');
-
-      final status = await _location.hasPermission().timeout(
-        const Duration(seconds: 2),
-        onTimeout: () {
-          debugPrint('⏰ 권한 확인 타임아웃');
-          return loc.PermissionStatus.denied;
-        },
-      );
-
-      debugPrint('📋 권한 상태: $status');
-
-      if (status == loc.PermissionStatus.granted) {
-        try {
-          final serviceEnabled = await _location.serviceEnabled().timeout(
-            const Duration(seconds: 1),
-            onTimeout: () => true,
-          );
-          debugPrint('📋 서비스 상태: $serviceEnabled');
-          _isLocationServiceEnabled = serviceEnabled;
-          return serviceEnabled;
-        } catch (e) {
-          debugPrint('⚠️ 서비스 확인 실패, true로 가정: $e');
-          _isLocationServiceEnabled = true;
-          return true;
+    if (status.isGranted) {
+      debugPrint('✅ 위치 권한 획득.');
+      // 3. (Android만 해당) 백그라운드 위치 권한 확인 및 요청
+      if (Platform.isAndroid) {
+        var backgroundStatus = await perm.Permission.locationAlways.status;
+        debugPrint('📋 현재 백그라운드 위치 권한 상태: $backgroundStatus');
+        if (backgroundStatus.isDenied) {
+          backgroundStatus = await perm.Permission.locationAlways.request();
+          debugPrint('📋 백그라운드 위치 권한 요청 결과: $backgroundStatus');
         }
+        // 🔥 백그라운드 권한이 영구 거부되어도 자동으로 설정 화면을 열지 않음
+        // if(backgroundStatus.isPermanentlyDenied){
+        //   perm.openAppSettings(); // 자동 열기 제거
+        // }
       }
-
-      _isLocationServiceEnabled = false;
-      return false;
-    } catch (e) {
-      debugPrint('❌ 조용한 권한 확인 실패: $e');
-      _isLocationServiceEnabled = false;
-      return false;
+      _hasLocationPermissionError = false;
+      return true;
     }
+    
+    _hasLocationPermissionError = true;
+    return false;
   }
+
 
   /// 🔥 실제 GPS 위치인지 확인
   bool isActualGPSLocation(loc.LocationData locationData) {
@@ -319,7 +261,7 @@ class LocationManager extends ChangeNotifier {
       debugPrint('🔐 권한 상태 재확인 중...');
       await recheckPermissionStatus();
       
-      if (permissionStatus != loc.PermissionStatus.granted) {
+      if (permissionStatus != perm.PermissionStatus.granted) {
         debugPrint('🔐 권한 요청 중...');
         await requestLocation();
         // 권한 요청 후 잠시 대기
@@ -463,7 +405,7 @@ class LocationManager extends ChangeNotifier {
       debugPrint('🎯 직접 GPS 위치 획득 시도...');
 
       // 권한 확인
-      final hasPermission = await _simplePermissionCheck();
+      final hasPermission = await _requestLocationPermissionSafely();
       if (!hasPermission) {
         debugPrint('❌ 위치 권한 없음');
         _hasLocationPermissionError = true;
@@ -529,61 +471,6 @@ class LocationManager extends ChangeNotifier {
       }
     } catch (e) {
       debugPrint('❌ 위치 재시도 실패: $e');
-    }
-  }
-
-  /// 🔥 단순한 권한 확인
-  Future<bool> _simplePermissionCheck() async {
-    try {
-      final status = await _location.hasPermission().timeout(
-        const Duration(seconds: 2),
-        onTimeout: () => loc.PermissionStatus.denied,
-      );
-
-      if (status == loc.PermissionStatus.granted) {
-        final serviceEnabled = await _location.serviceEnabled().timeout(
-          const Duration(seconds: 1),
-          onTimeout: () => true,
-        );
-
-        if (!serviceEnabled) {
-          debugPrint('🔧 위치 서비스 요청...');
-          try {
-            await _location.requestService().timeout(
-              const Duration(seconds: 3),
-              onTimeout: () => false,
-            );
-          } catch (e) {
-            debugPrint('⚠️ 서비스 요청 실패: $e');
-          }
-        }
-        return true;
-      }
-
-      if (status == loc.PermissionStatus.denied) {
-        debugPrint('🔐 권한 요청...');
-        final requestedStatus = await _location.requestPermission().timeout(
-          const Duration(seconds: 8),
-          onTimeout: () => loc.PermissionStatus.denied,
-        );
-
-        if (requestedStatus == loc.PermissionStatus.granted) {
-          try {
-            await _location.requestService().timeout(
-              const Duration(seconds: 3),
-              onTimeout: () => false,
-            );
-          } catch (e) {
-            debugPrint('⚠️ 서비스 요청 실패: $e');
-          }
-          return true;
-        }
-      }
-
-      return false;
-    } catch (e) {
-      debugPrint('❌ 권한 확인 실패: $e');
-      return false;
     }
   }
 
@@ -810,6 +697,8 @@ class LocationManager extends ChangeNotifier {
   }) {
     debugPrint('🔄 개선된 실시간 위치 추적 시작...');
 
+    _location.enableBackgroundMode(enable: true);
+
     // 위치 서비스 빠른 갱신 설정
     _location.changeSettings(
       interval: 1000, // 1초마다 위치 갱신
@@ -957,11 +846,22 @@ class LocationManager extends ChangeNotifier {
   /// 권한 상태 재확인
   Future<void> recheckPermissionStatus() async {
     debugPrint('🔄 권한 상태 재확인...');
-    final hasPermission = await checkPermissionQuietly();
-    if (!hasPermission) {
+    permissionStatus = await perm.Permission.location.status;
+    if (!permissionStatus!.isGranted) {
       _hasLocationPermissionError = true;
-      notifyListeners();
+    } else {
+      if (Platform.isAndroid) {
+        final backgroundStatus = await perm.Permission.locationAlways.status;
+        if (!backgroundStatus.isGranted) {
+          _hasLocationPermissionError = true;
+        } else {
+          _hasLocationPermissionError = false;
+        }
+      } else {
+        _hasLocationPermissionError = false;
+      }
     }
+    notifyListeners();
   }
 
   /// 🔥 개선된 위치 전송 상태 정보

@@ -108,11 +108,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       );
 
       // 🔥 즉시 초기화로 속도 향상
-      _controller = MapScreenController()..addListener(() => setState(() {}));
+      _controller = MapScreenController();
       _controller.resetForNewSession();
 
-      _locationController = LocationController()
-        ..addListener(() => setState(() {}));
+      _locationController = LocationController();
       _controller.setLocationController(_locationController);
 
       debugPrint('🔥🔥🔥 MapScreen에서 FriendsController 생성 🔥🔥🔥');
@@ -378,6 +377,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     }
 
     try {
+      // 🔥 LocationController의 스트림 리스너 먼저 정리
+      _locationController.stopLocationTracking();
+      // 🔥 dispose는 동기 메서드이므로 await 사용 불가
       _locationController.dispose();
     } catch (e) {
       debugPrint('⚠️ LocationController dispose 실패: $e');
@@ -875,177 +877,166 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       });
     }
 
-    return Consumer<LocationManager>(
-      builder: (context, locationManager, child) {
-        if (locationManager.hasValidLocation) {
-          controller.updateUserLocationMarker(
-            NLatLng(
-              locationManager.currentLocation!.latitude!,
-              locationManager.currentLocation!.longitude!,
-            ),
-          );
-        }
-        return Stack(
-          children: [
-            MapView(
-              onMapReady: (mapController) async {
-                await _controller.onMapReady(mapController);
-                debugPrint('🗺️ 지도 준비 완료!');
-                
-                // 🔥 지도 준비 완료 시 즉시 위치 확인 및 이동
-                final locationManager = context.read<LocationManager>();
-                if (locationManager.hasValidLocation &&
-                    locationManager.currentLocation != null) {
-                  debugPrint('⚡ 지도 준비 완료 - 즉시 내 위치로 이동');
-                  await _controller.moveToMyLocation();
-                } else {
-                  debugPrint('⚡ 지도 준비 완료 - 빠른 위치 요청 후 이동');
-                  // 빠른 위치 요청 후 이동 (iOS 최적화)
-                  _locationController.requestCurrentLocationQuickly().then((_) {
-                    if (_locationController.hasValidLocation) {
-                      _controller.moveToMyLocation();
-                    }
-                  }).catchError((error) {
-                    debugPrint('❌ 위치 요청 실패: $error');
-                    // 에러 발생 시에도 검색 상태 리셋
-                    if (mounted) {
-                      setState(() {
-                        // UI 상태 강제 업데이트
-                      });
-                    }
-                    // 에러 타입별 처리
-                    if (error.toString().contains('permission')) {
-                      debugPrint('❌ 위치 권한 오류');
-                    } else if (error.toString().contains('timeout')) {
-                      debugPrint('❌ 위치 요청 타임아웃');
-                    } else {
-                      debugPrint('❌ 기타 위치 오류: $error');
-                    }
+    return Stack(
+      children: [
+        MapView(
+          onMapReady: (mapController) async {
+            await _controller.onMapReady(mapController);
+            _locationController.startLocationTracking();
+            debugPrint('🗺️ 지도 준비 완료!');
+
+            // 🔥 지도 준비 완료 시 즉시 위치 확인 및 이동
+            final locationManager = context.read<LocationManager>();
+            if (locationManager.hasValidLocation &&
+                locationManager.currentLocation != null) {
+              debugPrint('⚡ 지도 준비 완료 - 즉시 내 위치로 이동');
+              await _controller.moveToMyLocation();
+            } else {
+              debugPrint('⚡ 지도 준비 완료 - 빠른 위치 요청 후 이동');
+              // 빠른 위치 요청 후 이동 (iOS 최적화)
+              _locationController.requestCurrentLocationQuickly().then((_) {
+                if (_locationController.hasValidLocation) {
+                  _controller.moveToMyLocation();
+                }
+              }).catchError((error) {
+                debugPrint('❌ 위치 요청 실패: $error');
+                // 에러 발생 시에도 검색 상태 리셋
+                if (mounted) {
+                  setState(() {
+                    // UI 상태 강제 업데이트
                   });
                 }
-              },
-              onTap: () => _controller.closeInfoWindow(_infoWindowController),
-              onMapRotationChanged: (rotation) {
-                // 지도 회전 각도를 LocationController에 전달
-                _locationController.updateMapRotation(rotation);
-              },
-            ),
-            if (_controller.isCategoryLoading) _buildCategoryLoadingIndicator(),
-            // 검색바와 카테고리 칩들
-            Positioned(
-              top: MediaQuery.of(context).padding.top + 10,
-              left: 16,
-              right: 16,
-              child: Column(
-                children: [
-                  BuildingSearchBar(
-                    onBuildingSelected: (building) {
-                      if (_controller.selectedCategory != null) {
-                        _controller.clearCategorySelection();
-                      }
-                      _controller.selectBuilding(building);
-                      if (mounted) _infoWindowController.show();
-                    },
-                    onSearchFocused: () =>
-                        _controller.closeInfoWindow(_infoWindowController),
-                    onDirectionsTap: () => _openDirectionsScreen(),
-                  ),
-                  const SizedBox(height: 12),
-                  CategoryChips(
-                    key: ValueKey('category_chips_${_controller.hashCode}'),
-                    selectedCategory: _controller.selectedCategory,
-                    onCategorySelected: (category, buildingInfoList) async {
-                      debugPrint('🎯 === 카테고리 선택 콜백 시작 ===');
-                      debugPrint(
-                        '🎯 카테고리: "$category", 건물 정보 개수: ${buildingInfoList.length}',
-                      );
-
-                      if (category.isEmpty) {
-                        // "건물" 버튼 클릭 또는 카테고리 해제
-                        debugPrint('🎯 "건물" 버튼 클릭 - 모든 건물 마커 표시 시작');
-
-                        // 1. 카테고리 마커 제거
-                        await _controller.clearCategorySelection();
-
-                        // 2. 건물 마커가 없다면 다시 로드
-                        if (!_buildingMarkerService.hasMarkers) {
-                          debugPrint('⚠️ 건물 마커가 없음 - 다시 로드 시작');
-                          await _controller.loadDefaultMarkers();
-                        } else {
-                          debugPrint('✅ 건물 마커가 이미 존재함 - 가시성만 변경');
-                        }
-
-                        // 3. UI 상태 정리
-                        _controller.clearSelectedBuilding();
-                        _controller.closeInfoWindow(_infoWindowController);
-
-                        debugPrint('✅ "건물" 버튼 처리 완료 - 모든 건물 마커 표시됨');
-                      } else {
-                        // 특정 카테고리 선택
-                        debugPrint('🎯 카테고리 선택 처리 시작: $category');
-
-                        // 1. UI 상태 정리
-                        _controller.clearSelectedBuilding();
-                        _controller.closeInfoWindow(_infoWindowController);
-
-                        // 2. 카테고리 마커 표시 (기존 건물 마커는 자동으로 숨겨짐)
-                        await _controller.selectCategoryByNames(
-                          category,
-                          buildingInfoList,
-                          context,
-                        );
-
-                        debugPrint('✅ 카테고리 선택 처리 완료: $category');
-                      }
-
-                      debugPrint('🎯 === 카테고리 선택 콜백 끝 ===');
-                    },
-                  ),
-                ],
+                // 에러 타입별 처리
+                if (error.toString().contains('permission')) {
+                  debugPrint('❌ 위치 권한 오류');
+                } else if (error.toString().contains('timeout')) {
+                  debugPrint('❌ 위치 요청 타임아웃');
+                } else {
+                  debugPrint('❌ 기타 위치 오류: $error');
+                }
+              });
+            }
+          },
+          onTap: () => _controller.closeInfoWindow(_infoWindowController),
+          onMapRotationChanged: (rotation) {
+            // 지도 회전 각도를 LocationController에 전달
+            _locationController.updateMapRotation(rotation);
+          },
+        ),
+        if (_controller.isCategoryLoading) _buildCategoryLoadingIndicator(),
+        // 검색바와 카테고리 칩들
+        Positioned(
+          top: MediaQuery.of(context).padding.top + 10,
+          left: 16,
+          right: 16,
+          child: Column(
+            children: [
+              BuildingSearchBar(
+                onBuildingSelected: (building) {
+                  if (_controller.selectedCategory != null) {
+                    _controller.clearCategorySelection();
+                  }
+                  _controller.selectBuilding(building);
+                  if (mounted) _infoWindowController.show();
+                },
+                onSearchFocused: () =>
+                    _controller.closeInfoWindow(_infoWindowController),
+                onDirectionsTap: () => _openDirectionsScreen(),
               ),
-            ),
-            // 네비게이션 상태 카드
-            if (_navigationManager.showNavigationStatus) ...[
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 27,
-                child: Center(
-                  child: SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.7,
-                    child: _buildNavigationStatusCard(),
-                  ),
-                ),
+              const SizedBox(height: 12),
+              CategoryChips(
+                key: ValueKey('category_chips_${_controller.hashCode}'),
+                selectedCategory: _controller.selectedCategory,
+                onCategorySelected: (category, buildingInfoList) async {
+                  debugPrint('🎯 === 카테고리 선택 콜백 시작 ===');
+                  debugPrint(
+                    '🎯 카테고리: "$category", 건물 정보 개수: ${buildingInfoList.length}',
+                  );
+
+                  if (category.isEmpty) {
+                    // "건물" 버튼 클릭 또는 카테고리 해제
+                    debugPrint('🎯 "건물" 버튼 클릭 - 모든 건물 마커 표시 시작');
+
+                    // 1. 카테고리 마커 제거
+                    await _controller.clearCategorySelection();
+
+                    // 2. 건물 마커가 없다면 다시 로드
+                    if (!_buildingMarkerService.hasMarkers) {
+                      debugPrint('⚠️ 건물 마커가 없음 - 다시 로드 시작');
+                      await _controller.loadDefaultMarkers();
+                    } else {
+                      debugPrint('✅ 건물 마커가 이미 존재함 - 가시성만 변경');
+                    }
+
+                    // 3. UI 상태 정리
+                    _controller.clearSelectedBuilding();
+                    _controller.closeInfoWindow(_infoWindowController);
+
+                    debugPrint('✅ "건물" 버튼 처리 완료 - 모든 건물 마커 표시됨');
+                  } else {
+                    // 특정 카테고리 선택
+                    debugPrint('🎯 카테고리 선택 처리 시작: $category');
+
+                    // 1. UI 상태 정리
+                    _controller.clearSelectedBuilding();
+                    _controller.closeInfoWindow(_infoWindowController);
+
+                    // 2. 카테고리 마커 표시 (기존 건물 마커는 자동으로 숨겨짐)
+                    await _controller.selectCategoryByNames(
+                      category,
+                      buildingInfoList,
+                      context,
+                    );
+
+                    debugPrint('✅ 카테고리 선택 처리 완료: $category');
+                  }
+
+                  debugPrint('🎯 === 카테고리 선택 콜백 끝 ===');
+                },
               ),
             ],
-            // 경로 계산, 위치 에러, 경로 초기화 버튼 등 기타 UI
-            if (controller.isLoading &&
-                controller.startBuilding != null &&
-                controller.endBuilding != null)
-              _buildRouteLoadingIndicator(),
-            if (controller.hasLocationPermissionError) _buildLocationError(),
-            if (_locationController.isLocationSearching && !_locationController.hasValidLocation) _buildLocationSearchingIndicator(),
-            if (controller.hasActiveRoute &&
-                !_navigationManager.showNavigationStatus)
-              Positioned(
-                left: 16,
-                right: 100,
-                bottom: 30,
-                child: _buildClearNavigationButton(controller),
-              ),
-            // 우측 하단 컨트롤 버튼
-            Positioned(
-              right: 16,
-              bottom: 27,
-              child: MapControls(
-                controller: controller,
-                onMyLocationPressed: () => _controller.moveToMyLocation(),
+          ),
+        ),
+        // 네비게이션 상태 카드
+        if (_navigationManager.showNavigationStatus) ...[
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 27,
+            child: Center(
+              child: SizedBox(
+                width: MediaQuery.of(context).size.width * 0.7,
+                child: _buildNavigationStatusCard(),
               ),
             ),
-            _buildBuildingInfoWindow(controller),
-          ],
-        );
-      },
+          ),
+        ],
+        // 경로 계산, 위치 에러, 경로 초기화 버튼 등 기타 UI
+        if (controller.isLoading &&
+            controller.startBuilding != null &&
+            controller.endBuilding != null)
+          _buildRouteLoadingIndicator(),
+        if (controller.hasLocationPermissionError) _buildLocationError(),
+        if (_locationController.isLocationSearching && !_locationController.hasValidLocation) _buildLocationSearchingIndicator(),
+        if (controller.hasActiveRoute &&
+            !_navigationManager.showNavigationStatus)
+          Positioned(
+            left: 16,
+            right: 100,
+            bottom: 30,
+            child: _buildClearNavigationButton(controller),
+          ),
+        // 우측 하단 컨트롤 버튼
+        Positioned(
+          right: 16,
+          bottom: 27,
+          child: MapControls(
+            controller: controller,
+            onMyLocationPressed: () => _controller.moveToMyLocation(),
+          ),
+        ),
+        _buildBuildingInfoWindow(controller),
+      ],
     );
   }
 

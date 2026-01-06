@@ -45,6 +45,7 @@ class _OutdoorMapPageState extends State<OutdoorMapPage> {
   NLatLng? _currentLocation;
   LocationManager? _locationManager;
   late CustomUserLocationMarker _customUserLocationMarker;
+  bool _isFirstLocationUpdate = true;
 
   @override
   void initState() {
@@ -65,20 +66,18 @@ class _OutdoorMapPageState extends State<OutdoorMapPage> {
 
   /// 위치 변화 시 호출되는 콜백
   void _onLocationChanged() {
-    if (_locationManager?.hasValidLocation == true && 
+    if (_locationManager?.hasValidLocation == true &&
         _locationManager?.currentLocation != null) {
       final newLocation = NLatLng(
         _locationManager!.currentLocation!.latitude!,
         _locationManager!.currentLocation!.longitude!,
       );
-      
+
       // 위치가 실제로 변경되었는지 확인
-      if (_currentLocation == null || 
+      if (_currentLocation == null ||
           _currentLocation!.latitude != newLocation.latitude ||
           _currentLocation!.longitude != newLocation.longitude) {
-        setState(() {
-          _currentLocation = newLocation;
-        });
+        _currentLocation = newLocation;
         _showCurrentLocation();
       }
     }
@@ -102,14 +101,21 @@ class _OutdoorMapPageState extends State<OutdoorMapPage> {
   Future<void> _showCurrentLocation() async {
     if (_mapController == null || _currentLocation == null) return;
 
-    // CustomUserLocationMarker를 사용하여 방향 화살표와 함께 현재 위치 표시
     _customUserLocationMarker.setMapController(_mapController!);
     _customUserLocationMarker.setContext(context);
-    await _customUserLocationMarker.showUserLocation(
-      position: _currentLocation!,
-      showDirectionArrow: true,
-      shouldMoveCamera: false,
-    );
+
+    if (_isFirstLocationUpdate) {
+      await _customUserLocationMarker.showUserLocation(
+        position: _currentLocation!,
+        showDirectionArrow: true,
+        shouldMoveCamera: false,
+      );
+      _isFirstLocationUpdate = false;
+    } else {
+      await _customUserLocationMarker.updateUserLocation(
+        position: _currentLocation!,
+      );
+    }
   }
 
   @override

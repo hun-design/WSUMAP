@@ -1,4 +1,5 @@
 // lib/repositories/building_repository.dart - 완전 수정된 버전
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../models/building.dart';
@@ -97,6 +98,13 @@ class BuildingRepository extends ChangeNotifier {
         _reinitialize();
       }
 
+      // 🔥 forceRefresh가 true면 캐시 무시하고 서버에서 가져오기
+      if (forceRefresh) {
+        debugPrint('🔄 forceRefresh=true - 캐시 무시하고 서버에서 가져오기');
+        _isLoaded = false;
+        _allBuildings.clear();
+      }
+      
       // 이미 로딩된 데이터가 있고 강제 새로고침이 아니면 캐시 반환
       if (_isLoaded && _allBuildings.isNotEmpty && !forceRefresh) {
         AppLogger.info(
@@ -126,13 +134,9 @@ class BuildingRepository extends ChangeNotifier {
       return _getCurrentBuildingsWithOperatingStatus();
     }
 
-    // 데이터가 없으면 fallback 반환
-    return _getFallbackBuildings().map((building) {
-      final autoStatus = _getAutoOperatingStatusWithoutContext(
-        building.baseStatus,
-      );
-      return building.copyWith(baseStatus: autoStatus);
-    }).toList();
+    // 🔥 데이터가 없으면 빈 리스트 반환 (fallback 제거)
+    debugPrint('⚠️ 동기식 건물 데이터 요청 시 데이터 없음 - 빈 리스트 반환');
+    return [];
   }
 
   /// 🔥 서버에서 건물 데이터 로딩 - Result 패턴 적용
@@ -144,10 +148,24 @@ class BuildingRepository extends ChangeNotifier {
     try {
       List<Building> buildings = [];
 
-      // 1단계: 일반 API 시도
+      // 1단계: 일반 API 시도 (타임아웃 설정)
+      debugPrint('🔄 건물 목록 API 호출 시작...');
       final apiResult = await ResultHelper.runSafelyAsync(() async {
-        return await BuildingApiService.getAllBuildings();
-      }, 'BuildingApiService.getAllBuildings');
+        // 🔥 게스트 사용자도 API 호출 가능하도록 타임아웃 설정 (더 긴 타임아웃)
+        return await BuildingApiService.getAllBuildings().timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            debugPrint('⏰ 건물 API 호출 타임아웃 (10초)');
+            throw Exception('API 호출 타임아웃');
+          },
+        );
+      }, 'BuildingApiService.getAllBuildings').timeout(
+        const Duration(seconds: 12),
+        onTimeout: () {
+          debugPrint('⏰ 건물 API 전체 프로세스 타임아웃 (12초)');
+          return Result.failure<List<Building>>('API 호출 타임아웃');
+        },
+      );
 
       if (apiResult.isSuccess) {
         buildings = apiResult.data!;
@@ -156,59 +174,42 @@ class BuildingRepository extends ChangeNotifier {
           '🔍 API 응답 건물 목록: ${buildings.map((b) => b.name).join(', ')}',
         );
       } else {
+        // 🔥 API 실패 시 예외 발생 (fallback 사용 안 함)
         debugPrint('❌ 일반 API 실패: ${apiResult.error}');
-
-        // 2단계: BuildingDataService 시도
-        final dataServiceResult = await ResultHelper.runSafelyAsync(() async {
-          await _buildingDataService.loadBuildings();
-          return _buildingDataService.buildings;
-        }, 'BuildingDataService.loadBuildings');
-
-        if (dataServiceResult.isSuccess) {
-          buildings = dataServiceResult.data!;
-          debugPrint('✅ DataService 성공: ${buildings.length}개');
-          debugPrint(
-            '🔍 DataService 응답 건물 목록: ${buildings.map((b) => b.name).join(', ')}',
-          );
-        } else {
-          debugPrint('❌ DataService 실패: ${dataServiceResult.error}');
-        }
+        debugPrint('❌ 에러 코드: ${apiResult.errorCode}');
+        throw Exception('서버에서 건물 데이터를 가져올 수 없습니다: ${apiResult.error}');
       }
 
-      // 3단계: 데이터 검증 및 저장
-      if (buildings.isNotEmpty) {
-        _allBuildings = buildings;
-        _isLoaded = true;
-        _lastLoadTime = DateTime.now();
-        debugPrint('✅ 서버 데이터 저장 완료: ${buildings.length}개');
-      } else {
-        // 4단계: 확장된 Fallback 데이터 사용
-        _allBuildings = _getFallbackBuildings();
-        _isLoaded = true;
-        _lastLoadTime = DateTime.now();
-        _lastError = '서버 데이터 없음, 확장된 Fallback 사용';
-        debugPrint('⚠️ 확장된 Fallback 데이터 사용: ${_allBuildings.length}개');
-        debugPrint(
-          '🔍 Fallback 건물 목록: ${_allBuildings.map((b) => b.name).join(', ')}',
-        );
+      // 🔥 데이터 검증 및 저장 (API에서만 가져옴)
+      if (buildings.isEmpty) {
+        throw Exception('서버에서 건물 데이터가 비어있습니다');
       }
+
+      _allBuildings = buildings;
+      _isLoaded = true;
+      _lastLoadTime = DateTime.now();
+      debugPrint('✅ 서버 데이터 저장 완료: ${buildings.length}개');
 
       // 🔥 수정: 올바른 메서드 호출 (언더스코어 제거)
       notifyDataChangeListeners();
     } catch (e) {
+      // 🔥 API 실패 시 예외를 그대로 전파 (fallback 사용 안 함)
       _lastError = e.toString();
-      _allBuildings = _getFallbackBuildings();
-      _isLoaded = true;
-      debugPrint('❌ 로딩 실패, 확장된 Fallback 사용: ${_allBuildings.length}개');
+      _isLoaded = false;
+      debugPrint('❌ 로딩 실패: $e');
       debugPrint('🔍 오류 내용: $e');
 
       // 🔥 수정: 올바른 메서드 호출 (언더스코어 제거)
       notifyDataChangeListeners();
+      
+      // 예외를 다시 throw하여 호출자가 처리할 수 있도록 함
+      rethrow;
     } finally {
       _isLoading = false;
       _safeNotifyListeners();
     }
 
+    // API 성공 시에만 여기 도달
     return _getCurrentBuildingsWithOperatingStatus();
   }
 
@@ -222,287 +223,7 @@ class BuildingRepository extends ChangeNotifier {
     }).toList();
   }
 
-  /// 🔥 확장된 Fallback 건물 데이터 (23개 건물)
-  List<Building> _getFallbackBuildings() {
-    return [
-      Building(
-        name: '우송도서관(W1)',
-        info: '도서관 및 학습 공간',
-        lat: 36.338076,
-        lng: 127.446452,
-        category: '학습시설',
-        baseStatus: '운영중',
-        hours: '09:00-18:00',
-        phone: '042-821-5601',
-        imageUrl: null,
-        description: '메인 도서관',
-      ),
-      Building(
-        name: '산학혁신관(W2)',
-        info: '산학협력 관련 시설',
-        lat: 36.339589,
-        lng: 127.447295,
-        category: '강의시설',
-        baseStatus: '운영중',
-        hours: '09:00-18:00',
-        phone: '042-821-5602',
-        imageUrl: null,
-        description: '산학혁신관',
-      ),
-      Building(
-        name: '학군단(W2-1)',
-        info: '학군단 시설',
-        lat: 36.339537,
-        lng: 127.447746,
-        category: '행정시설',
-        baseStatus: '운영중',
-        hours: '09:00-18:00',
-        phone: '042-821-5603',
-        imageUrl: null,
-        description: '학군단',
-      ),
-      Building(
-        name: '유학생기숙사(W3)',
-        info: '유학생 기숙사',
-        lat: 36.339464,
-        lng: 127.446453,
-        category: '기숙사',
-        baseStatus: '24시간',
-        hours: '24시간',
-        phone: '042-821-5604',
-        imageUrl: null,
-        description: '유학생기숙사',
-      ),
-      Building(
-        name: '철도물류관(W4)',
-        info: '철도물류 관련 강의실',
-        lat: 36.33876,
-        lng: 127.445511,
-        category: '강의시설',
-        baseStatus: '운영중',
-        hours: '09:00-18:00',
-        phone: '042-821-5605',
-        imageUrl: null,
-        description: '철도물류관',
-      ),
-      Building(
-        name: '보건의료과학관(W5)',
-        info: '보건의료 관련 강의실',
-        lat: 36.338067,
-        lng: 127.444903,
-        category: '강의시설',
-        baseStatus: '운영중',
-        hours: '09:00-18:00',
-        phone: '042-821-5606',
-        imageUrl: null,
-        description: '보건의료과학관',
-      ),
-      Building(
-        name: '교양교육관(W6)',
-        info: '교양교육 관련 강의실',
-        lat: 36.337507,
-        lng: 127.445761,
-        category: '강의시설',
-        baseStatus: '운영중',
-        hours: '09:00-18:00',
-        phone: '042-821-5607',
-        imageUrl: null,
-        description: '교양교육관',
-      ),
-      Building(
-        name: '우송관(W7)',
-        info: '우송관 강의실',
-        lat: 36.337149,
-        lng: 127.44507,
-        category: '강의시설',
-        baseStatus: '운영중',
-        hours: '09:00-18:00',
-        phone: '042-821-5608',
-        imageUrl: null,
-        description: '우송관',
-      ),
-      Building(
-        name: '우송유치원(W8)',
-        info: '우송유치원',
-        lat: 36.33749,
-        lng: 127.444353,
-        category: '교육시설',
-        baseStatus: '운영중',
-        hours: '09:00-18:00',
-        phone: '042-821-5609',
-        imageUrl: null,
-        description: '우송유치원',
-      ),
-      Building(
-        name: '정례원(W9)',
-        info: '정례원 강의실',
-        lat: 36.3371,
-        lng: 127.444062,
-        category: '강의시설',
-        baseStatus: '운영중',
-        hours: '09:00-18:00',
-        phone: '042-821-5610',
-        imageUrl: null,
-        description: '정례원',
-      ),
-      Building(
-        name: '사회복지융합관(W10)',
-        info: '사회복지 관련 강의실',
-        lat: 36.336656,
-        lng: 127.443852,
-        category: '강의시설',
-        baseStatus: '운영중',
-        hours: '09:00-18:00',
-        phone: '042-821-5611',
-        imageUrl: null,
-        description: '사회복지융합관',
-      ),
-      Building(
-        name: '체육관(W11)',
-        info: '체육관 시설',
-        lat: 36.335822,
-        lng: 127.443289,
-        category: '체육시설',
-        baseStatus: '운영중',
-        hours: '06:00-22:00',
-        phone: '042-821-5612',
-        imageUrl: null,
-        description: '체육관(서캠)',
-      ),
-      Building(
-        name: 'SICA(W12)',
-        info: 'SICA 시설',
-        lat: 36.335513,
-        lng: 127.443778,
-        category: '강의시설',
-        baseStatus: '운영중',
-        hours: '09:00-18:00',
-        phone: '042-821-5613',
-        imageUrl: null,
-        description: 'SICA',
-      ),
-      Building(
-        name: '우송타워(W13)',
-        info: '우송타워',
-        lat: 36.335634,
-        lng: 127.444357,
-        category: '강의시설',
-        baseStatus: '운영중',
-        hours: '09:00-18:00',
-        phone: '042-821-5614',
-        imageUrl: null,
-        description: '우송타워',
-      ),
-      Building(
-        name: 'Culinary Center(W14)',
-        info: '요리 관련 시설',
-        lat: 36.335419,
-        lng: 127.444638,
-        category: '강의시설',
-        baseStatus: '운영중',
-        hours: '09:00-18:00',
-        phone: '042-821-5615',
-        imageUrl: null,
-        description: 'Culinary Center',
-      ),
-      Building(
-        name: '식품건축관(W15)',
-        info: '식품 및 건축 관련 강의실',
-        lat: 36.335441,
-        lng: 127.445383,
-        category: '강의시설',
-        baseStatus: '운영중',
-        hours: '09:00-18:00',
-        phone: '042-821-5616',
-        imageUrl: null,
-        description: '식품건축관',
-      ),
-      Building(
-        name: '학생회관(W16)',
-        info: '학생회관 및 편의시설',
-        lat: 36.33604,
-        lng: 127.44497,
-        category: '학생시설',
-        baseStatus: '운영중',
-        hours: '09:00-18:00',
-        phone: '042-821-5617',
-        imageUrl: null,
-        description: '학생회관',
-      ),
-      Building(
-        name: 'W17 동관(W17-동관)',
-        info: 'W17 동관 시설',
-        lat: 36.3358485,
-        lng: 127.4456995,
-        category: '강의시설',
-        baseStatus: '운영중',
-        hours: '09:00-18:00',
-        phone: '042-821-5618',
-        imageUrl: null,
-        description: 'W17 동관',
-      ),
-      Building(
-        name: '미디어융합관(W17-서관)',
-        info: '미디어융합관 시설',
-        lat: 36.3359085,
-        lng: 127.4455097,
-        category: '강의시설',
-        baseStatus: '운영중',
-        hours: '09:00-18:00',
-        phone: '042-821-5619',
-        imageUrl: null,
-        description: '미디어융합관',
-      ),
-      Building(
-        name: '우송예술회관(W18)',
-        info: '예술 관련 시설',
-        lat: 36.336346,
-        lng: 127.446151,
-        category: '문화시설',
-        baseStatus: '운영중',
-        hours: '09:00-18:00',
-        phone: '042-821-5620',
-        imageUrl: null,
-        description: '우송예술회관',
-      ),
-      Building(
-        name: '앤디cut 아저씨 빌딩(W19)',
-        info: '강의실 및 실습실',
-        lat: 36.3365,
-        lng: 127.4455372,
-        category: '강의시설',
-        baseStatus: '운영중',
-        hours: '09:00-18:00',
-        phone: '042-821-5621',
-        imageUrl: null,
-        description: '앤디cut 아저씨 빌딩',
-      ),
-      Building(
-        name: '청운2숙',
-        info: '기숙사 시설',
-        lat: 36.3398982,
-        lng: 127.4470519,
-        category: '기숙사',
-        baseStatus: '24시간',
-        hours: '24시간',
-        phone: '042-821-5622',
-        imageUrl: null,
-        description: '기숙사',
-      ),
-      Building(
-        name: '24시간 편의점',
-        info: '24시간 운영하는 편의점',
-        lat: 36.337500,
-        lng: 127.446000,
-        category: '편의시설',
-        baseStatus: '24시간',
-        hours: '24시간',
-        phone: '042-821-5678',
-        imageUrl: null,
-        description: '24시간 편의점',
-      ),
-    ];
-  }
+  // 🔥 Fallback 데이터 제거됨 - API만 사용
 
   /// 🔥 강제 데이터 새로고침 개선
   Future<void> forceRefresh() async {
@@ -522,14 +243,25 @@ class BuildingRepository extends ChangeNotifier {
     }
   }
 
-  /// 🔥 로딩 완료까지 대기
+  /// 🔥 로딩 완료까지 대기 (타임아웃 강화)
   Future<List<Building>> _waitForLoadingComplete() async {
     int attempts = 0;
-    const maxAttempts = 50; // 최대 5초 대기
+    const maxAttempts = 60; // 최대 6초 대기 (타임아웃과 맞춤)
 
     while (_isLoading && attempts < maxAttempts) {
       await Future.delayed(const Duration(milliseconds: 100));
       attempts++;
+    }
+
+    // 🔥 타임아웃 시 빈 리스트 반환 (fallback 제거)
+    if (_isLoading) {
+      debugPrint('⚠️ BuildingRepository 로딩 타임아웃 - 빈 리스트 반환');
+      _isLoading = false;
+      _allBuildings = [];
+      _isLoaded = false;
+      _lastError = '로딩 타임아웃';
+      _safeNotifyListeners();
+      notifyDataChangeListeners();
     }
 
     return _getCurrentBuildingsWithOperatingStatus();

@@ -8,7 +8,7 @@ import 'api_helper.dart';
 
 class InquiryService {
   // 🔥 서버 라우터 구조에 맞게 URL 수정: router.get('/', authMiddleware, inquiryController.getInquiry)
-  static String get baseUrl => '${ApiConfig.baseHost}:3001/inquiry';
+  static String get baseUrl => '${ApiConfig.baseHost}/inquiry';
 
   /// 문의하기 작성
   static Future<bool> createInquiry({
@@ -79,8 +79,8 @@ class InquiryService {
 
       // 🔥 서버 라우트: router.post('/', authMiddleware, inquiryController.createInquiry)
       final List<String> possibleUrls = [
-        '${ApiConfig.baseHost}:3001/inquiry', // 🔥 JWT 토큰에서 사용자 ID 추출
-        '${ApiConfig.baseHost}:3001/user/inquiry', // 대안 경로
+        '${ApiConfig.baseHost}/inquiry', // 🔥 JWT 토큰에서 사용자 ID 추출
+        '${ApiConfig.baseHost}/user/inquiry', // 대안 경로
       ];
 
       for (int i = 0; i < possibleUrls.length; i++) {
@@ -182,8 +182,8 @@ class InquiryService {
 
       // 🔥 서버 라우트: router.post('/', authMiddleware, inquiryController.createInquiry)
       final List<String> possibleUrls = [
-        '${ApiConfig.baseHost}:3001/inquiry', // 🔥 JWT 토큰에서 사용자 ID 추출
-        '${ApiConfig.baseHost}:3001/user/inquiry', // 대안 경로
+        '${ApiConfig.baseHost}/inquiry', // 🔥 JWT 토큰에서 사용자 ID 추출
+        '${ApiConfig.baseHost}/user/inquiry', // 대안 경로
       ];
 
       for (int i = 0; i < possibleUrls.length; i++) {
@@ -308,10 +308,10 @@ class InquiryService {
     debugPrint('=== 서버 경로 테스트 시작 ===');
 
     final List<String> testUrls = [
-      '${ApiConfig.baseHost}:3001/user/inquiry',
-      '${ApiConfig.baseHost}:3001/inquiry/$userId',
-      '${ApiConfig.baseHost}:3001/user/inquiry/$userId',
-      '${ApiConfig.baseHost}:3001/inquiry',
+      '${ApiConfig.baseHost}/user/inquiry',
+      '${ApiConfig.baseHost}/inquiry/$userId',
+      '${ApiConfig.baseHost}/user/inquiry/$userId',
+      '${ApiConfig.baseHost}/inquiry',
     ];
 
     for (int i = 0; i < testUrls.length; i++) {
@@ -339,10 +339,10 @@ class InquiryService {
   static Future<List<InquiryItem>> getInquiries() async {
     try {
       debugPrint('=== 문의 목록 조회 시작 ===');
-      debugPrint('API 기본 URL: ${ApiConfig.baseHost}:3001');
+      debugPrint('API 기본 URL: ${ApiConfig.baseHost}');
 
       // 🔥 서버 라우트에 맞게 단일 경로 사용
-      final url = '${ApiConfig.baseHost}:3001/inquiry/my';
+      final url = '${ApiConfig.baseHost}/inquiry/my';
       debugPrint('URL: $url');
 
       final response = await ApiHelper.get(url);
@@ -488,7 +488,7 @@ class InquiryService {
       debugPrint('문의 코드: $inquiryCode');
 
       // 🔥 서버 라우트에 맞게 단일 경로 사용
-      final url = '${ApiConfig.baseHost}:3001/inquiry/my';
+      final url = '${ApiConfig.baseHost}/inquiry/my';
       debugPrint('URL: $url');
 
       final response = await ApiHelper.delete(url, body: {'inquiry_code': inquiryCode});

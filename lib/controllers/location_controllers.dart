@@ -1,4 +1,6 @@
 // lib/controllers/location_controllers.dart
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/services/map_location_service.dart';
 import 'package:flutter_naver_map/flutter_naver_map.dart';
@@ -27,13 +29,15 @@ class LocationController extends ChangeNotifier {
   // 마지막으로 업데이트된 위치 저장
   NLatLng? _lastUpdatedPosition;
 
+  StreamSubscription<loc.LocationData>? _locationSubscription;
+
   LocationController({
     LocationService? locationService,
     LocationPermissionManager? permissionManager,
     MapLocationService? mapLocationService,
-  }) : _locationService = locationService ?? LocationService(),
-       _permissionManager = permissionManager ?? LocationPermissionManager(),
-       _mapLocationService = mapLocationService ?? MapLocationService() {
+  })  : _locationService = locationService ?? LocationService(),
+        _permissionManager = permissionManager ?? LocationPermissionManager(),
+        _mapLocationService = mapLocationService ?? MapLocationService() {
     _initialize();
   }
 
@@ -53,6 +57,44 @@ class LocationController extends ChangeNotifier {
     } catch (e) {
       debugPrint('LocationController 초기화 실패: $e');
     }
+  }
+
+  void startLocationTracking() {
+    _location.changeSettings(
+      accuracy: loc.LocationAccuracy.high,
+      interval: 1000,
+      distanceFilter: 1,
+    );
+    if (_locationSubscription != null) {
+      _locationSubscription!.cancel();
+    }
+    _locationSubscription =
+        _location.onLocationChanged.listen((loc.LocationData newLocation) {
+      // 🔥 dispose된 후 호출 방지
+      try {
+        if (LocationService.isValidLocation(newLocation)) {
+          _currentLocation = newLocation;
+          _hasValidLocation = true;
+          if (_mapController != null) {
+            updateUserLocationMarker(
+                NLatLng(newLocation.latitude!, newLocation.longitude!));
+          }
+          notifyListeners();
+        }
+      } catch (e) {
+        // dispose된 후 notifyListeners() 호출 시 조용히 무시
+        if (e.toString().contains('disposed')) {
+          // 조용히 무시
+        } else {
+          debugPrint('위치 업데이트 중 오류: $e');
+        }
+      }
+    });
+  }
+
+  void stopLocationTracking() {
+    _locationSubscription?.cancel();
+    _locationSubscription = null;
   }
 
   /// 권한 상태 변경 콜백
@@ -109,8 +151,9 @@ class LocationController extends ChangeNotifier {
         _currentLocation = locationResult.locationData;
         _hasValidLocation = true;
         _isLocationSearching = false;
-        
-        debugPrint('위치 획득 성공: ${locationResult.locationData!.latitude}, ${locationResult.locationData!.longitude}');
+
+        debugPrint(
+            '위치 획득 성공: ${locationResult.locationData!.latitude}, ${locationResult.locationData!.longitude}');
 
         await _mapLocationService.showMyLocation(
           locationResult.locationData!,
@@ -167,8 +210,9 @@ class LocationController extends ChangeNotifier {
         _currentLocation = locationResult.locationData;
         _hasValidLocation = true;
         _isLocationSearching = false;
-        
-        debugPrint('✅ 메인 위치 요청 성공: ${locationResult.locationData!.latitude}, ${locationResult.locationData!.longitude}');
+
+        debugPrint(
+            '✅ 메인 위치 요청 성공: ${locationResult.locationData!.latitude}, ${locationResult.locationData!.longitude}');
 
         await _mapLocationService.showMyLocation(
           locationResult.locationData!,
@@ -230,18 +274,17 @@ class LocationController extends ChangeNotifier {
     _mapLocationService.setMapController(mapController);
     debugPrint('LocationController에 지도 컨트롤러 설정 완료');
   }
-  
+
   /// 컨텍스트 설정
   void setContext(BuildContext context) {
     _mapLocationService.setContext(context);
     debugPrint('LocationController에 컨텍스트 설정 완료');
   }
-  
+
   /// 지도 회전 각도 업데이트
   void updateMapRotation(double rotation) {
     _mapLocationService.updateMapRotation(rotation);
   }
-  
 
   /// 사용자 위치 마커 업데이트 - 커스텀 마커 사용
   void updateUserLocationMarker(NLatLng position) async {
@@ -281,6 +324,7 @@ class LocationController extends ChangeNotifier {
 
   @override
   void dispose() {
+    stopLocationTracking();
     _permissionManager.removePermissionListener(_onPermissionChanged);
     _permissionManager.dispose();
     _locationService.dispose();

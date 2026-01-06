@@ -8,6 +8,7 @@ import '../services/auth_service.dart';
 import '../services/websocket_service.dart';
 import '../services/jwt_service.dart';
 import '../managers/location_manager.dart';
+import '../repositories/building_repository.dart';
 
 /// 우송대학교 캠퍼스 네비게이터 사용자 역할 정의
 enum UserRole {
@@ -433,34 +434,92 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 게스트 로그인 - 로컬 처리 (서버 없이)
+  /// 게스트 로그인 - 서버 API 호출
   Future<void> loginAsGuest({BuildContext? context}) async {
     _setLoading(true);
     _clearError();
 
     try {
-      // 게스트 ID 생성 (타임스탬프 기반)
-      final guestId = '${AuthConstants.guestPrefix}${DateTime.now().millisecondsSinceEpoch}';
+      debugPrint('🔄 게스트 로그인 시도 - 서버 API 호출');
 
-      debugPrint('🔄 게스트 로그인 시도 - ID: $guestId');
+      // 🔥 서버에 게스트 로그인 요청
+      final result = await AuthService.guestLogin();
 
-      // 서버 없이 로컬에서 게스트 로그인 처리
-      _userRole = UserRole.external;
-      _userId = guestId;
-      _userName = context != null 
-          ? AppLocalizations.of(context)!.guest 
-          : '게스트';
-      _isLoggedIn = true;
-      _isFirstLaunch = false;
-      _isTutorial = true; // 게스트는 항상 튜토리얼 표시
+      if (result.isSuccess) {
+        // 🔥 서버에서 반환된 게스트 정보 사용
+        final guestId = result.userId ?? '${AuthConstants.guestPrefix}${DateTime.now().millisecondsSinceEpoch}';
+        final guestName = result.userName ?? 
+            (context != null ? AppLocalizations.of(context)!.guest : '게스트');
 
-      // 게스트 로그인 시 위치 전송 및 웹소켓 연결 시작 제거
-      debugPrint('✅ 게스트 로그인 완료 - 위치 전송 및 웹소켓 연결 없음');
-      notifyListeners();
+        debugPrint('✅ 게스트 로그인 성공 - ID: $guestId');
+
+        // 게스트 사용자 정보 설정
+        _userRole = UserRole.external;
+        _userId = guestId;
+        _userName = guestName;
+        _isLoggedIn = true;
+        _isFirstLaunch = false;
+        _isTutorial = result.isTutorial ?? true; // 게스트는 항상 튜토리얼 표시
+
+        // 게스트 로그인 정보 저장 (선택적)
+        await _saveLoginInfo(rememberMe: false);
+
+        debugPrint('✅ 게스트 로그인 완료 - 위치 전송 및 웹소켓 연결 없음');
+        
+        // 🔥 게스트 로그인 후 API 캐시 초기화는 제거
+        // (건물 마커 등 다른 API 호출에 영향을 주지 않도록)
+        // 대신 각 API 호출 시 게스트 사용자는 자동으로 forceRefresh를 사용
+        
+        // 🔥 게스트 로그인 후 BuildingRepository 강제 새로고침 (서버에서 건물 데이터 가져오기)
+        try {
+          debugPrint('========================================');
+          debugPrint('🔥 게스트 로그인 후 건물 데이터 강제 새로고침 시작');
+          debugPrint('========================================');
+          
+          final buildingRepository = BuildingRepository();
+          
+          debugPrint('1️⃣ BuildingRepository 리셋 시작...');
+          buildingRepository.resetForNewSession();
+          debugPrint('2️⃣ BuildingRepository 리셋 완료');
+          
+          debugPrint('3️⃣ 서버에서 건물 데이터 가져오기 시작...');
+          final result = await buildingRepository.getAllBuildings(forceRefresh: true);
+          
+          if (result.isSuccess) {
+            debugPrint('✅ 게스트 로그인 후 건물 데이터 새로고침 완료: ${result.data?.length ?? 0}개');
+          } else {
+            debugPrint('❌ 게스트 로그인 후 건물 데이터 새로고침 실패: ${result.error}');
+          }
+          
+          debugPrint('========================================');
+        } catch (e) {
+          debugPrint('========================================');
+          debugPrint('❌ 게스트 로그인 후 건물 데이터 새로고침 실패: $e');
+          debugPrint('========================================');
+        }
+        
+        notifyListeners();
+      } else {
+        // 🔥 서버 게스트 로그인 실패 시 로컬 fallback
+        debugPrint('⚠️ 서버 게스트 로그인 실패, 로컬 게스트 로그인으로 fallback');
+        final guestId = '${AuthConstants.guestPrefix}${DateTime.now().millisecondsSinceEpoch}';
+        
+        _userRole = UserRole.external;
+        _userId = guestId;
+        _userName = context != null 
+            ? AppLocalizations.of(context)!.guest 
+            : '게스트';
+        _isLoggedIn = true;
+        _isFirstLaunch = false;
+        _isTutorial = true;
+
+        debugPrint('✅ 로컬 게스트 로그인 완료 (서버 연결 실패)');
+        notifyListeners();
+      }
     } catch (e) {
       debugPrint('❌ 게스트 로그인 오류: $e');
       _setErrorFromContext(context, 'unexpected_login_error', 
-          '게스트 로그인 중 오류가 발생했습니다.');
+          '게스트 로그인 중 오류가 발생했습니다: $e');
     } finally {
       _setLoading(false);
     }

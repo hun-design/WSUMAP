@@ -84,6 +84,71 @@ class AuthService {
     }
   }
 
+  /// 🔥 게스트 로그인 API 호출
+  static Future<LoginResult> guestLogin() async {
+    try {
+      debugPrint('=== 🔥 게스트 로그인 API 요청 ===');
+      debugPrint('URL: $baseUrl/guest_login');
+
+      final response = await http
+          .post(
+            Uri.parse('$baseUrl/guest_login'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: jsonEncode({}),
+          )
+          .timeout(const Duration(seconds: 10));
+
+      debugPrint('=== 🔥 게스트 로그인 API 응답 ===');
+      debugPrint('상태코드: ${response.statusCode}');
+      debugPrint('응답 내용: ${response.body}');
+
+      switch (response.statusCode) {
+        case 200:
+        case 201:
+          final data = jsonDecode(response.body);
+          
+          // 🔥 JWT 토큰 저장 (서버에서 게스트 토큰 발급 시)
+          if (data['token'] != null) {
+            await JwtService.saveToken(data['token']);
+            debugPrint('🔐 게스트 JWT 토큰 저장 완료');
+          }
+          
+          // 게스트 사용자 정보 반환
+          final guestId = data['guest_id'] ?? data['id'] ?? 'guest_${DateTime.now().millisecondsSinceEpoch}';
+          final guestName = data['guest_name'] ?? data['name'] ?? '게스트';
+          
+          return LoginResult.success(
+            userId: guestId,
+            userName: guestName,
+            isLogin: true,
+            isTutorial: true,
+          );
+        case 400:
+          return LoginResult.failure('게스트 로그인 요청이 잘못되었습니다.');
+        case 500:
+          return LoginResult.failure('게스트 로그인 처리 중 서버 오류가 발생했습니다.');
+        default:
+          return LoginResult.failure(
+            '게스트 로그인 실패 (${response.statusCode})',
+          );
+      }
+    } catch (e) {
+      debugPrint('게스트 로그인 네트워크 오류: $e');
+      if (e.toString().contains('timeout') ||
+          e.toString().contains('TimeoutException')) {
+        return LoginResult.failure('서버 응답 시간이 초과되었습니다. 네트워크 연결을 확인해주세요.');
+      }
+      if (e.toString().contains('SocketException') ||
+          e.toString().contains('network')) {
+        return LoginResult.failure('네트워크 연결에 실패했습니다. 인터넷 연결을 확인해주세요.');
+      }
+      return LoginResult.failure('게스트 로그인 중 오류가 발생했습니다: $e');
+    }
+  }
+
   /// 🔥 로그인 API 호출 (서버 DB 검증 강화)
   static Future<LoginResult> login({
     required String id,

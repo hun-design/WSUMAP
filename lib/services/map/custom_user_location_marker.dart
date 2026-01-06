@@ -177,32 +177,40 @@ class CustomUserLocationMarker {
     bool updateDirection = true,
   }) async {
     if (_mapController == null) return;
-    
+
     try {
-      debugPrint('🔄 사용자 위치 업데이트: ${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}');
-      
-      if (_userLocationMarker != null) {
+      debugPrint(
+          '🔄 사용자 위치 업데이트: ${position.latitude.toStringAsFixed(6)}, ${position.longitude.toStringAsFixed(6)}');
+
+      // If marker doesn't exist, create it.
+      if (_userLocationMarker == null) {
+        await _addUserLocationMarker(position);
+      } else {
         _userLocationMarker!.setPosition(position);
       }
-      
+
       if (_accuracyCircle != null) {
+        // This can stay as is, it's less critical
         _accuracyCircle!.setCenter(position);
+        if (accuracy != null) {
+          _accuracyCircle!.setRadius(accuracy);
+        }
       }
-      
-      if (_directionArrow != null && updateDirection && _isMagnetometerAvailable) {
+
+      // If direction arrow doesn't exist, create it
+      if (_directionArrow == null && updateDirection && _isMagnetometerAvailable) {
+        await _addDirectionArrow(position);
+      } else if (_directionArrow != null &&
+          updateDirection &&
+          _isMagnetometerAvailable) {
         _directionArrow!.setPosition(position);
         await _updateDirectionArrowRotation();
       }
-      
+
       debugPrint('✅ 사용자 위치 업데이트 완료');
     } catch (e) {
       debugPrint('❌ 사용자 위치 업데이트 실패: $e');
-      await showUserLocation(
-        position: position,
-        accuracy: accuracy,
-        showDirectionArrow: _isDirectionEnabled,
-        shouldMoveCamera: false,
-      );
+      // No fallback to showUserLocation to avoid creating duplicate markers.
     }
   }
   
@@ -366,7 +374,9 @@ class CustomUserLocationMarker {
       
       await _mapController!.addOverlay(_directionArrow!);
     } catch (e) {
-      // 방향 화살표 추가 실패
+      // 🔥 방향 화살표 추가 실패 시 조용히 처리 (플러그인 미지원 가능성)
+      _isMagnetometerAvailable = false;
+      _directionArrow = null;
     }
   }
   
@@ -488,7 +498,22 @@ class CustomUserLocationMarker {
       
       // 방향 업데이트 로그 제거 (각도 변경 시마다 로그 폭발 방지)
     } catch (e) {
-      // 화살표 방향 업데이트 실패 로그 제거
+      // 🔥 화살표 방향 업데이트 실패 시 조용히 처리 (플러그인 미지원 시 발생)
+      // MissingPluginException 등은 조용히 무시
+      if (e.toString().contains('MissingPluginException') || 
+          e.toString().contains('No implementation found')) {
+        // 방향 화살표 기능 비활성화
+        _isMagnetometerAvailable = false;
+        if (_directionArrow != null) {
+          try {
+            await _mapController?.deleteOverlay(_directionArrow!.info);
+          } catch (_) {
+            // 무시
+          }
+          _directionArrow = null;
+        }
+      }
+      // 기타 오류도 조용히 무시
     }
   }
   

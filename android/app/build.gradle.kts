@@ -1,3 +1,6 @@
+import java.util.Properties
+import org.gradle.api.GradleException
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -76,6 +79,22 @@ if (keystorePropertiesFile.exists()) {
     println("   - storePasswordValue: '${storePasswordValue.take(3)}...' (길이: ${storePasswordValue.length})")
 }
 
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(localPropertiesFile.reader())
+}
+
+val flutterVersionCode = localProperties.getProperty("flutter.versionCode")
+if (flutterVersionCode == null) {
+    throw GradleException("flutter.versionCode not found in local.properties. Have you run 'flutter build'?")
+}
+
+val flutterVersionName = localProperties.getProperty("flutter.versionName")
+if (flutterVersionName == null) {
+    throw GradleException("flutter.versionName not found in local.properties. Have you run 'flutter build'?")
+}
+
 android {
     namespace = "com.woosong.wsumap"
     compileSdk = 35
@@ -84,8 +103,8 @@ android {
         applicationId = "com.woosong.wsumap"  // TODO: 배포 시 고유한 패키지 이름으로 변경 (예: com.woosong.wsumap)
         minSdk = 23  // flutter_naver_map 플러그인 요구사항에 맞춰 23으로 변경
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = flutterVersionCode.toInt()
+        versionName = flutterVersionName
         // 🔥 multiDex 활성화 추가
         multiDexEnabled = true
     }

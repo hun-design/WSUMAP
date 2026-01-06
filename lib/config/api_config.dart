@@ -4,29 +4,29 @@ import 'package:flutter/material.dart';
 /// API 설정 클래스
 class ApiConfig {
   // Base Configuration
-  static const String baseHost = 'https://52.65.94.225';
-  static const String baseWsHost = '52.65.94.225'; // WebSocket용 호스트 (protocol 제외)
+  static const String baseHost = 'https://wsumap-service.com';
+  static const String baseWsHost = 'wsumap-service.com'; // WebSocket용 호스트 (protocol 제외)
   
-  // Port Configuration
-  static const int buildingPort = 3000;
-  static const int userPort = 3000;
-  static const int websocketPort = 3003; // 🔥 서버 포트와 일치 (websocket-server.js에서 3003 사용)
+  // Port Configuration (REMOVED as per new server configuration)
+  // static const int buildingPort = 3000;
+  // static const int userPort = 3000;
+  // static const int websocketPort = 3003;
   
   // HTTP API Endpoints
-  static String get buildingBase => '$baseHost:$buildingPort/building';
-  static String get categoryBase => '$baseHost:$buildingPort/category';
-  static String get pathBase => '$baseHost:$buildingPort';
-  static String get userBase => '$baseHost:$userPort/user';
-  static String get friendBase => '$baseHost:$userPort/friend';
-  static String get timetableBase => '$baseHost:$userPort/timetable';
-  static String get timetableUploadUrl => '$baseHost:$userPort/timetable/upload';
-  static String get timetableUploadBase => '$baseHost:$userPort/timetable';
-  static String get floorBase => '$baseHost:$buildingPort/floor';
-  static String get roomBase => '$baseHost:$buildingPort/room';
+  static String get buildingBase => '$baseHost/building';
+  static String get categoryBase => '$baseHost/category';
+  static String get pathBase => baseHost;
+  static String get userBase => '$baseHost/user';
+  static String get friendBase => '$baseHost/friend';
+  static String get timetableBase => '$baseHost/timetable';
+  static String get timetableUploadUrl => '$baseHost/timetable/upload';
+  static String get timetableUploadBase => '$baseHost/timetable';
+  static String get floorBase => '$baseHost/floor';
+  static String get roomBase => '$baseHost/room';
   
   // WebSocket Configuration
-  static String get websocketUrl => 'wss://$baseWsHost:$websocketPort/friend/ws';
-  static String get websocketBase => 'wss://$baseWsHost:$websocketPort';
+  static String get websocketUrl => 'wss://$baseWsHost/friend/ws';
+  static String get websocketBase => 'wss://$baseWsHost';
   
   // WebSocket 관련 상수들 (연결 안정성 개선)
   static const Duration heartbeatInterval = Duration(seconds: 15); // 🔥 25초 → 15초로 단축
