@@ -2,6 +2,7 @@
 
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_application_1/config/api_config.dart';
 import 'package:flutter_application_1/services/api_helper.dart';
 import 'package:flutter_application_1/services/jwt_service.dart';
@@ -42,9 +43,14 @@ class ApiService {
   /// 반환: [{Floor_Id, Floor_Number, Building_Name, File}, ...]
   Future<List<dynamic>> fetchFloorList(String buildingName, {bool forceRefresh = false}) async {
     try {
-      // 🔥 게스트 사용자인 경우 (토큰이 없으면) 항상 캐시 무시
+      // 🔥 게스트 사용자인지 확인 (userId가 guest_로 시작하는지 확인)
+      final prefs = await SharedPreferences.getInstance();
+      final userId = prefs.getString('user_id');
+      final isGuestUser = userId == null || userId.startsWith('guest_');
+      
+      // 🔥 게스트 사용자인 경우 항상 캐시 무시하고 최신 데이터 가져오기
       final hasToken = await JwtService.isTokenValid();
-      final shouldForceRefresh = forceRefresh || !hasToken;
+      final shouldForceRefresh = forceRefresh || isGuestUser || !hasToken;
       
       final encodedBuildingName = Uri.encodeComponent(buildingName);
       final url = '${ApiConfig.floorBase}/$encodedBuildingName';
@@ -64,11 +70,24 @@ class ApiService {
       }
       
       if (response.statusCode == 200) {
-        final List<dynamic> floorList = json.decode(utf8.decode(response.bodyBytes));
-        if (kDebugMode) {
-          debugPrint('✅ 층 목록 로드 성공: ${floorList.length}개');
+        try {
+          final List<dynamic> floorList = json.decode(utf8.decode(response.bodyBytes));
+          if (kDebugMode) {
+            debugPrint('✅ 층 목록 로드 성공: ${floorList.length}개');
+          }
+          
+          if (floorList.isEmpty) {
+            throw Exception('이 건물에는 층 정보가 없습니다.');
+          }
+          
+          return floorList;
+        } catch (jsonError) {
+          if (kDebugMode) {
+            debugPrint('❌ JSON 파싱 오류: $jsonError');
+            debugPrint('❌ 응답 본문: ${response.body}');
+          }
+          throw Exception('서버 응답을 파싱하는데 실패했습니다: $jsonError');
         }
-        return floorList;
       } else if (response.statusCode == 401 || response.statusCode == 403) {
         // 🔥 인증 오류 - 게스트 사용자일 때 더 자세한 메시지
         if (kDebugMode) {
@@ -80,18 +99,40 @@ class ApiService {
         }
         // 🔥 게스트 사용자에게 더 명확한 안내
         throw Exception('게스트 사용자는 건물 도면을 볼 수 없습니다.\n로그인 후 다시 시도해주세요.');
+      } else if (response.statusCode == 404) {
+        if (kDebugMode) {
+          debugPrint('❌ 건물을 찾을 수 없음 (404): $buildingName');
+          debugPrint('❌ 응답 본문: ${response.body}');
+        }
+        throw Exception('건물 "$buildingName"을(를) 찾을 수 없습니다.\n건물명이 정확한지 확인해주세요.');
+      } else if (response.statusCode >= 500) {
+        if (kDebugMode) {
+          debugPrint('❌ 서버 오류 (${response.statusCode})');
+          debugPrint('❌ 응답 본문: ${response.body}');
+        }
+        throw Exception('서버 오류가 발생했습니다.\n잠시 후 다시 시도해주세요. (오류 코드: ${response.statusCode})');
       } else {
         if (kDebugMode) {
           debugPrint('❌ API 오류: 상태 코드 ${response.statusCode}');
           debugPrint('❌ 응답 본문: ${response.body}');
+          debugPrint('❌ 요청 URL: $url');
         }
-        throw Exception('Failed to load floor list for $buildingName (Status: ${response.statusCode})');
+        throw Exception('층 목록을 불러오는데 실패했습니다.\n오류 코드: ${response.statusCode}');
       }
     } catch (e) {
       if (kDebugMode) {
         debugPrint('❌ fetchFloorList 오류: $e');
         debugPrint('❌ 오류 타입: ${e.runtimeType}');
+        debugPrint('❌ 스택 트레이스: ${StackTrace.current}');
       }
+      
+      // 🔥 타임아웃이나 네트워크 오류인 경우 더 친화적인 메시지
+      if (e.toString().contains('Timeout') || e.toString().contains('timeout')) {
+        throw Exception('요청 시간이 초과되었습니다.\n네트워크 연결을 확인하고 다시 시도해주세요.');
+      } else if (e.toString().contains('SocketException') || e.toString().contains('Failed host lookup')) {
+        throw Exception('네트워크 연결에 실패했습니다.\n인터넷 연결을 확인해주세요.');
+      }
+      
       rethrow;
     }
   }

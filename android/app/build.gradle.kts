@@ -79,20 +79,28 @@ if (keystorePropertiesFile.exists()) {
     println("   - storePasswordValue: '${storePasswordValue.take(3)}...' (길이: ${storePasswordValue.length})")
 }
 
-val localProperties = Properties()
-val localPropertiesFile = rootProject.file("local.properties")
-if (localPropertiesFile.exists()) {
-    localProperties.load(localPropertiesFile.reader())
-}
+// 🔥 pubspec.yaml에서 직접 버전 정보 읽기
+val pubspecFile = rootProject.file("../pubspec.yaml")
+var flutterVersionCode = "5"
+var flutterVersionName = "1.0.2"
 
-val flutterVersionCode = localProperties.getProperty("flutter.versionCode")
-if (flutterVersionCode == null) {
-    throw GradleException("flutter.versionCode not found in local.properties. Have you run 'flutter build'?")
-}
-
-val flutterVersionName = localProperties.getProperty("flutter.versionName")
-if (flutterVersionName == null) {
-    throw GradleException("flutter.versionName not found in local.properties. Have you run 'flutter build'?")
+if (pubspecFile.exists()) {
+    val pubspecContent = pubspecFile.readText()
+    val versionMatch = Regex("version:\\s*([\\d.]+)\\+?(\\d+)?").find(pubspecContent)
+    if (versionMatch != null) {
+        flutterVersionName = versionMatch.groupValues[1]
+        flutterVersionCode = versionMatch.groupValues.getOrNull(2) ?: "1"
+        println("✅ pubspec.yaml에서 버전 정보 읽음: versionName=$flutterVersionName, versionCode=$flutterVersionCode")
+    }
+} else {
+    // fallback: local.properties에서 읽기 시도
+    val localProperties = Properties()
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localProperties.load(localPropertiesFile.reader())
+        flutterVersionCode = localProperties.getProperty("flutter.versionCode") ?: flutterVersionCode
+        flutterVersionName = localProperties.getProperty("flutter.versionName") ?: flutterVersionName
+    }
 }
 
 android {

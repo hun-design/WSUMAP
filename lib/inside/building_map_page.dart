@@ -657,7 +657,8 @@ class _BuildingMapPageState extends State<BuildingMapPage> {
     });
 
     try {
-      final floors = await _apiService.fetchFloorList(buildingName);
+      // 🔥 건물 도면 열 때 항상 최신 데이터 가져오기
+      final floors = await _apiService.fetchFloorList(buildingName, forceRefresh: true);
 
       if (mounted) {
         final allowedFloors = widget.navigationNodeIds

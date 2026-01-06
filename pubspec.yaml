@@ -1,7 +1,7 @@
 name: flutter_application_1
 description: "따라우송 캠퍼스 네비게이터"
 publish_to: "none"
-version: 1.0.1+4
+version: 1.0.2+5
 
 environment:
   # sdk 버전을 최신 프로젝트의 ^3.8.1로 설정했습니다.

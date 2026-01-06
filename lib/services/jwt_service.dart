@@ -146,7 +146,15 @@ class JwtService {
   /// 🔥 Authorization 헤더 생성 (크로스 플랫폼 최적화)
   static Future<Map<String, String>> getAuthHeaders() async {
     final token = await getToken();
+    
+    // 🔥 게스트 사용자인지 확인 (userId가 guest_로 시작하는지 확인)
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getString('user_id');
+    final isGuestUser = userId == null || userId.startsWith('guest_');
+    
     debugPrint('🔐 JWT 토큰 상태: ${token != null ? "있음" : "없음"}');
+    debugPrint('🔐 현재 사용자 ID: $userId');
+    debugPrint('🔐 게스트 사용자 여부: $isGuestUser');
     
     final headers = <String, String>{
       'Content-Type': 'application/json',
@@ -155,14 +163,20 @@ class JwtService {
       'X-Platform': Platform.isAndroid ? 'android' : Platform.isIOS ? 'ios' : 'unknown',
     };
     
+    // 🔥 게스트 사용자인 경우 항상 X-Guest-User 헤더 추가 (토큰이 있어도)
+    if (isGuestUser) {
+      headers['X-Guest-User'] = 'true';
+      debugPrint('🔐 게스트 사용자로 인식 - X-Guest-User 헤더 추가');
+    }
+    
+    // 토큰이 있으면 Authorization 헤더 추가
     if (token != null) {
       debugPrint('🔐 JWT 토큰 길이: ${token.length}');
       debugPrint('🔐 JWT 토큰 시작: ${token.substring(0, token.length > 20 ? 20 : token.length)}...');
       headers['Authorization'] = 'Bearer $token';
-    } else {
-      // 🔥 게스트 사용자임을 나타내는 헤더 추가 (서버에서 게스트 요청 허용)
-      headers['X-Guest-User'] = 'true';
-      debugPrint('⚠️ JWT 토큰이 없어서 게스트 사용자 헤더 추가');
+    } else if (!isGuestUser) {
+      // 일반 사용자인데 토큰이 없는 경우 경고
+      debugPrint('⚠️ 일반 사용자인데 JWT 토큰이 없습니다.');
     }
     
     return headers;
