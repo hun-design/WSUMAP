@@ -197,6 +197,7 @@
 				97C146EC1CF9000F007C117D /* Resources */,
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
+				A1B2C3D4E5F6A7B8C9D0E1F2 /* Copy Pods dSYM Files */,
 				2D374788998A0914DDA43E2F /* [CP] Embed Pods Frameworks */,
 				0292B8FC7E28F25DC48D7AFD /* [CP] Copy Pods Resources */,
 			);
@@ -378,6 +379,22 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" build";
+		};
+		A1B2C3D4E5F6A7B8C9D0E1F2 /* Copy Pods dSYM Files */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Copy Pods dSYM Files";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"${CONFIGURATION}\" = \"Release\" ] || [ \"${CONFIGURATION}\" = \"Profile\" ]; then\n  # 앱의 dSYM 폴더 경로\n  APP_DSYM=\"${DWARF_DSYM_FOLDER_PATH}/${WRAPPER_NAME}.dSYM\"\n  \n  if [ ! -d \"${APP_DSYM}\" ]; then\n    echo \"Warning: App dSYM folder not found: ${APP_DSYM}\"\n    exit 0\n  fi\n  \n  DWARF_FOLDER=\"${APP_DSYM}/Contents/Resources/DWARF\"\n  mkdir -p \"${DWARF_FOLDER}\"\n  \n  # 필요한 프레임워크 목록\n  FRAMEWORKS=(\"NMapsGeometry\" \"NMapsMap\")\n  \n  for FRAMEWORK in \"${FRAMEWORKS[@]}\"; do\n    # 1. Pods 빌드 디렉토리에서 dSYM 찾기\n    PODS_DSYM=$(find \"${PODS_BUILD_DIR}\" -name \"${FRAMEWORK}.framework.dSYM\" -type d 2>/dev/null | head -1)\n    \n    # 2. 빌드된 제품 디렉토리에서 찾기\n    if [ -z \"$PODS_DSYM\" ]; then\n      PODS_DSYM=$(find \"${BUILT_PRODUCTS_DIR}\" -name \"${FRAMEWORK}.framework.dSYM\" -type d 2>/dev/null | head -1)\n    fi\n    \n    # 3. DerivedData에서 찾기\n    if [ -z \"$PODS_DSYM\" ]; then\n      DERIVED_DATA=\"${TARGET_BUILD_DIR%/*/*}\"\n      PODS_DSYM=$(find \"${DERIVED_DATA}\" -name \"${FRAMEWORK}.framework.dSYM\" -type d 2>/dev/null | head -1)\n    fi\n    \n    if [ -n \"$PODS_DSYM\" ] && [ -d \"$PODS_DSYM\" ]; then\n      echo \"Found dSYM for ${FRAMEWORK}: ${PODS_DSYM}\"\n      \n      # dSYM의 DWARF 파일 복사\n      SOURCE_DWARF=\"${PODS_DSYM}/Contents/Resources/DWARF/${FRAMEWORK}\"\n      if [ -f \"${SOURCE_DWARF}\" ]; then\n        cp \"${SOURCE_DWARF}\" \"${DWARF_FOLDER}/${FRAMEWORK}\"\n        echo \"Copied dSYM for ${FRAMEWORK} to ${DWARF_FOLDER}\"\n      else\n        echo \"Warning: DWARF file not found in ${PODS_DSYM}\"\n      fi\n    else\n      echo \"Warning: dSYM not found for ${FRAMEWORK}.framework\"\n      echo \"Searched in: ${PODS_BUILD_DIR}, ${BUILT_PRODUCTS_DIR}\"\n    fi\n  done\nfi\n";
+			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
 
