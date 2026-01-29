@@ -1,7 +1,6 @@
 // lib/signup/sign_up_view.dart - 다국어 지원이 완전히 적용된 버전
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_application_1/login/login_form_view.dart';
 import 'package:provider/provider.dart';
 import '../components/woosong_input_field.dart';
@@ -36,7 +35,6 @@ class _SignUpViewState extends State<SignUpView> with TickerProviderStateMixin {
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
   final nameController = TextEditingController();
-  final phoneController = TextEditingController();
   final emailController = TextEditingController();
   final stuNumberController = TextEditingController();
 
@@ -54,9 +52,6 @@ class _SignUpViewState extends State<SignUpView> with TickerProviderStateMixin {
       CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
     );
     _animationController.forward();
-    
-    // 전화번호 포맷팅 리스너 추가
-    phoneController.addListener(_formatPhoneNumber);
   }
 
   @override
@@ -65,36 +60,10 @@ class _SignUpViewState extends State<SignUpView> with TickerProviderStateMixin {
     passwordController.dispose();
     confirmPasswordController.dispose();
     nameController.dispose();
-    phoneController.dispose();
     emailController.dispose();
     stuNumberController.dispose();
     _animationController.dispose();
     super.dispose();
-  }
-
-  /// 전화번호 자동 포맷팅
-  void _formatPhoneNumber() {
-    final text = phoneController.text;
-    final digitsOnly = text.replaceAll(RegExp(r'[^\d]'), '');
-    
-    if (digitsOnly.length <= 3) {
-      phoneController.value = TextEditingValue(
-        text: digitsOnly,
-        selection: TextSelection.collapsed(offset: digitsOnly.length),
-      );
-    } else if (digitsOnly.length <= 7) {
-      final formatted = '${digitsOnly.substring(0, 3)}-${digitsOnly.substring(3)}';
-      phoneController.value = TextEditingValue(
-        text: formatted,
-        selection: TextSelection.collapsed(offset: formatted.length),
-      );
-    } else {
-      final formatted = '${digitsOnly.substring(0, 3)}-${digitsOnly.substring(3, 7)}-${digitsOnly.substring(7, 11)}';
-      phoneController.value = TextEditingValue(
-        text: formatted,
-        selection: TextSelection.collapsed(offset: formatted.length),
-      );
-    }
   }
 
   /// 회원가입 처리
@@ -104,12 +73,11 @@ class _SignUpViewState extends State<SignUpView> with TickerProviderStateMixin {
     final pw = passwordController.text.trim();
     final confirmPw = confirmPasswordController.text.trim();
     final name = nameController.text.trim();
-    final phone = phoneController.text.trim();
     final email = emailController.text.trim();
     final stuNumber = stuNumberController.text.trim();
 
     // 입력 검증
-    if (id.isEmpty || pw.isEmpty || name.isEmpty || phone.isEmpty) {
+    if (id.isEmpty || pw.isEmpty || name.isEmpty) {
       _showDialog(l10n.required_fields_empty, isError: true);
       return;
     }
@@ -124,12 +92,6 @@ class _SignUpViewState extends State<SignUpView> with TickerProviderStateMixin {
       return;
     }
 
-    // 전화번호 형식 검증
-    if (!_isValidPhoneNumber(phone)) {
-      _showDialog(l10n.invalid_phone_format, isError: true);
-      return;
-    }
-
     // 이메일 형식 검증 (선택사항)
     if (email.isNotEmpty && !_isValidEmail(email)) {
       _showDialog(l10n.invalid_email_format, isError: true);
@@ -138,12 +100,11 @@ class _SignUpViewState extends State<SignUpView> with TickerProviderStateMixin {
 
     final userAuth = Provider.of<UserAuth>(context, listen: false);
     
-    // 서버 API를 통한 회원가입 시도
+    // 서버 API를 통한 회원가입 시도 (전화번호는 가이드라인 5.1.1에 따라 수집하지 않음)
     final success = await userAuth.register(
       id: id,
       password: pw,
       name: name,
-      phone: phone,
       stuNumber: stuNumber.isEmpty ? null : stuNumber,
       email: email.isEmpty ? null : email,
       context: context,
@@ -156,13 +117,6 @@ class _SignUpViewState extends State<SignUpView> with TickerProviderStateMixin {
       // 회원가입 실패
       _showDialog(userAuth.lastError ?? l10n.register_error, isError: true);
     }
-  }
-
-  /// 전화번호 형식 검증
-  bool _isValidPhoneNumber(String phone) {
-    // 010-1234-5678 또는 01012345678 형식 허용
-    final phoneRegex = RegExp(r'^010[-]?\d{4}[-]?\d{4}$');
-    return phoneRegex.hasMatch(phone);
   }
 
   /// 이메일 형식 검증
@@ -376,18 +330,6 @@ class _SignUpViewState extends State<SignUpView> with TickerProviderStateMixin {
                               hint: l10n.enter_real_name,
                             ),
                             const SizedBox(height: 16),
-                            WoosongInputField(
-                              icon: Icons.phone_outlined,
-                              label: '${l10n.phone} *',
-                              controller: phoneController,
-                              hint: l10n.phone_format_hint,
-                              keyboardType: TextInputType.phone,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly,
-                              ],
-                            ),
-                            const SizedBox(height: 16),
-                            
                             // 선택 입력 필드들
                             WoosongInputField(
                               icon: Icons.numbers_outlined,

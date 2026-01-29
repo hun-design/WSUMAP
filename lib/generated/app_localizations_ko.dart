@@ -1870,6 +1870,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get help_subtitle => '앱 사용법을 확인하세요';
 
   @override
+  String get support_contact_title => '고객 지원';
+
+  @override
+  String get support_contact_description => '앱 사용 중 문제가 있으시면 프로필 > 문의하기에서 질문을 보내주시거나, 지원 웹사이트(App Store 앱 정보)를 이용해 주세요.';
+
+  @override
+  String get support_go_to_inquiry => '문의하기';
+
+  @override
   String get app_info_subtitle => '버전 정보 및 개발자 정보';
 
   @override

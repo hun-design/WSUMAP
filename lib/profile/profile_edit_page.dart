@@ -290,16 +290,16 @@ class _ProfileEditPageState extends State<ProfileEditPage> with TickerProviderSt
                       validator: (value) => value == null || value.trim().isEmpty ? l10n.email_required : null,
                     ),
                     const SizedBox(height: 20),
-                    // 전화번호
+                    // 전화번호 (선택, 가이드라인 5.1.1)
                     _buildProfileField(
-                      label: l10n.phone,
+                      label: '${l10n.phone} (${l10n.optional})',
                       controller: _phoneController,
                       icon: Icons.phone,
                       keyboardType: TextInputType.phone,
                       inputFormatters: [
                         FilteringTextInputFormatter.digitsOnly,
                       ],
-                      validator: (value) => value == null || value.trim().isEmpty ? l10n.phone_required : null,
+                      validator: (value) => null,
                     ),
                     const SizedBox(height: 20),
                     // 비밀번호

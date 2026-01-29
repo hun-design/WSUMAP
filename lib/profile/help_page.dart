@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../generated/app_localizations.dart';
+import 'inquiry_page.dart';
 
 // 이미지 확대 다이얼로그 위젯
 class ImageZoomDialog extends StatelessWidget {
@@ -221,6 +222,91 @@ class _HelpPageState extends State<HelpPage> {
                             : Colors.grey.withOpacity(0.3),
                       ),
                     ),
+                  ),
+                ),
+              ),
+              // 고객 지원 안내 (가이드라인 1.5)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: const Color(0xFF1E3A8A).withOpacity(0.2),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.06),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.contact_support_outlined,
+                            color: const Color(0xFF1E3A8A),
+                            size: 22,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            l10n.support_contact_title,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF1E3A8A),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        l10n.support_contact_description,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.grey[700],
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: TextButton.icon(
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => const InquiryPage(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(
+                            Icons.mail_outline,
+                            size: 18,
+                            color: Color(0xFF1E3A8A),
+                          ),
+                          label: Text(
+                            l10n.support_go_to_inquiry,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF1E3A8A),
+                            ),
+                          ),
+                          style: TextButton.styleFrom(
+                            backgroundColor: const Color(0xFF1E3A8A).withOpacity(0.08),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),

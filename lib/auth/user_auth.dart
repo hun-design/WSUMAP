@@ -730,12 +730,12 @@ class UserAuth extends ChangeNotifier {
     }
   }
 
-  /// 회원가입
+  /// 회원가입 (가이드라인 5.1.1: 전화번호는 수집하지 않음)
   Future<bool> register({
     required String id,
     required String password,
     required String name,
-    required String phone,
+    String? phone,
     String? stuNumber,
     String? email,
     BuildContext? context,
