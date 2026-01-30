@@ -13,12 +13,12 @@ import 'api_helper.dart';
 class AuthService {
   static final String baseUrl = ApiConfig.userBase;
 
-  /// 회원가입 API 호출
+  /// 회원가입 API 호출 (전화번호는 App Store 가이드라인 5.1.1 준수로 선택 항목)
   static Future<AuthResult> register({
     required String id,
     required String pw,
     required String name,
-    required String phone,
+    String? phone,
     String? stuNumber,
     String? email,
   }) async {
@@ -26,14 +26,16 @@ class AuthService {
       debugPrint('=== 회원가입 API 요청 ===');
       debugPrint('URL: $baseUrl/register');
 
-      final requestBody = {
+      final requestBody = <String, dynamic>{
         'id': id,
         'pw': pw,
         'name': name,
         'stu_number': stuNumber,
-        'phone': phone,
         'email': email,
       };
+      if (phone != null && phone.isNotEmpty) {
+        requestBody['phone'] = phone;
+      }
 
       debugPrint('요청 데이터: $requestBody');
 
