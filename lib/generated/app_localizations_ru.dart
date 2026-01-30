@@ -1949,6 +1949,15 @@ class AppLocalizationsRu extends AppLocalizations {
   String get help_subtitle => 'Проверьте, как использовать приложение';
 
   @override
+  String get support_contact_title => 'Поддержка';
+
+  @override
+  String get support_contact_description => 'Если у вас возникли вопросы при использовании приложения, отправьте сообщение через Профиль > Запрос или посетите сайт поддержки в информации о приложении в App Store.';
+
+  @override
+  String get support_go_to_inquiry => 'Связаться с нами';
+
+  @override
   String get app_info_subtitle => 'Информация о версии и разработчике';
 
   @override

@@ -3658,6 +3658,15 @@ abstract class AppLocalizations {
   /// **'Check app usage'**
   String get help_subtitle;
 
+  /// No description provided for @support_contact_title.
+  String get support_contact_title;
+
+  /// No description provided for @support_contact_description.
+  String get support_contact_description;
+
+  /// No description provided for @support_go_to_inquiry.
+  String get support_go_to_inquiry;
+
   /// No description provided for @app_info_subtitle.
   ///
   /// In en, this message translates to:

@@ -100,7 +100,7 @@ class _SignUpViewState extends State<SignUpView> with TickerProviderStateMixin {
 
     final userAuth = Provider.of<UserAuth>(context, listen: false);
     
-    // 서버 API를 통한 회원가입 시도
+    // 서버 API를 통한 회원가입 시도 (전화번호는 가이드라인 5.1.1에 따라 수집하지 않음)
     final success = await userAuth.register(
       id: id,
       password: pw,

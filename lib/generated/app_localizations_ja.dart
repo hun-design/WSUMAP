@@ -1875,6 +1875,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get help_subtitle => 'アプリの使い方を確認してください';
 
   @override
+  String get support_contact_title => 'カスタマーサポート';
+
+  @override
+  String get support_contact_description => 'アプリの使用中に問題がありましたら、プロフィール＞お問い合わせから送信するか、App Storeのアプリ情報のサポートサイトをご利用ください。';
+
+  @override
+  String get support_go_to_inquiry => 'お問い合わせ';
+
+  @override
   String get app_info_subtitle => 'バージョン情報・開発者情報';
 
   @override

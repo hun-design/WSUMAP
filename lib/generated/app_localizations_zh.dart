@@ -1860,6 +1860,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get help_subtitle => '查看应用使用方法';
 
   @override
+  String get support_contact_title => '客户支持';
+
+  @override
+  String get support_contact_description => '使用应用时如有问题，请通过个人资料＞咨询发送，或使用App Store应用信息中的支持网站。';
+
+  @override
+  String get support_go_to_inquiry => '联系我们';
+
+  @override
   String get app_info_subtitle => '版本信息及开发者信息';
 
   @override

@@ -1918,6 +1918,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get help_subtitle => 'Check app usage';
 
   @override
+  String get support_contact_title => 'Customer Support';
+
+  @override
+  String get support_contact_description => 'If you have any questions while using the app, please use Profile > Inquiry to send a message, or visit the support website in the App Store app info.';
+
+  @override
+  String get support_go_to_inquiry => 'Contact Us';
+
+  @override
   String get app_info_subtitle =>
       'Version information and developer information';
 
