@@ -1198,7 +1198,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     if (title == l10n.help) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => const HelpPage()),
+      MaterialPageRoute(builder: (_) => HelpPage(userAuth: userAuth)),
       );
     } else if (title == l10n.app_info) {
       Navigator.push(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../generated/app_localizations.dart';
+import '../auth/user_auth.dart';
 import 'inquiry_page.dart';
 
 // 이미지 확대 다이얼로그 위젯
@@ -96,7 +97,9 @@ class ImageZoomDialog extends StatelessWidget {
 }
 
 class HelpPage extends StatefulWidget {
-  const HelpPage({super.key});
+  final UserAuth userAuth;
+
+  const HelpPage({required this.userAuth, super.key});
 
   @override
   State<HelpPage> createState() => _HelpPageState();
@@ -282,7 +285,8 @@ class _HelpPageState extends State<HelpPage> {
                           onPressed: () {
                             Navigator.of(context).push(
                               MaterialPageRoute<void>(
-                                builder: (_) => const InquiryPage(),
+                                builder: (_) =>
+                                    InquiryPage(userAuth: widget.userAuth),
                               ),
                             );
                           },
